@@ -11,13 +11,13 @@ export interface LoginResponse {
     playerId: string;
   };
   isMember: boolean;
-  role: "member" | "applicant";
+  role: "Applicant" | "Member" | "Officer" | "Admin";
 }
 
 export interface AuthState {
   player: LoginResponse["player"] | null;
   isMember: boolean;
-  role: "member" | "applicant" | null;
+  role: LoginResponse["role"] | null;
 }
 
 export const useAuth = () => {

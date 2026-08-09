@@ -9,36 +9,35 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="page">
-    <header class="topbar">
-      <span class="brand">ROOC StatDB</span>
-      <button class="btn-logout" @click="logout">Logout</button>
-    </header>
-
-    <main class="content">
-      <div class="welcome-card">
-        <div class="badge applicant">Applicant</div>
-        <h1>Welcome, {{ auth.player?.ign }}!</h1>
-        <p>Player ID: <strong>{{ auth.player?.playerId }}</strong></p>
-        <p>
-          You are currently registered as an <strong>applicant</strong>.
-          Please contact an admin to complete your membership.
-        </p>
+  <div class="min-h-screen p-6 md:p-10">
+    <div class="mx-auto max-w-3xl space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl md:text-2xl font-semibold text-white">ROOC StatDB</h1>
+          <p class="text-sm text-slate-400">Applicant portal</p>
+        </div>
+        <UButton color="neutral" variant="soft" icon="i-lucide-log-out" @click="logout">
+          Logout
+        </UButton>
       </div>
-    </main>
+
+      <UCard class="border border-amber-900/40 bg-slate-950/70">
+        <div class="space-y-4">
+          <UBadge color="warning" variant="soft" size="lg">Applicant</UBadge>
+          <h2 class="text-2xl font-semibold text-white">Welcome, {{ auth.player?.ign }}!</h2>
+          <p class="text-slate-300">
+            Player ID:
+            <span class="font-medium text-amber-300">{{ auth.player?.playerId }}</span>
+          </p>
+          <UAlert
+            color="warning"
+            variant="soft"
+            icon="i-lucide-hourglass"
+            title="Application in review"
+            description="You are currently registered as an applicant. Contact an admin to complete membership approval."
+          />
+        </div>
+      </UCard>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.page { min-height: 100vh; background: #0f172a; font-family: system-ui, sans-serif; color: #f1f5f9; }
-.topbar { display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; background: #1e293b; border-bottom: 1px solid #334155; }
-.brand { font-size: 1.25rem; font-weight: 700; }
-.btn-logout { background: transparent; border: 1px solid #475569; color: #94a3b8; border-radius: 6px; padding: 0.4rem 1rem; cursor: pointer; }
-.btn-logout:hover { border-color: #f59e0b; color: #f1f5f9; }
-.content { display: flex; align-items: center; justify-content: center; padding: 4rem 1rem; }
-.welcome-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 2.5rem; text-align: center; max-width: 480px; width: 100%; }
-.welcome-card h1 { font-size: 1.75rem; margin: 0.75rem 0 0.5rem; }
-.welcome-card p { color: #94a3b8; margin: 0.5rem 0; }
-.badge { display: inline-block; padding: 0.3rem 0.9rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-.badge.applicant { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
-</style>

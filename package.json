@@ -7,9 +7,11 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "serve": "yarn dev"
   },
   "dependencies": {
+    "@nuxt/ui": "^4.10.0",
     "nuxt": "^4.5.2",
     "vue": "^3.5.40",
     "vue-router": "^5.2.0"
