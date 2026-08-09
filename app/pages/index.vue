@@ -1,6 +1,11 @@
 <script setup lang="ts">
-// Redirect root to login
-navigateTo("/login");
+const { auth } = useAuth();
+
+if (auth.value.player) {
+  navigateTo(auth.value.isMember ? "/dashboard" : "/applicant");
+} else {
+  navigateTo("/login");
+}
 </script>
 
 <template>

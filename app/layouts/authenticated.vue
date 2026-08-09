@@ -1,0 +1,66 @@
+<script setup lang="ts">
+const { auth, logout } = useAuth();
+const config = useRuntimeConfig();
+const { subtitle } = usePageSubtitle();
+const siteName = computed(() => config.public.siteName || "OUROBOROS");
+
+const isPrivileged = computed(() =>
+  auth.value.role === "Officer" || auth.value.role === "Admin"
+);
+
+const navItems = computed(() => [
+  { label: "Rosters",    icon: "i-lucide-users",         to: "/rosters" },
+  { label: "Applicants", icon: "i-lucide-user-plus",     to: "/applicants" },
+  ...(auth.value.role === "Admin"
+    ? [{ label: "Management", icon: "i-lucide-shield-check", to: "/management" }]
+    : []),
+]);
+
+// Redirect to login if not authenticated
+onMounted(() => {
+  if (!auth.value.player) navigateTo("/login");
+});
+</script>
+
+<template>
+  <div class="flex min-h-screen flex-col">
+
+    <!-- Top header (full width) -->
+    <header class="flex items-center justify-between border-b border-slate-800 bg-slate-950 px-6 py-4">
+      <div>
+        <h1 class="text-xl md:text-2xl font-semibold text-white">{{ siteName }}</h1>
+          <p class="text-sm text-slate-400">{{ subtitle }}</p>
+      </div>
+      <UButton color="neutral" variant="soft" icon="i-lucide-log-out" @click="logout">
+        Logout
+      </UButton>
+    </header>
+
+    <!-- Body: sidebar + main -->
+    <div class="flex flex-1">
+
+      <!-- Left sidebar (Officer/Admin only) -->
+      <aside
+        v-if="isPrivileged"
+        class="flex w-16 flex-col items-center gap-4 border-r border-slate-800 bg-transparent py-6"
+      >
+        <UTooltip v-for="item in navItems" :key="item.to" :text="item.label" :popper="{ placement: 'right' }">
+          <UButton
+            :to="item.to"
+            :icon="item.icon"
+            color="neutral"
+            variant="ghost"
+            size="lg"
+            square
+          />
+        </UTooltip>
+      </aside>
+
+      <!-- Main content -->
+      <main class="flex-1 p-6 md:p-10">
+        <slot />
+      </main>
+
+    </div>
+  </div>
+</template>

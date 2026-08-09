@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: false });
 
-const { login } = useAuth();
+const { auth, login } = useAuth();
 const router = useRouter();
 const config = useRuntimeConfig();
 
@@ -18,6 +18,12 @@ const logoSrc = computed(() => {
 const form = reactive({ ign: "", playerId: "" });
 const error = ref<string | null>(null);
 const loading = ref(false);
+
+onMounted(() => {
+  if (auth.value.player) {
+    navigateTo(auth.value.isMember ? "/dashboard" : "/applicant");
+  }
+});
 
 const handleLogin = async () => {
   error.value = null;

@@ -24,11 +24,17 @@ export const useAuth = () => {
   const config = useRuntimeConfig();
   const backendUrl = config.public.backendUrl;
 
+  const authCookie = useCookie<AuthState | null>("rooc_auth", {
+    maxAge: 60 * 60,
+    sameSite: "lax",
+    secure: false,
+  });
+
   // Persistent state across the app
   const auth = useState<AuthState>("auth", () => ({
-    player: null,
-    isMember: false,
-    role: null,
+    player: authCookie.value?.player ?? null,
+    isMember: authCookie.value?.isMember ?? false,
+    role: authCookie.value?.role ?? null,
   }));
 
   const isLoggedIn = computed(() => auth.value.player !== null);
@@ -45,11 +51,14 @@ export const useAuth = () => {
       role: data.role,
     };
 
+    authCookie.value = auth.value;
+
     return data;
   };
 
   const logout = () => {
     auth.value = { player: null, isMember: false, role: null };
+    authCookie.value = null;
     navigateTo("/login");
   };
 
