@@ -8,7 +8,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "serve": "yarn dev"
+    "serve": "yarn dev",
+    "serve:prod": "yarn dev"
   },
   "dependencies": {
     "@nuxt/ui": "^4.10.0",
