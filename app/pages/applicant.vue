@@ -44,6 +44,7 @@ onMounted(async () => {
             Player ID:
             <span class="font-medium text-amber-300">{{ auth.player?.playerId }}</span>
           </p>
+          <UpdateIgnForm />
           <UAlert
             v-if="hasStatRecord"
             color="warning"

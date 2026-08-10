@@ -11,7 +11,11 @@ const { setSubtitle } = usePageSubtitle();
 const config = useRuntimeConfig();
 const backendUrl = config.public.backendUrl;
 
-onMounted(() => setSubtitle("Rosters"));
+onMounted(() => {
+  if (!auth.value.player) { navigateTo("/login"); return; }
+  if (auth.value.role === "Applicant" || auth.value.role === "Waitlisted") { navigateTo("/applicant"); return; }
+  setSubtitle("Rosters");
+});
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
@@ -41,11 +45,11 @@ interface Snapshot {
   dmgVsMedium: number; dmgReductionVsMedium: number;
   pvpDmg: number; pvpDmgReduction: number;
 }
-interface PlayerRow { id: number; ign: string; playerId: string; role: string | null; snapshot: Snapshot | null; }
+interface PlayerRow { id: number; ign: string; playerId: string; role: string | null; isFirstPlayer: boolean; snapshot: Snapshot | null; }
 
 // ── Flat row for UTable ───────────────────────────────────────────────────────
 interface FlatRow {
-  id: number; ign: string; playerId: string; role: string; week: string; weekNumber: number | null; weekYear: number | null; jobClass: string; job: string; classRole: string;
+  id: number; ign: string; playerId: string; role: string; isFirstPlayer: boolean; week: string; weekNumber: number | null; weekYear: number | null; jobClass: string; job: string; classRole: string;
   patk: number; matk: number; ignorePdef: number; ignoreMdef: number;
   eqPdef: number; eqMdef: number; eqPdefPct: number; eqMdefPct: number;
   rawPdef: number; rawMdef: number;
@@ -168,7 +172,7 @@ const tableData = computed<FlatRow[]>(() =>
   players.value.map((p) => {
     const s = p.snapshot;
       return {
-        id: p.id, ign: p.ign, playerId: p.playerId, role: p.role ?? "—",
+        id: p.id, ign: p.ign, playerId: p.playerId, role: p.role ?? "—", isFirstPlayer: p.isFirstPlayer,
         week: s ? `W${s.weekNumber} ${s.year}` : "—",
         weekNumber: s?.weekNumber ?? null,
         weekYear: s?.year ?? null,
@@ -304,6 +308,18 @@ const columns: TableColumn<FlatRow>[] = [
   })),
 ];
 
+const tableColumns = computed(() => {
+  if (auth.value.role === "Member") {
+    return columns.filter((col) => {
+      if ("accessorKey" in col) {
+        return col.accessorKey !== "playerId";
+      }
+      return true;
+    });
+  }
+  return columns;
+});
+
 const columnVisibility = ref<Record<string, boolean>>({});
 const tableRef = useTemplateRef("tableRef");
 
@@ -324,7 +340,12 @@ function onTableContextMenu(e: MouseEvent) {
   const allRows = tableRef.value?.tableApi?.getRowModel()?.rows ?? [];
   const tableRow = allRows.find((_, i) => i === rowIndex);
   if (tableRow === undefined) return;
-  contextRow.value = tableRow.original as FlatRow;
+  const rowData = tableRow.original as FlatRow;
+  if (rowData.isFirstPlayer) {
+    closeMenu();
+    return;
+  }
+  contextRow.value = rowData;
   menuX.value = e.clientX;
   menuY.value = e.clientY;
   menuVisible.value = true;
@@ -422,13 +443,13 @@ onUnmounted(() => {
     <UAlert v-if="errorMsg" color="error" variant="soft" :description="errorMsg" />
     <UAlert v-if="actionError" color="error" variant="soft" :description="actionError" />
 
-    <div @contextmenu.prevent="onTableContextMenu">
+    <div @contextmenu.prevent="auth.role !== 'Member' ? onTableContextMenu($event) : undefined">
       <UTable
         ref="tableRef"
         v-model:sorting="sorting"
         v-model:column-visibility="columnVisibility"
         :data="tableData"
-        :columns="columns"
+        :columns="tableColumns"
         :loading="loading"
         sticky
         empty="No roster members found."
@@ -467,7 +488,7 @@ onUnmounted(() => {
         @click.stop
       >
         <button
-          v-if="(auth.role === 'Officer' || auth.role === 'Admin') && contextRow.role !== 'Member'"
+          v-if="!contextRow.isFirstPlayer && (auth.role === 'Officer' || auth.role === 'Admin') && contextRow.role !== 'Member'"
           type="button"
           class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700"
           @click="changePlayerRole(contextRow!, 'Member')"
@@ -476,7 +497,7 @@ onUnmounted(() => {
           Set as Member
         </button>
         <button
-          v-if="(auth.role === 'Officer' || auth.role === 'Admin') && contextRow.role !== 'Officer' && contextRow.role !== 'Admin'"
+          v-if="!contextRow.isFirstPlayer && (auth.role === 'Officer' || auth.role === 'Admin') && contextRow.role !== 'Officer' && contextRow.role !== 'Admin'"
           type="button"
           class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700"
           @click="changePlayerRole(contextRow!, 'Officer')"
@@ -485,7 +506,7 @@ onUnmounted(() => {
           Set as Officer
         </button>
         <button
-          v-if="auth.role === 'Admin' && contextRow.role !== 'Admin'"
+          v-if="!contextRow.isFirstPlayer && auth.role === 'Admin' && contextRow.role !== 'Admin'"
           type="button"
           class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700"
           @click="changePlayerRole(contextRow!, 'Admin')"
@@ -495,7 +516,7 @@ onUnmounted(() => {
         </button>
         <div class="my-1 border-t border-slate-700" />
         <button
-          v-if="auth.role === 'Officer' || auth.role === 'Admin'"
+          v-if="!contextRow.isFirstPlayer && (auth.role === 'Officer' || auth.role === 'Admin')"
           type="button"
           class="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-slate-700"
           @click="deletePlayer(contextRow!)"

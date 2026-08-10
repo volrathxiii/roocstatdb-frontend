@@ -21,6 +21,8 @@ onMounted(() => {
           Player ID:
           <span class="font-medium text-cyan-300">{{ auth.player?.playerId }}</span>
         </p>
+
+        <UpdateIgnForm class="pt-2" />
       </div>
     </UCard>
 

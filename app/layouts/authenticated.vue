@@ -22,8 +22,12 @@ async function fetchApplicantStatsCount() {
 
 const navItems = computed(() => [
   { label: "Dashboard",  icon: "i-lucide-layout-dashboard",  to: "/dashboard",  badge: 0 },
-  { label: "Rosters",    icon: "i-lucide-users",              to: "/rosters",    badge: 0 },
-  { label: "Applicants", icon: "i-lucide-user-plus",          to: "/applicants", badge: applicantStatsCount.value },
+  ...(auth.value.role !== "Applicant" && auth.value.role !== "Waitlisted"
+    ? [{ label: "Rosters", icon: "i-lucide-users", to: "/rosters", badge: 0 }]
+    : []),
+  ...(isPrivileged.value
+    ? [{ label: "Applicants", icon: "i-lucide-user-plus", to: "/applicants", badge: applicantStatsCount.value }]
+    : []),
   ...(auth.value.role === "Admin"
     ? [{ label: "Management", icon: "i-lucide-settings", to: "/management", badge: 0 }]
     : []),
@@ -53,9 +57,8 @@ onMounted(() => {
     <!-- Body: sidebar + main -->
     <div class="flex flex-1">
 
-      <!-- Left sidebar (Officer/Admin only) -->
+      <!-- Left sidebar (all authenticated users) -->
       <aside
-        v-if="isPrivileged"
         class="flex w-16 flex-col items-center gap-4 border-r border-slate-800 bg-transparent py-6"
       >
         <UTooltip v-for="item in navItems" :key="item.to" :text="item.label" :popper="{ placement: 'right' }">

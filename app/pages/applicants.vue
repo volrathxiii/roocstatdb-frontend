@@ -38,11 +38,11 @@ interface Snapshot {
   dmgVsMedium: number; dmgReductionVsMedium: number;
   pvpDmg: number; pvpDmgReduction: number;
 }
-interface PlayerRow { id: number; ign: string; playerId: string; role: string | null; snapshot: Snapshot | null; }
+interface PlayerRow { id: number; ign: string; playerId: string; role: string | null; isFirstPlayer: boolean; snapshot: Snapshot | null; }
 
 // ── Flat row for UTable ───────────────────────────────────────────────────────
 interface FlatRow {
-  id: number; ign: string; playerId: string; role: string; week: string; weekNumber: number | null; weekYear: number | null; jobClass: string; job: string; classRole: string;
+  id: number; ign: string; playerId: string; role: string; isFirstPlayer: boolean; week: string; weekNumber: number | null; weekYear: number | null; jobClass: string; job: string; classRole: string;
   patk: number; matk: number; ignorePdef: number; ignoreMdef: number;
   eqPdef: number; eqMdef: number; eqPdefPct: number; eqMdefPct: number;
   rawPdef: number; rawMdef: number;
@@ -168,7 +168,7 @@ const tableData = computed<FlatRow[]>(() =>
   players.value.map((p) => {
     const s = p.snapshot;
       return {
-        id: p.id, ign: p.ign, playerId: p.playerId, role: p.role ?? "—",
+        id: p.id, ign: p.ign, playerId: p.playerId, role: p.role ?? "—", isFirstPlayer: p.isFirstPlayer,
         week: s ? `W${s.weekNumber} ${s.year}` : "—",
         weekNumber: s?.weekNumber ?? null,
         weekYear: s?.year ?? null,
@@ -328,7 +328,12 @@ function onTableContextMenu(e: MouseEvent) {
   const allRows = tableRef.value?.tableApi?.getRowModel()?.rows ?? [];
   const tableRow = allRows.find((_, i) => i === rowIndex);
   if (tableRow === undefined) return;
-  contextRow.value = tableRow.original as FlatRow;
+  const rowData = tableRow.original as FlatRow;
+  if (rowData.isFirstPlayer) {
+    closeMenu();
+    return;
+  }
+  contextRow.value = rowData;
   menuX.value = e.clientX;
   menuY.value = e.clientY;
   menuVisible.value = true;
@@ -473,7 +478,7 @@ onUnmounted(() => {
         @click.stop
       >
         <button
-          v-if="contextRow.role === 'Applicant'"
+          v-if="!contextRow.isFirstPlayer && contextRow.role === 'Applicant'"
           type="button"
           class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700"
           @click="changePlayerRole(contextRow!, 'Waitlisted')"
@@ -482,7 +487,7 @@ onUnmounted(() => {
           Mark as Whitelisted
         </button>
         <button
-          v-if="contextRow.role === 'Waitlisted'"
+          v-if="!contextRow.isFirstPlayer && contextRow.role === 'Waitlisted'"
           type="button"
           class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700"
           @click="changePlayerRole(contextRow!, 'Applicant')"
@@ -491,7 +496,7 @@ onUnmounted(() => {
           Set as Applicant
         </button>
         <button
-          v-if="contextRow.role === 'Applicant' || contextRow.role === 'Waitlisted'"
+          v-if="!contextRow.isFirstPlayer && (contextRow.role === 'Applicant' || contextRow.role === 'Waitlisted')"
           type="button"
           class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700"
           @click="changePlayerRole(contextRow!, 'Member')"
@@ -501,6 +506,7 @@ onUnmounted(() => {
         </button>
         <div class="my-1 border-t border-slate-700" />
         <button
+          v-if="!contextRow.isFirstPlayer"
           type="button"
           class="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-slate-700"
           @click="deletePlayer(contextRow!)"

@@ -20,6 +20,11 @@ export interface AuthState {
   role: LoginResponse["role"] | null;
 }
 
+export interface UpdateIgnResponse {
+  id: number;
+  ign: string;
+}
+
 export const useAuth = () => {
   const config = useRuntimeConfig();
   const backendUrl = config.public.backendUrl;
@@ -62,5 +67,25 @@ export const useAuth = () => {
     navigateTo("/login");
   };
 
-  return { auth, isLoggedIn, login, logout };
+  const updateIgn = async (id: number, ign: string): Promise<UpdateIgnResponse> => {
+    const data = await $fetch<UpdateIgnResponse>(`${backendUrl}/api/players/${id}/ign`, {
+      method: "PATCH",
+      body: { ign },
+    });
+
+    if (auth.value.player?.id === id) {
+      auth.value = {
+        ...auth.value,
+        player: {
+          ...auth.value.player,
+          ign: data.ign,
+        },
+      };
+      authCookie.value = auth.value;
+    }
+
+    return data;
+  };
+
+  return { auth, isLoggedIn, login, logout, updateIgn };
 };
