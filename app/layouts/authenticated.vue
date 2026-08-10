@@ -21,8 +21,9 @@ async function fetchApplicantStatsCount() {
 }
 
 const navItems = computed(() => [
-  { label: "Rosters",    icon: "i-lucide-users",         to: "/rosters",    badge: 0 },
-  { label: "Applicants", icon: "i-lucide-user-plus",     to: "/applicants", badge: applicantStatsCount.value },
+  { label: "Dashboard",  icon: "i-lucide-layout-dashboard",  to: "/dashboard",  badge: 0 },
+  { label: "Rosters",    icon: "i-lucide-users",              to: "/rosters",    badge: 0 },
+  { label: "Applicants", icon: "i-lucide-user-plus",          to: "/applicants", badge: applicantStatsCount.value },
   ...(auth.value.role === "Admin"
     ? [{ label: "Management", icon: "i-lucide-settings", to: "/management", badge: 0 }]
     : []),

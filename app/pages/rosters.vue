@@ -6,15 +6,15 @@ import { upperFirst } from "scule";
 
 definePageMeta({ layout: "authenticated" });
 
+const { auth } = useAuth();
 const { setSubtitle } = usePageSubtitle();
 const config = useRuntimeConfig();
 const backendUrl = config.public.backendUrl;
 
-onMounted(() => setSubtitle("Applicants"));
+onMounted(() => setSubtitle("Rosters"));
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
-const UContextMenu = resolveComponent("UContextMenu");
 
 // ── Raw API types ─────────────────────────────────────────────────────────────
 interface Snapshot {
@@ -46,16 +46,18 @@ const players = ref<PlayerRow[]>([]);
 const loading = ref(true);
 const errorMsg = ref<string | null>(null);
 
-onMounted(async () => {
+async function fetchPlayers() {
   try {
-    const res = await $fetch<{ players: PlayerRow[] }>(`${backendUrl}/api/players/non-members`);
+    const res = await $fetch<{ players: PlayerRow[] }>(`${backendUrl}/api/players/members`);
     players.value = res.players;
   } catch {
-    errorMsg.value = "Failed to load applicants.";
+    errorMsg.value = "Failed to load roster.";
   } finally {
     loading.value = false;
   }
-});
+}
+
+onMounted(fetchPlayers);
 
 const search = ref("");
 
@@ -85,10 +87,7 @@ const nowIso = getIsoWeekParts(new Date());
 const currentWeekStart = isoWeekStartDate(nowIso.year, nowIso.week);
 
 function isWeekOlderThanTwoWeeks(weekYear: number | null, weekNumber: number | null) {
-  if (weekYear === null || weekNumber === null) {
-    return true;
-  }
-
+  if (weekYear === null || weekNumber === null) return true;
   const snapshotWeekStart = isoWeekStartDate(weekYear, weekNumber);
   const diffMs = currentWeekStart.getTime() - snapshotWeekStart.getTime();
   return diffMs >= 14 * 24 * 60 * 60 * 1000;
@@ -134,12 +133,8 @@ const UIcon = resolveComponent("UIcon");
 
 function sortIcon(col: Column<FlatRow>) {
   const s = col.getIsSorted();
-  if (s === "asc") {
-    return "i-lucide-arrow-up-narrow-wide";
-  }
-  if (s === "desc") {
-    return "i-lucide-arrow-down-wide-narrow";
-  }
+  if (s === "asc") return "i-lucide-arrow-up-narrow-wide";
+  if (s === "desc") return "i-lucide-arrow-down-wide-narrow";
   return "i-lucide-arrow-up-down";
 }
 
@@ -200,7 +195,7 @@ const columns: TableColumn<FlatRow>[] = [
   },
   {
     accessorKey: "role",
-    header: ({ column }) => sortableHeader(column, "Status"),
+    header: ({ column }) => sortableHeader(column, "Role"),
     cell: ({ row }) => h("span", { class: `font-medium ${rowTextClass(row.original as FlatRow)}` }, row.getValue("role") as string),
   },
   {
@@ -225,9 +220,7 @@ const columns: TableColumn<FlatRow>[] = [
 ];
 
 const sorting = ref([{ id: "ign", desc: false }]);
-
 const columnVisibility = ref<Record<string, boolean>>({});
-
 const tableRef = useTemplateRef("tableRef");
 
 // ── Row context menu ──────────────────────────────────────────────────────────
@@ -265,8 +258,7 @@ async function changePlayerRole(row: FlatRow, role: string) {
       method: "PATCH",
       body: { role },
     });
-    const res = await $fetch<{ players: PlayerRow[] }>(`${backendUrl}/api/players/non-members`);
-    players.value = res.players;
+    await fetchPlayers();
   } catch {
     actionError.value = "Failed to update player role. Please try again.";
   }
@@ -277,8 +269,7 @@ async function deletePlayer(row: FlatRow) {
   closeMenu();
   try {
     await $fetch(`${backendUrl}/api/players/${row.id}`, { method: "DELETE" });
-    const res = await $fetch<{ players: PlayerRow[] }>(`${backendUrl}/api/players/non-members`);
-    players.value = res.players;
+    await fetchPlayers();
   } catch {
     actionError.value = "Failed to delete player. Please try again.";
   }
@@ -340,7 +331,7 @@ onUnmounted(() => {
         :columns="columns"
         :loading="loading"
         sticky
-        empty="No applicants found."
+        empty="No roster members found."
         :ui="{ base: 'min-w-[1800px]', root: 'overflow-auto rounded-lg border border-slate-800', th: 'whitespace-normal align-bottom', td: 'whitespace-normal align-top' }"
       />
     </div>
@@ -353,34 +344,35 @@ onUnmounted(() => {
         @click.stop
       >
         <button
-          v-if="contextRow.role === 'Applicant'"
-          type="button"
-          class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700"
-          @click="changePlayerRole(contextRow!, 'Waitlisted')"
-        >
-          <UIcon name="i-lucide-shield-check" class="h-4 w-4 text-sky-400" />
-          Mark as Whitelisted
-        </button>
-        <button
-          v-if="contextRow.role === 'Waitlisted'"
-          type="button"
-          class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700"
-          @click="changePlayerRole(contextRow!, 'Applicant')"
-        >
-          <UIcon name="i-lucide-user" class="h-4 w-4 text-amber-400" />
-          Set as Applicant
-        </button>
-        <button
-          v-if="contextRow.role === 'Applicant' || contextRow.role === 'Waitlisted'"
+          v-if="(auth.role === 'Officer' || auth.role === 'Admin') && contextRow.role !== 'Member'"
           type="button"
           class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700"
           @click="changePlayerRole(contextRow!, 'Member')"
         >
-          <UIcon name="i-lucide-shield-plus" class="h-4 w-4 text-green-400" />
+          <UIcon name="i-lucide-user-check" class="h-4 w-4 text-green-400" />
           Set as Member
+        </button>
+        <button
+          v-if="(auth.role === 'Officer' || auth.role === 'Admin') && contextRow.role !== 'Officer' && contextRow.role !== 'Admin'"
+          type="button"
+          class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700"
+          @click="changePlayerRole(contextRow!, 'Officer')"
+        >
+          <UIcon name="i-lucide-shield-half" class="h-4 w-4 text-blue-400" />
+          Set as Officer
+        </button>
+        <button
+          v-if="auth.role === 'Admin' && contextRow.role !== 'Admin'"
+          type="button"
+          class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700"
+          @click="changePlayerRole(contextRow!, 'Admin')"
+        >
+          <UIcon name="i-lucide-crown" class="h-4 w-4 text-yellow-400" />
+          Set as Admin
         </button>
         <div class="my-1 border-t border-slate-700" />
         <button
+          v-if="auth.role === 'Officer' || auth.role === 'Admin'"
           type="button"
           class="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-slate-700"
           @click="deletePlayer(contextRow!)"

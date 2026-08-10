@@ -36,9 +36,25 @@ const form = reactive({
 
 const loading = ref(true);
 const saving = ref(false);
+const submitted = ref(false);
 const savedWeekLabel = ref<string | null>(null);
 const errorMsg = ref<string | null>(null);
 const successMsg = ref<string | null>(null);
+
+const numericKeys = [
+  'patk', 'matk', 'ignorePdef', 'ignoreMdef',
+  'eqPdef', 'eqMdef', 'eqPdefPct', 'eqMdefPct',
+  'pDmgPct', 'pDmgReductionPct', 'mDmgPct', 'mDmgReductionPct',
+  'dmgVsDemiHuman', 'dmgReductionVsDemiHuman',
+  'dmgVsMedium', 'dmgReductionVsMedium',
+  'pvpDmg', 'pvpDmgReduction',
+] as const;
+
+function fieldError(key: keyof typeof form): boolean {
+  if (!submitted.value) return false;
+  const val = form[key];
+  return val === null || Number(val) <= 0;
+}
 
 function applySnapshot(snapshot: Record<string, unknown>) {
   form.jobId = (snapshot.job as RefItem).id;
@@ -89,9 +105,11 @@ onMounted(async () => {
 async function handleSubmit() {
   errorMsg.value = null;
   successMsg.value = null;
+  submitted.value = true;
 
-  if (!form.jobId || !form.classRoleId) {
-    errorMsg.value = "Please select a Job Class and Class Role.";
+  const hasInvalid = !form.jobId || !form.classRoleId || numericKeys.some(k => form[k] <= 0);
+  if (hasInvalid) {
+    errorMsg.value = "All stat fields must have a value greater than 0.";
     return;
   }
 
@@ -166,6 +184,7 @@ const classRoleOptions = computed(() =>
             label-key="label"
             placeholder="Select job..."
             class="w-full"
+            :color="fieldError('jobId') ? 'error' : undefined"
           />
         </UFormField>
         <UFormField label="Class Role" required class="w-full">
@@ -176,6 +195,7 @@ const classRoleOptions = computed(() =>
             label-key="label"
             placeholder="Select role..."
             class="w-full"
+            :color="fieldError('classRoleId') ? 'error' : undefined"
           />
         </UFormField>
       </div>
@@ -185,10 +205,10 @@ const classRoleOptions = computed(() =>
         <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Core Attack</p>
         <div class="grid grid-cols-2 gap-4">
           <UFormField label="PATK" class="w-full">
-            <UInput v-model.number="form.patk" type="number" :min="0" class="w-full" />
+            <UInput v-model.number="form.patk" type="number" :min="0" class="w-full" :color="fieldError('patk') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="MATK" class="w-full">
-            <UInput v-model.number="form.matk" type="number" :min="0" class="w-full" />
+            <UInput v-model.number="form.matk" type="number" :min="0" class="w-full" :color="fieldError('matk') ? 'error' : undefined" />
           </UFormField>
         </div>
       </div>
@@ -198,10 +218,10 @@ const classRoleOptions = computed(() =>
         <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Ignore DEF</p>
         <div class="grid grid-cols-2 gap-4">
             <UFormField label="Ignore PDEF" class="w-full">
-            <UInput v-model.number="form.ignorePdef" type="number" :min="0" step="0.01" class="w-full" />
+            <UInput v-model.number="form.ignorePdef" type="number" :min="0" step="0.01" class="w-full" :color="fieldError('ignorePdef') ? 'error' : undefined" />
           </UFormField>
             <UFormField label="Ignore MDEF" class="w-full">
-            <UInput v-model.number="form.ignoreMdef" type="number" :min="0" step="0.01" class="w-full" />
+            <UInput v-model.number="form.ignoreMdef" type="number" :min="0" step="0.01" class="w-full" :color="fieldError('ignoreMdef') ? 'error' : undefined" />
           </UFormField>
         </div>
       </div>
@@ -211,16 +231,16 @@ const classRoleOptions = computed(() =>
         <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Equipment DEF</p>
         <div class="grid grid-cols-2 gap-4">
           <UFormField label="EQ PDEF (flat)" class="w-full">
-            <UInput v-model.number="form.eqPdef" type="number" :min="0" class="w-full" />
+            <UInput v-model.number="form.eqPdef" type="number" :min="0" class="w-full" :color="fieldError('eqPdef') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="EQ MDEF (flat)" class="w-full">
-            <UInput v-model.number="form.eqMdef" type="number" :min="0" class="w-full" />
+            <UInput v-model.number="form.eqMdef" type="number" :min="0" class="w-full" :color="fieldError('eqMdef') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="EQ PDEF %" class="w-full">
-            <UInput v-model.number="form.eqPdefPct" type="number" :min="0" step="0.01" class="w-full" />
+            <UInput v-model.number="form.eqPdefPct" type="number" :min="0" step="0.01" class="w-full" :color="fieldError('eqPdefPct') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="EQ MDEF %" class="w-full">
-            <UInput v-model.number="form.eqMdefPct" type="number" :min="0" step="0.01" class="w-full" />
+            <UInput v-model.number="form.eqMdefPct" type="number" :min="0" step="0.01" class="w-full" :color="fieldError('eqMdefPct') ? 'error' : undefined" />
           </UFormField>
         </div>
       </div>
@@ -230,10 +250,10 @@ const classRoleOptions = computed(() =>
         <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Physical Damage (%)</p>
         <div class="grid grid-cols-2 gap-4">
           <UFormField label="P DMG %" class="w-full">
-            <UInput v-model.number="form.pDmgPct" type="number" step="0.01" class="w-full" />
+            <UInput v-model.number="form.pDmgPct" type="number" step="0.01" class="w-full" :color="fieldError('pDmgPct') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="P DMG Reduction %" class="w-full">
-            <UInput v-model.number="form.pDmgReductionPct" type="number" step="0.01" class="w-full" />
+            <UInput v-model.number="form.pDmgReductionPct" type="number" step="0.01" class="w-full" :color="fieldError('pDmgReductionPct') ? 'error' : undefined" />
           </UFormField>
         </div>
       </div>
@@ -243,10 +263,10 @@ const classRoleOptions = computed(() =>
         <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Magic Damage (%)</p>
         <div class="grid grid-cols-2 gap-4">
           <UFormField label="M DMG %" class="w-full">
-            <UInput v-model.number="form.mDmgPct" type="number" step="0.01" class="w-full" />
+            <UInput v-model.number="form.mDmgPct" type="number" step="0.01" class="w-full" :color="fieldError('mDmgPct') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="M DMG Reduction %" class="w-full">
-            <UInput v-model.number="form.mDmgReductionPct" type="number" step="0.01" class="w-full" />
+            <UInput v-model.number="form.mDmgReductionPct" type="number" step="0.01" class="w-full" :color="fieldError('mDmgReductionPct') ? 'error' : undefined" />
           </UFormField>
         </div>
       </div>
@@ -256,10 +276,10 @@ const classRoleOptions = computed(() =>
         <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Demi-Human (%)</p>
         <div class="grid grid-cols-2 gap-4">
           <UFormField label="DMG vs Demi-Human %" class="w-full">
-            <UInput v-model.number="form.dmgVsDemiHuman" type="number" step="0.01" class="w-full" />
+            <UInput v-model.number="form.dmgVsDemiHuman" type="number" step="0.01" class="w-full" :color="fieldError('dmgVsDemiHuman') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="DMG Reduction vs Demi-Human %" class="w-full">
-            <UInput v-model.number="form.dmgReductionVsDemiHuman" type="number" step="0.01" class="w-full" />
+            <UInput v-model.number="form.dmgReductionVsDemiHuman" type="number" step="0.01" class="w-full" :color="fieldError('dmgReductionVsDemiHuman') ? 'error' : undefined" />
           </UFormField>
         </div>
       </div>
@@ -269,10 +289,10 @@ const classRoleOptions = computed(() =>
         <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Medium Size (%)</p>
         <div class="grid grid-cols-2 gap-4">
           <UFormField label="DMG vs Medium %" class="w-full">
-            <UInput v-model.number="form.dmgVsMedium" type="number" step="0.01" class="w-full" />
+            <UInput v-model.number="form.dmgVsMedium" type="number" step="0.01" class="w-full" :color="fieldError('dmgVsMedium') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="DMG Reduction vs Medium %" class="w-full">
-            <UInput v-model.number="form.dmgReductionVsMedium" type="number" step="0.01" class="w-full" />
+            <UInput v-model.number="form.dmgReductionVsMedium" type="number" step="0.01" class="w-full" :color="fieldError('dmgReductionVsMedium') ? 'error' : undefined" />
           </UFormField>
         </div>
       </div>
@@ -282,10 +302,10 @@ const classRoleOptions = computed(() =>
         <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">PVP</p>
         <div class="grid grid-cols-2 gap-4">
           <UFormField label="PVP DMG" class="w-full">
-            <UInput v-model.number="form.pvpDmg" type="number" step="0.01" class="w-full" />
+            <UInput v-model.number="form.pvpDmg" type="number" step="0.01" class="w-full" :color="fieldError('pvpDmg') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="PVP DMG Reduction" class="w-full">
-            <UInput v-model.number="form.pvpDmgReduction" type="number" step="0.01" class="w-full" />
+            <UInput v-model.number="form.pvpDmgReduction" type="number" step="0.01" class="w-full" :color="fieldError('pvpDmgReduction') ? 'error' : undefined" />
           </UFormField>
         </div>
       </div>
