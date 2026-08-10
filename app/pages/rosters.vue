@@ -15,6 +15,20 @@ onMounted(() => setSubtitle("Rosters"));
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
+const UBadge = resolveComponent("UBadge");
+
+const ROLE_PILL: Record<string, { color: string; variant: string }> = {
+  Waitlisted: { color: "warning",  variant: "soft" },
+  Officer:    { color: "info",     variant: "soft" },
+  Admin:      { color: "error",    variant: "soft" },
+};
+
+function roleCell(row: FlatRow) {
+  const role = row.role;
+  const pill = ROLE_PILL[role];
+  if (pill) return h(UBadge, { color: pill.color, variant: pill.variant, size: "sm" }, () => role);
+  return h("span", { class: `font-medium ${rowTextClass(row)}` }, role);
+}
 
 // ── Raw API types ─────────────────────────────────────────────────────────────
 interface Snapshot {
@@ -31,7 +45,7 @@ interface PlayerRow { id: number; ign: string; playerId: string; role: string | 
 
 // ── Flat row for UTable ───────────────────────────────────────────────────────
 interface FlatRow {
-  id: number; ign: string; playerId: string; role: string; week: string; weekNumber: number | null; weekYear: number | null; jobClass: string;
+  id: number; ign: string; playerId: string; role: string; week: string; weekNumber: number | null; weekYear: number | null; jobClass: string; job: string; classRole: string;
   patk: number; matk: number; ignorePdef: number; ignoreMdef: number;
   eqPdef: number; eqMdef: number; eqPdefPct: number; eqMdefPct: number;
   rawPdef: number; rawMdef: number;
@@ -43,13 +57,36 @@ interface FlatRow {
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 const players = ref<PlayerRow[]>([]);
+const total = ref(0);
 const loading = ref(true);
 const errorMsg = ref<string | null>(null);
 
+const search = ref("");
+const filterJob = ref<string | null>(null);
+const filterClassRole = ref<string | null>(null);
+const pageIndex = ref(0);
+const pageSize = 20;
+const sorting = ref([{ id: "ign", desc: false }]);
+
 async function fetchPlayers() {
+  loading.value = true;
+  errorMsg.value = null;
   try {
-    const res = await $fetch<{ players: PlayerRow[] }>(`${backendUrl}/api/players/members`);
+    const params: Record<string, string> = {
+      page: String(pageIndex.value + 1),
+      pageSize: String(pageSize),
+    };
+    if (search.value.trim()) params.search = search.value.trim();
+    if (filterJob.value) params.job = filterJob.value;
+    if (filterClassRole.value) params.classRole = filterClassRole.value;
+    if (sorting.value[0]) {
+      params.sortBy = sorting.value[0].id;
+      params.sortDir = sorting.value[0].desc ? "desc" : "asc";
+    }
+    const qs = new URLSearchParams(params).toString();
+    const res = await $fetch<{ players: PlayerRow[]; total: number }>(`${backendUrl}/api/players/members?${qs}`);
     players.value = res.players;
+    total.value = res.total;
   } catch {
     errorMsg.value = "Failed to load roster.";
   } finally {
@@ -57,9 +94,37 @@ async function fetchPlayers() {
   }
 }
 
-onMounted(fetchPlayers);
+// ── Filter options from ref-data ──────────────────────────────────────────────
+interface RefItem { id: number; name: string }
+const allJobs = ref<RefItem[]>([]);
+const allClassRoles = ref<RefItem[]>([]);
 
-const search = ref("");
+onMounted(async () => {
+  const [jobs, classRoles] = await Promise.all([
+    $fetch<RefItem[]>(`${backendUrl}/api/ref-data/job-classes`).catch(() => []),
+    $fetch<RefItem[]>(`${backendUrl}/api/ref-data/class-roles`).catch(() => []),
+  ]);
+  allJobs.value = jobs;
+  allClassRoles.value = classRoles;
+  await fetchPlayers();
+});
+
+watch([filterJob, filterClassRole], () => {
+  pageIndex.value = 0;
+  fetchPlayers();
+});
+
+watch(pageIndex, fetchPlayers);
+watch(sorting, () => { pageIndex.value = 0; fetchPlayers(); }, { deep: true });
+
+let _searchTimer: ReturnType<typeof setTimeout> | null = null;
+watch(search, () => {
+  if (_searchTimer) clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(() => {
+    pageIndex.value = 0;
+    fetchPlayers();
+  }, 300);
+});
 
 const ACTIVE_ROW_TEXT_CLASS = "text-sky-300";
 const STALE_ROW_TEXT_CLASS = "text-muted";
@@ -99,18 +164,17 @@ function rowTextClass(row: FlatRow) {
     : ACTIVE_ROW_TEXT_CLASS;
 }
 
-const tableData = computed<FlatRow[]>(() => {
-  const q = search.value.trim().toLowerCase();
-  return players.value
-    .filter((p) => !q || p.ign.toLowerCase().includes(q) || p.playerId.toLowerCase().includes(q))
-    .map((p) => {
-      const s = p.snapshot;
+const tableData = computed<FlatRow[]>(() =>
+  players.value.map((p) => {
+    const s = p.snapshot;
       return {
         id: p.id, ign: p.ign, playerId: p.playerId, role: p.role ?? "—",
         week: s ? `W${s.weekNumber} ${s.year}` : "—",
         weekNumber: s?.weekNumber ?? null,
         weekYear: s?.year ?? null,
         jobClass: s ? `${s.job} — ${s.classRole}` : "—",
+        job: s?.job ?? "—",
+        classRole: s?.classRole ?? "—",
         patk: s?.patk ?? 0, matk: s?.matk ?? 0,
         ignorePdef: s?.ignorePdef ?? 0, ignoreMdef: s?.ignoreMdef ?? 0,
         eqPdef: s?.eqPdef ?? 0, eqMdef: s?.eqMdef ?? 0,
@@ -122,8 +186,29 @@ const tableData = computed<FlatRow[]>(() => {
         dmgVsMedium: s?.dmgVsMedium ?? 0, dmgReductionVsMedium: s?.dmgReductionVsMedium ?? 0,
         pvpDmg: s?.pvpDmg ?? 0, pvpDmgReduction: s?.pvpDmgReduction ?? 0,
       };
-    });
+    })
+);
+
+const jobOptions = computed(() => [
+  { label: "All Jobs", value: null },
+  ...allJobs.value.map(j => ({ label: j.name, value: j.name })),
+]);
+
+const classRoleOptions = computed(() => [
+  { label: "All Roles", value: null },
+  ...allClassRoles.value.map(r => ({ label: r.name, value: r.name })),
+]);
+
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)));
+
+const pageLabel = computed(() => {
+  if (total.value === 0) return "No results";
+  const start = pageIndex.value * pageSize + 1;
+  const end = Math.min(start + pageSize - 1, total.value);
+  return `${start}–${end} of ${total.value}`;
 });
+
+watch([search, filterJob, filterClassRole], () => { pageIndex.value = 0; });
 
 function fmtPct(v: number) { return v === 0 ? "—" : `${v}%`; }
 function fmtFlat(v: number) { return v === 0 ? "—" : String(v); }
@@ -196,7 +281,7 @@ const columns: TableColumn<FlatRow>[] = [
   {
     accessorKey: "role",
     header: ({ column }) => sortableHeader(column, "Role"),
-    cell: ({ row }) => h("span", { class: `font-medium ${rowTextClass(row.original as FlatRow)}` }, row.getValue("role") as string),
+    cell: ({ row }) => roleCell(row.original as FlatRow),
   },
   {
     accessorKey: "week",
@@ -219,7 +304,6 @@ const columns: TableColumn<FlatRow>[] = [
   })),
 ];
 
-const sorting = ref([{ id: "ign", desc: false }]);
 const columnVisibility = ref<Record<string, boolean>>({});
 const tableRef = useTemplateRef("tableRef");
 
@@ -286,12 +370,28 @@ onUnmounted(() => {
 
 <template>
   <div class="space-y-4">
-    <div class="flex items-center gap-3">
+    <div class="flex flex-wrap items-center gap-3">
       <UInput
         v-model="search"
         icon="i-lucide-search"
         placeholder="Search by IGN or Player ID…"
         class="max-w-sm"
+      />
+      <USelect
+        v-model="filterJob"
+        :items="jobOptions"
+        value-key="value"
+        label-key="label"
+        placeholder="All Jobs"
+        class="w-44"
+      />
+      <USelect
+        v-model="filterClassRole"
+        :items="classRoleOptions"
+        value-key="value"
+        label-key="label"
+        placeholder="All Roles"
+        class="w-44"
       />
       <UDropdownMenu
         :items="
@@ -334,6 +434,29 @@ onUnmounted(() => {
         empty="No roster members found."
         :ui="{ base: 'min-w-[1800px]', root: 'overflow-auto rounded-lg border border-slate-800', th: 'whitespace-normal align-bottom', td: 'whitespace-normal align-top' }"
       />
+    </div>
+
+    <div class="flex items-center justify-between pt-2">
+      <span class="text-sm text-slate-400">{{ pageLabel }}</span>
+      <div class="flex items-center gap-2">
+        <UButton
+          icon="i-lucide-chevron-left"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          :disabled="pageIndex === 0"
+          @click="pageIndex = pageIndex - 1"
+        />
+        <span class="text-sm text-slate-400">Page {{ pageIndex + 1 }} of {{ totalPages }}</span>
+        <UButton
+          icon="i-lucide-chevron-right"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          :disabled="pageIndex + 1 >= totalPages"
+          @click="pageIndex = pageIndex + 1"
+        />
+      </div>
     </div>
 
     <Teleport to="body">

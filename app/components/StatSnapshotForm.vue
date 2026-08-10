@@ -53,7 +53,7 @@ const numericKeys = [
 function fieldError(key: keyof typeof form): boolean {
   if (!submitted.value) return false;
   const val = form[key];
-  return val === null || Number(val) <= 0;
+  return val === null || Number(val) < 0;
 }
 
 function applySnapshot(snapshot: Record<string, unknown>) {
@@ -107,9 +107,9 @@ async function handleSubmit() {
   successMsg.value = null;
   submitted.value = true;
 
-  const hasInvalid = !form.jobId || !form.classRoleId || numericKeys.some(k => form[k] <= 0);
+  const hasInvalid = !form.jobId || !form.classRoleId || numericKeys.some(k => form[k] < 0);
   if (hasInvalid) {
-    errorMsg.value = "All stat fields must have a value greater than 0.";
+    errorMsg.value = "All fields must have a value greater than or equal to 0.";
     return;
   }
 
