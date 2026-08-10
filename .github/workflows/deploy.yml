@@ -1,0 +1,83 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main  # Triggers the action every time code is pushed to main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone & Deploy Frontend
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # 0. Load shell profiles so PATH/nvm/yarn are available in non-interactive SSH
+            [ -f "$HOME/.profile" ] && . "$HOME/.profile"
+            [ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"
+            [ -f "$HOME/.zshrc" ] && . "$HOME/.zshrc"
+
+            # Load NVM explicitly (appleboy/ssh-action runs a non-login shell)
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+            command -v nvm >/dev/null 2>&1 && nvm use --silent default || true
+
+            export PATH="$HOME/.local/bin:$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
+            # 1. Define target path and repository URL
+            TARGET_DIR="/home/ubuntu/frontend"
+            REPO_URL="https://github.com/${{ github.repository }}.git"
+
+            # 2. Navigate to the parent directory or create it
+            mkdir -p "$(dirname "$TARGET_DIR")"
+
+            # 3. Clone if the directory doesn't exist; pull if it does
+            if [ ! -d "$TARGET_DIR/.git" ]; then
+              echo "Directory does not exist. Cloning repository..."
+
+              # Inject PAT for private repository access
+              REPO_URL="https://${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git"
+
+              git clone "$REPO_URL" "$TARGET_DIR"
+            else
+              echo "Directory exists. Updating codebase..."
+              cd "$TARGET_DIR"
+              git fetch --all
+              git reset --hard origin/main
+            fi
+
+            # 4. Install frontend dependencies using Yarn
+            export NUXT_PUBLIC_BACKEND_URL="${{ secrets.NUXT_PUBLIC_BACKEND_URL }}"
+            cd "$TARGET_DIR"
+            if [ -f yarn.lock ]; then
+              yarn install --frozen-lockfile
+            else
+              yarn install
+            fi
+
+            # 5. Stop any process on the app port using ss + kill
+            APP_PORT=3000
+            PORT_PIDS=$(ss -tlnp "sport = :${APP_PORT}" | grep -oP 'pid=\K[0-9]+' || true)
+            if [ -n "$PORT_PIDS" ]; then
+              echo "Stopping processes on port $APP_PORT: $PORT_PIDS"
+              kill $PORT_PIDS || true
+              sleep 2
+            fi
+
+            # 6. Build and start frontend in background
+            nohup yarn deploy:ci > /home/ubuntu/frontend-serve.log 2>&1 &
+            echo $! > /home/ubuntu/frontend-serve.pid
+            sleep 5
+            if ps -p "$(cat /home/ubuntu/frontend-serve.pid)" > /dev/null 2>&1; then
+              echo "Frontend started with PID $(cat /home/ubuntu/frontend-serve.pid)"
+            else
+              echo "Frontend failed to start. Last 30 lines of log:"
+              tail -30 /home/ubuntu/frontend-serve.log || true
+              exit 1
+            fi

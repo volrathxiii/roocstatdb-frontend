@@ -9,7 +9,8 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "serve": "yarn dev",
-    "serve:prod": "yarn dev"
+    "serve:prod": "yarn dev",
+    "deploy:ci": "yarn build && node .output/server/index.mjs",
   },
   "dependencies": {
     "@nuxt/ui": "^4.10.0",
