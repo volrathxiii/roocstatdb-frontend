@@ -2,9 +2,24 @@
 definePageMeta({ layout: false });
 
 const { auth, logout } = useAuth();
+const { getLatestSnapshot } = useStatSnapshots();
+const config = useRuntimeConfig();
+const siteName = computed(() => config.public.siteName || "ROOC StatDB");
+const roleLabel = computed(() => auth.value.role || "Applicant");
+const hasStatRecord = ref(false);
 
-onMounted(() => {
-  if (!auth.value.player) navigateTo("/login");
+onMounted(async () => {
+  if (!auth.value.player) {
+    await navigateTo("/login");
+    return;
+  }
+
+  try {
+    const latest = await getLatestSnapshot(auth.value.player.playerId);
+    hasStatRecord.value = latest.snapshot !== null;
+  } catch {
+    hasStatRecord.value = false;
+  }
 });
 </script>
 
@@ -13,7 +28,7 @@ onMounted(() => {
     <div class="mx-auto max-w-3xl space-y-6">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-xl md:text-2xl font-semibold text-white">ROOC StatDB</h1>
+          <h1 class="text-xl md:text-2xl font-semibold text-white">{{ siteName }}</h1>
           <p class="text-sm text-slate-400">Applicant portal</p>
         </div>
         <UButton color="neutral" variant="soft" icon="i-lucide-log-out" @click="logout">
@@ -23,13 +38,14 @@ onMounted(() => {
 
       <UCard class="border border-amber-900/40 bg-slate-950/70">
         <div class="space-y-4">
-          <UBadge color="warning" variant="soft" size="lg">Applicant</UBadge>
+          <UBadge color="warning" variant="soft" size="lg">{{ roleLabel }}</UBadge>
           <h2 class="text-2xl font-semibold text-white">Welcome, {{ auth.player?.ign }}!</h2>
           <p class="text-slate-300">
             Player ID:
             <span class="font-medium text-amber-300">{{ auth.player?.playerId }}</span>
           </p>
           <UAlert
+            v-if="hasStatRecord"
             color="warning"
             variant="soft"
             icon="i-lucide-hourglass"
@@ -38,6 +54,8 @@ onMounted(() => {
           />
         </div>
       </UCard>
+
+      <StatSnapshotForm v-if="auth.player?.playerId" :player-id="auth.player.playerId" />
     </div>
   </div>
 </template>

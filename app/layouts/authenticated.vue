@@ -3,22 +3,35 @@ const { auth, logout } = useAuth();
 const config = useRuntimeConfig();
 const { subtitle } = usePageSubtitle();
 const siteName = computed(() => config.public.siteName || "OUROBOROS");
+const backendUrl = config.public.backendUrl;
 
 const isPrivileged = computed(() =>
   auth.value.role === "Officer" || auth.value.role === "Admin"
 );
 
+const applicantStatsCount = ref(0);
+
+async function fetchApplicantStatsCount() {
+  try {
+    const res = await $fetch<{ count: number }>(`${backendUrl}/api/players/applicant-stats-count`);
+    applicantStatsCount.value = res.count;
+  } catch {
+    // non-critical — badge simply stays at 0
+  }
+}
+
 const navItems = computed(() => [
-  { label: "Rosters",    icon: "i-lucide-users",         to: "/rosters" },
-  { label: "Applicants", icon: "i-lucide-user-plus",     to: "/applicants" },
+  { label: "Rosters",    icon: "i-lucide-users",         to: "/rosters",    badge: 0 },
+  { label: "Applicants", icon: "i-lucide-user-plus",     to: "/applicants", badge: applicantStatsCount.value },
   ...(auth.value.role === "Admin"
-    ? [{ label: "Management", icon: "i-lucide-shield-check", to: "/management" }]
+    ? [{ label: "Management", icon: "i-lucide-settings", to: "/management", badge: 0 }]
     : []),
 ]);
 
 // Redirect to login if not authenticated
 onMounted(() => {
   if (!auth.value.player) navigateTo("/login");
+  fetchApplicantStatsCount();
 });
 </script>
 
@@ -45,14 +58,20 @@ onMounted(() => {
         class="flex w-16 flex-col items-center gap-4 border-r border-slate-800 bg-transparent py-6"
       >
         <UTooltip v-for="item in navItems" :key="item.to" :text="item.label" :popper="{ placement: 'right' }">
-          <UButton
-            :to="item.to"
-            :icon="item.icon"
-            color="neutral"
-            variant="ghost"
-            size="lg"
-            square
-          />
+          <div class="relative">
+            <UButton
+              :to="item.to"
+              :icon="item.icon"
+              color="neutral"
+              variant="ghost"
+              size="lg"
+              square
+            />
+            <span
+              v-if="item.badge > 0"
+              class="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-sky-500 px-0.5 text-[10px] font-bold text-white"
+            >{{ item.badge }}</span>
+          </div>
         </UTooltip>
       </aside>
 

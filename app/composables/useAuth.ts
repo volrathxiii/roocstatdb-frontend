@@ -11,7 +11,7 @@ export interface LoginResponse {
     playerId: string;
   };
   isMember: boolean;
-  role: "Applicant" | "Member" | "Officer" | "Admin";
+  role: "Applicant" | "Member" | "Officer" | "Admin" | "Waitlisted";
 }
 
 export interface AuthState {
