@@ -10,6 +10,7 @@ const isPrivileged = computed(() =>
 );
 
 const applicantStatsCount = ref(0);
+const rosterMissingStatsCount = ref(0);
 
 async function fetchApplicantStatsCount() {
   try {
@@ -20,16 +21,25 @@ async function fetchApplicantStatsCount() {
   }
 }
 
+async function fetchRosterMissingStatsCount() {
+  try {
+    const res = await $fetch<{ count: number }>(`${backendUrl}/api/players/members-missing-stats-count`);
+    rosterMissingStatsCount.value = res.count;
+  } catch {
+    // non-critical — badge simply stays at 0
+  }
+}
+
 const navItems = computed(() => [
-  { label: "Dashboard",  icon: "i-lucide-layout-dashboard",  to: "/dashboard",  badge: 0 },
+  { label: "Dashboard",  icon: "i-lucide-layout-dashboard",  to: "/dashboard",  badge: 0, badgeClass: "bg-sky-500", badgeTooltip: "" },
   ...(auth.value.role !== "Applicant" && auth.value.role !== "Waitlisted"
-    ? [{ label: "Rosters", icon: "i-lucide-users", to: "/rosters", badge: 0 }]
+    ? [{ label: "Rosters", icon: "i-lucide-users", to: "/rosters", badge: rosterMissingStatsCount.value, badgeClass: "bg-red-500", badgeTooltip: "Members missing this week's stats" }]
     : []),
   ...(isPrivileged.value
-    ? [{ label: "Applicants", icon: "i-lucide-user-plus", to: "/applicants", badge: applicantStatsCount.value }]
+    ? [{ label: "Applicants", icon: "i-lucide-user-plus", to: "/applicants", badge: applicantStatsCount.value, badgeClass: "bg-sky-500", badgeTooltip: "Applicant stat submissions this week" }]
     : []),
   ...(auth.value.role === "Admin"
-    ? [{ label: "Management", icon: "i-lucide-settings", to: "/management", badge: 0 }]
+    ? [{ label: "Management", icon: "i-lucide-settings", to: "/management", badge: 0, badgeClass: "bg-sky-500", badgeTooltip: "" }]
     : []),
 ]);
 
@@ -37,6 +47,7 @@ const navItems = computed(() => [
 onMounted(() => {
   if (!auth.value.player) navigateTo("/login");
   fetchApplicantStatsCount();
+  fetchRosterMissingStatsCount();
 });
 </script>
 
@@ -71,9 +82,14 @@ onMounted(() => {
               size="lg"
               square
             />
+            <UTooltip v-if="item.badge > 0 && item.badgeTooltip" :text="item.badgeTooltip" :popper="{ placement: 'right' }">
+              <span
+                :class="['absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] font-bold text-white', item.badgeClass]"
+              >{{ item.badge }}</span>
+            </UTooltip>
             <span
-              v-if="item.badge > 0"
-              class="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-sky-500 px-0.5 text-[10px] font-bold text-white"
+              v-else-if="item.badge > 0"
+              :class="['absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] font-bold text-white', item.badgeClass]"
             >{{ item.badge }}</span>
           </div>
         </UTooltip>

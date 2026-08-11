@@ -140,3 +140,199 @@ Dev server runs on port **3000** by default (`npm run dev`).
 - File names: `kebab-case` for pages, `PascalCase` for components
 - No default exports — use `defineComponent` only when options API is unavoidable
 - Keep `<template>` → `<script>` → `<style scoped>` order in every SFC
+
+---
+
+## Score System & Rankings
+
+### Guild vs. Class Scores
+
+Players have two score tiers:
+
+1. **Guild Score** — normalized against **all Member/Officer/Admin** players
+2. **Class Score** — normalized against players with the **same Job Class + Class Role**
+
+#### Score Calculation
+
+Both use the same 3 categories:
+- **Physical**: PATK, Ignore PDEF, P DMG %, DMG vs Demi-Human, DMG vs Medium, PVP DMG
+- **Magic**: MATK, Ignore MDEF, M DMG %, DMG vs Demi-Human, DMG vs Medium, PVP DMG  
+- **Defensive**: Raw PDEF, Raw MDEF, P/M DMG Reduction %, Reduction vs Demi-Human/Medium, PVP Reduction
+
+Each stat is normalized as `stat_value / max_stat_in_pool`, then averaged across all stats (fixed denominator, even if max=0). Result is converted to 0–100%.
+
+### Rankings
+
+Each score type (physical/magic/defense) has two ranks:
+- **Class Rank** (primary in UI) — position among same Job+Class players
+- **Guild Rank** (secondary) — position among all Member+ players
+
+Ranks use latest snapshot only for each player.
+
+#### Type Definitions
+
+```ts
+// app/components/PlayerProgressionModal.vue
+interface ScoreSet { physical: number; magic: number; defensive: number; }
+interface ScoresResponse {
+  current: ScoreSet | null;
+  previous: ScoreSet | null;
+  classCurrent?: ScoreSet | null;
+  classPrevious?: ScoreSet | null;
+}
+interface RankSet { rank: number; total: number; }
+interface ScopedRank { guild: RankSet; classRole: RankSet; }
+interface RankResponse {
+  physical: ScopedRank | null;
+  magic: ScopedRank | null;
+  defensive: ScopedRank | null;
+}
+```
+
+---
+
+## Roster Page (`rosters.vue`)
+
+### Features
+
+1. **Member Listing** — paginated, sortable, filterable table
+2. **Stat Display** — shows player's latest snapshot (job, class role, all stats)
+3. **Class & Guild Scores** — both visible, with toggle visibility
+4. **Filters**:
+   - Search by IGN or Player ID
+   - Job Class filter
+   - Class Role filter
+   - **Outdated Stats** toggle (shows members missing updates in last 2 ISO weeks)
+5. **Row Click** — opens `PlayerProgressionModal`
+6. **Context Menu** (Officer/Admin only) — role change, delete player
+7. **Columns Dropdown** — toggle visibility of all stat columns
+
+### Column Visibility Defaults
+
+Hidden by default:
+- Week (snapshot week/year)
+- Guild Physical/Magic/Defense Scores
+- EQ PDEF, EQ MDEF, EQ PDEF %, EQ MDEF %
+
+Visible by default:
+- Class Physical/Magic/Defense Scores
+- All raw stat columns (PATK, MATK, ignore, defenses, damage types, PVP)
+
+### Latest Snapshot Filtering
+
+When filtering by Job or Class Role, the backend:
+1. Fetches all players matching role + search
+2. Loads each player's **latest snapshot only** (via Prisma `distinct: ["playerId"]`)
+3. Filters mapped players by current snapshot's job/classRole
+4. Returns paginated result
+
+This ensures players who changed class don't show up when filtering for their old class.
+
+### Outdated Stats Filter
+
+- Marks a player as outdated if their latest snapshot is **not** in the current or previous ISO week
+- Includes players with **no snapshot at all**
+- Applied server-side; affects total count and pagination
+
+---
+
+## Progression Modal (`PlayerProgressionModal.vue`)
+
+### Display
+
+1. **Header** — IGN, week comparison (W#, year)
+2. **Class Scores Section**:
+   - 3 columns (Physical, Magic, Defense)
+   - Each shows score % and both ranks (Class rank first, Guild rank second)
+   - No weekly delta displayed
+3. **Job/Class Info** — current job, role; flags if changed since previous week
+4. **Stats by Group** — Offense, Defense, vs Targets, PVP
+   - Shows current value and delta since previous week
+
+### Data Sources
+
+- Snapshots: `GET /api/players/:id/snapshots` (latest 2)
+- Scores: `GET /api/players/:id/scores` (includes `classCurrent`, `classPrevious`)
+- Ranks: `GET /api/players/:id/rank` (scoped by guild and classRole)
+
+---
+
+## Sidebar Badge System (`authenticated.vue`)
+
+### Badge Counters
+
+- **Dashboard** — blue badge (placeholder, currently 0)
+- **Rosters** — red badge showing count of members missing this week's stats
+- **Applicants** — blue badge showing count of applicant stat submissions this week
+- **Management** — blue badge (placeholder, currently 0)
+
+### Implementation
+
+Counters fetched on mount via separate endpoints:
+- `GET /api/players/members-missing-stats-count`
+- `GET /api/players/applicant-stats-count`
+
+Each nav item includes `badgeClass` (color class: `bg-red-500` or `bg-sky-500`).
+
+---
+
+## API Query Parameters
+
+### `GET /api/players/members` (and `/non-members`)
+
+Supported params:
+- `page` (1-indexed)
+- `pageSize`
+- `search` (IGN or PlayerID)
+- `job` (Job Class name)
+- `classRole` (Class Role name)
+- `outdatedOnly` (`"1"` or `"true"` for filtering)
+- `sortBy` (field name; snapshot fields sorted in-memory)
+- `sortDir` (`"asc"` or `"desc"`)
+
+When `job` or `classRole` is set, filtering uses latest snapshot only (server-side in-memory after DB fetch).
+
+---
+
+## Common Patterns
+
+### Fetching & Pagination
+
+```ts
+const params = {
+  page: String(pageIndex.value + 1),
+  pageSize: String(pageSize),
+  search: search.value || undefined,
+  job: filterJob.value || undefined,
+};
+const qs = new URLSearchParams(params).toString();
+const res = await $fetch<{ players: PlayerRow[]; total: number }>(
+  `${backendUrl}/api/players/members?${qs}`
+);
+```
+
+### Filtering on Change
+
+```ts
+watch([filterJob, filterClassRole, filterOutdatedOnly], () => {
+  pageIndex.value = 0;
+  fetchPlayers();
+});
+```
+
+Reset page to 0, then refetch.
+
+### Scoped Timestamp Calculations
+
+ISO week date calculations are replicated in frontend (for UI logic like staleness) and backend (for query filtering). Both use the same formulas:
+
+```ts
+function getIsoWeekParts(date: Date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return { year: d.getUTCFullYear(), week };
+}
+```

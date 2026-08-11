@@ -443,7 +443,7 @@ onUnmounted(() => {
         :loading="loading"
         sticky
         empty="No applicants found."
-        :ui="{ base: 'min-w-[1800px]', root: 'overflow-auto rounded-lg border border-slate-800', th: 'whitespace-normal align-bottom', td: 'whitespace-normal align-top' }"
+        :ui="{ base: 'min-w-[1800px]', root: 'overflow-auto rounded-lg border border-slate-800', thead: 'sticky top-0 z-10 bg-slate-950', th: 'whitespace-normal align-bottom', td: 'whitespace-normal align-top', tr: 'hover:bg-white/10 transition-colors' }"
       />
     </div>
 

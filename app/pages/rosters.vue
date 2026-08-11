@@ -45,7 +45,16 @@ interface Snapshot {
   dmgVsMedium: number; dmgReductionVsMedium: number;
   pvpDmg: number; pvpDmgReduction: number;
 }
-interface PlayerRow { id: number; ign: string; playerId: string; role: string | null; isFirstPlayer: boolean; snapshot: Snapshot | null; }
+interface PlayerRow {
+  id: number;
+  ign: string;
+  playerId: string;
+  role: string | null;
+  isFirstPlayer: boolean;
+  snapshot: Snapshot | null;
+  scores: { physical: number; magic: number; defensive: number } | null;
+  classScores: { physical: number; magic: number; defensive: number } | null;
+}
 
 // ── Flat row for UTable ───────────────────────────────────────────────────────
 interface FlatRow {
@@ -57,6 +66,8 @@ interface FlatRow {
   dmgVsDemiHuman: number; dmgReductionVsDemiHuman: number;
   dmgVsMedium: number; dmgReductionVsMedium: number;
   pvpDmg: number; pvpDmgReduction: number;
+  physicalScore: number; magicScore: number; defensiveScore: number;
+  classPhysicalScore: number; classMagicScore: number; classDefensiveScore: number;
 }
 
 // ── Data ─────────────────────────────────────────────────────────────────────
@@ -68,6 +79,7 @@ const errorMsg = ref<string | null>(null);
 const search = ref("");
 const filterJob = ref<string | null>(null);
 const filterClassRole = ref<string | null>(null);
+const filterOutdatedOnly = ref(false);
 const pageIndex = ref(0);
 const pageSize = 20;
 const sorting = ref([{ id: "ign", desc: false }]);
@@ -83,6 +95,7 @@ async function fetchPlayers() {
     if (search.value.trim()) params.search = search.value.trim();
     if (filterJob.value) params.job = filterJob.value;
     if (filterClassRole.value) params.classRole = filterClassRole.value;
+    if (filterOutdatedOnly.value) params.outdatedOnly = "1";
     if (sorting.value[0]) {
       params.sortBy = sorting.value[0].id;
       params.sortDir = sorting.value[0].desc ? "desc" : "asc";
@@ -113,7 +126,7 @@ onMounted(async () => {
   await fetchPlayers();
 });
 
-watch([filterJob, filterClassRole], () => {
+watch([filterJob, filterClassRole, filterOutdatedOnly], () => {
   pageIndex.value = 0;
   fetchPlayers();
 });
@@ -189,6 +202,12 @@ const tableData = computed<FlatRow[]>(() =>
         dmgVsDemiHuman: s?.dmgVsDemiHuman ?? 0, dmgReductionVsDemiHuman: s?.dmgReductionVsDemiHuman ?? 0,
         dmgVsMedium: s?.dmgVsMedium ?? 0, dmgReductionVsMedium: s?.dmgReductionVsMedium ?? 0,
         pvpDmg: s?.pvpDmg ?? 0, pvpDmgReduction: s?.pvpDmgReduction ?? 0,
+        physicalScore: p.scores?.physical ?? 0,
+        magicScore: p.scores?.magic ?? 0,
+        defensiveScore: p.scores?.defensive ?? 0,
+        classPhysicalScore: p.classScores?.physical ?? 0,
+        classMagicScore: p.classScores?.magic ?? 0,
+        classDefensiveScore: p.classScores?.defensive ?? 0,
       };
     })
 );
@@ -212,11 +231,12 @@ const pageLabel = computed(() => {
   return `${start}–${end} of ${total.value}`;
 });
 
-watch([search, filterJob, filterClassRole], () => { pageIndex.value = 0; });
+watch([search, filterJob, filterClassRole, filterOutdatedOnly], () => { pageIndex.value = 0; });
 
 function fmtPct(v: number) { return v === 0 ? "—" : `${v}%`; }
 function fmtFlat(v: number) { return v === 0 ? "—" : String(v); }
 function fmtFp(v: number)   { return v === 0 ? "—" : v.toFixed(2); }
+function fmtScore(v: number) { return v === 0 ? "—" : `${v.toFixed(1)}%`; }
 
 const UIcon = resolveComponent("UIcon");
 
@@ -269,6 +289,12 @@ const numCols: NumColDef[] = [
   ["dmgReductionVsMedium",    "vs Med Red %",  fmtPct],
   ["pvpDmg",                  "PVP DMG",       fmtFlat],
   ["pvpDmgReduction",         "PVP Red",       fmtFlat],
+  ["physicalScore",           "Guild Physical Score", fmtScore, true],
+  ["magicScore",              "Guild Magic Score",    fmtScore, true],
+  ["defensiveScore",          "Guild Defense Score",  fmtScore, true],
+  ["classPhysicalScore",      "Class Physical Score", fmtScore, true],
+  ["classMagicScore",         "Class Magic Score",    fmtScore, true],
+  ["classDefensiveScore",     "Class Defense Score",  fmtScore, true],
 ];
 
 const columns: TableColumn<FlatRow>[] = [
@@ -320,8 +346,25 @@ const tableColumns = computed(() => {
   return columns;
 });
 
-const columnVisibility = ref<Record<string, boolean>>({});
+const columnVisibility = ref<Record<string, boolean>>({
+  week: false,
+  eqPdef: false,
+  eqMdef: false,
+  eqPdefPct: false,
+  eqMdefPct: false,
+  physicalScore: false,
+  magicScore: false,
+  defensiveScore: false,
+});
 const tableRef = useTemplateRef("tableRef");
+
+// ── Progression modal ─────────────────────────────────────────────────────────
+const progressionPlayer = ref<{ id: number; ign: string } | null>(null);
+
+function openProgression(row: FlatRow) {
+  closeMenu();
+  progressionPlayer.value = { id: row.id, ign: row.ign };
+}
 
 // ── Row context menu ──────────────────────────────────────────────────────────
 const contextRow = ref<FlatRow | null>(null);
@@ -331,24 +374,31 @@ const menuY = ref(0);
 const actionError = ref<string | null>(null);
 
 function onTableContextMenu(e: MouseEvent) {
-  const tr = (e.target as HTMLElement).closest("tr");
-  if (!tr) return;
-  const tbody = tr.closest("tbody");
-  if (!tbody) return;
-  const rowIndex = Array.from(tbody.children).indexOf(tr);
-  if (rowIndex < 0) return;
-  const allRows = tableRef.value?.tableApi?.getRowModel()?.rows ?? [];
-  const tableRow = allRows.find((_, i) => i === rowIndex);
-  if (tableRow === undefined) return;
-  const rowData = tableRow.original as FlatRow;
-  if (rowData.isFirstPlayer) {
-    closeMenu();
-    return;
-  }
+  const rowData = getRowFromMouseEvent(e);
+  if (!rowData) return;
   contextRow.value = rowData;
   menuX.value = e.clientX;
   menuY.value = e.clientY;
   menuVisible.value = true;
+}
+
+function onTableRowClick(e: MouseEvent) {
+  const rowData = getRowFromMouseEvent(e);
+  if (!rowData) return;
+  openProgression(rowData);
+}
+
+function getRowFromMouseEvent(e: MouseEvent): FlatRow | null {
+  const tr = (e.target as HTMLElement).closest("tr");
+  if (!tr) return null;
+  const tbody = tr.closest("tbody");
+  if (!tbody) return null;
+  const rowIndex = Array.from(tbody.children).indexOf(tr);
+  if (rowIndex < 0) return null;
+  const allRows = tableRef.value?.tableApi?.getRowModel()?.rows ?? [];
+  const tableRow = allRows.find((_, i) => i === rowIndex);
+  if (tableRow === undefined) return null;
+  return tableRow.original as FlatRow;
 }
 
 function closeMenu() {
@@ -414,7 +464,16 @@ onUnmounted(() => {
         placeholder="All Roles"
         class="w-44"
       />
+      <UButton
+        :color="filterOutdatedOnly ? 'error' : 'neutral'"
+        :variant="filterOutdatedOnly ? 'solid' : 'outline'"
+        icon="i-lucide-alert-triangle"
+        @click="filterOutdatedOnly = !filterOutdatedOnly"
+      >
+        Outdated Stats
+      </UButton>
       <UDropdownMenu
+        class="ml-auto"
         :items="
           tableRef?.tableApi
             ?.getAllColumns()
@@ -443,7 +502,7 @@ onUnmounted(() => {
     <UAlert v-if="errorMsg" color="error" variant="soft" :description="errorMsg" />
     <UAlert v-if="actionError" color="error" variant="soft" :description="actionError" />
 
-    <div @contextmenu.prevent="auth.role !== 'Member' ? onTableContextMenu($event) : undefined">
+    <div @click="onTableRowClick($event)" @contextmenu.prevent="auth.role !== 'Member' ? onTableContextMenu($event) : undefined">
       <UTable
         ref="tableRef"
         v-model:sorting="sorting"
@@ -453,7 +512,7 @@ onUnmounted(() => {
         :loading="loading"
         sticky
         empty="No roster members found."
-        :ui="{ base: 'min-w-[1800px]', root: 'overflow-auto rounded-lg border border-slate-800', th: 'whitespace-normal align-bottom', td: 'whitespace-normal align-top' }"
+        :ui="{ base: 'min-w-[1800px]', root: 'overflow-auto rounded-lg border border-slate-800', thead: 'sticky top-0 z-10 bg-slate-950', th: 'whitespace-normal align-bottom', td: 'whitespace-normal align-top', tr: 'hover:bg-white/10 transition-colors' }"
       />
     </div>
 
@@ -487,6 +546,19 @@ onUnmounted(() => {
         :style="{ top: `${menuY}px`, left: `${menuX}px` }"
         @click.stop
       >
+        <!-- View Progression — visible to all roles -->
+        <button
+          type="button"
+          class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700"
+          @click="openProgression(contextRow!)"
+        >
+          <UIcon name="i-lucide-trending-up" class="h-4 w-4 text-cyan-400" />
+          View Progression
+        </button>
+        <div
+          v-if="!contextRow.isFirstPlayer && (auth.role === 'Officer' || auth.role === 'Admin')"
+          class="my-1 border-t border-slate-700"
+        />
         <button
           v-if="!contextRow.isFirstPlayer && (auth.role === 'Officer' || auth.role === 'Admin') && contextRow.role !== 'Member'"
           type="button"
@@ -514,7 +586,10 @@ onUnmounted(() => {
           <UIcon name="i-lucide-crown" class="h-4 w-4 text-yellow-400" />
           Set as Admin
         </button>
-        <div class="my-1 border-t border-slate-700" />
+        <div
+          v-if="!contextRow.isFirstPlayer && (auth.role === 'Officer' || auth.role === 'Admin')"
+          class="my-1 border-t border-slate-700"
+        />
         <button
           v-if="!contextRow.isFirstPlayer && (auth.role === 'Officer' || auth.role === 'Admin')"
           type="button"
@@ -525,6 +600,16 @@ onUnmounted(() => {
           Delete Player
         </button>
       </div>
+    </Teleport>
+
+    <!-- Progression Modal -->
+    <Teleport to="body">
+      <PlayerProgressionModal
+        v-if="progressionPlayer"
+        :player-id="progressionPlayer.id"
+        :ign="progressionPlayer.ign"
+        @close="progressionPlayer = null"
+      />
     </Teleport>
   </div>
 </template>
