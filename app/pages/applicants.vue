@@ -99,6 +99,13 @@ const allJobs = ref<RefItem[]>([]);
 const allClassRoles = ref<RefItem[]>([]);
 
 onMounted(async () => {
+  if (window.innerWidth < 1024) {
+    columnVisibility.value = { ...MOBILE_COLUMN_VISIBILITY };
+  } else if (window.innerWidth < 1280) {
+    columnVisibility.value = { ...MEDIUM_COLUMN_VISIBILITY };
+  } else {
+    columnVisibility.value = { ...DESKTOP_COLUMN_VISIBILITY };
+  }
   const [jobs, classRoles] = await Promise.all([
     $fetch<RefItem[]>(`${backendUrl}/api/ref-data/job-classes`).catch(() => []),
     $fetch<RefItem[]>(`${backendUrl}/api/ref-data/class-roles`).catch(() => []),
@@ -313,7 +320,55 @@ const columns: TableColumn<FlatRow>[] = [
   })),
 ];
 
-const columnVisibility = ref<Record<string, boolean>>({});
+const DESKTOP_COLUMN_VISIBILITY: Record<string, boolean> = {};
+
+const MEDIUM_COLUMN_VISIBILITY: Record<string, boolean> = {
+  week: false,
+  eqPdef: false,
+  eqMdef: false,
+  eqPdefPct: false,
+  eqMdefPct: false,
+  pDmgPct: false,
+  pDmgReductionPct: false,
+  mDmgPct: false,
+  mDmgReductionPct: false,
+  dmgVsDemiHuman: false,
+  dmgReductionVsDemiHuman: false,
+  dmgVsMedium: false,
+  dmgReductionVsMedium: false,
+  pvpDmg: false,
+  pvpDmgReduction: false,
+  healingDone: false,
+  healingTaken: false,
+};
+
+const MOBILE_COLUMN_VISIBILITY: Record<string, boolean> = {
+  week: false,
+  patk: false,
+  matk: false,
+  ignorePdef: false,
+  ignoreMdef: false,
+  eqPdef: false,
+  eqMdef: false,
+  eqPdefPct: false,
+  eqMdefPct: false,
+  rawPdef: false,
+  rawMdef: false,
+  pDmgPct: false,
+  pDmgReductionPct: false,
+  mDmgPct: false,
+  mDmgReductionPct: false,
+  dmgVsDemiHuman: false,
+  dmgReductionVsDemiHuman: false,
+  dmgVsMedium: false,
+  dmgReductionVsMedium: false,
+  pvpDmg: false,
+  pvpDmgReduction: false,
+  healingDone: false,
+  healingTaken: false,
+};
+
+const columnVisibility = ref<Record<string, boolean>>({ ...DESKTOP_COLUMN_VISIBILITY });
 const tableRef = useTemplateRef("tableRef");
 
 // ── Row context menu ──────────────────────────────────────────────────────────
@@ -404,12 +459,12 @@ function onTableRowClick(e: MouseEvent) {
 
 <template>
   <div class="space-y-4">
-    <div class="flex flex-wrap items-center gap-3">
+    <div class="flex flex-wrap items-center gap-2">
       <UInput
         v-model="search"
         icon="i-lucide-search"
-        placeholder="Search by IGN or Player ID…"
-        class="max-w-sm"
+        placeholder="Search…"
+        class="w-full sm:max-w-sm"
       />
       <USelect
         v-model="filterJob"
@@ -417,7 +472,7 @@ function onTableRowClick(e: MouseEvent) {
         value-key="value"
         label-key="label"
         placeholder="All Jobs"
-        class="w-44"
+        class="w-full sm:w-44"
       />
       <USelect
         v-model="filterClassRole"
@@ -425,7 +480,7 @@ function onTableRowClick(e: MouseEvent) {
         value-key="value"
         label-key="label"
         placeholder="All Roles"
-        class="w-44"
+        class="w-full sm:w-44"
       />
       <UDropdownMenu
         :items="
@@ -456,21 +511,24 @@ function onTableRowClick(e: MouseEvent) {
     <UAlert v-if="errorMsg" color="error" variant="soft" :description="errorMsg" />
     <UAlert v-if="actionError" color="error" variant="soft" :description="actionError" />
 
-    <div @click="onTableRowClick($event)" @contextmenu.prevent="onTableContextMenu">
+    <div v-if="!loading" @click="onTableRowClick($event)" @contextmenu.prevent="onTableContextMenu">
       <UTable
         ref="tableRef"
         v-model:sorting="sorting"
         v-model:column-visibility="columnVisibility"
         :data="tableData"
         :columns="columns"
-        :loading="loading"
         sticky
         empty="No applicants found."
-        :ui="{ base: 'min-w-[1800px]', root: 'overflow-auto rounded-lg border border-slate-800', thead: 'sticky top-0 z-10 bg-slate-950', th: 'whitespace-normal align-bottom', td: 'whitespace-normal align-top', tr: 'hover:bg-white/10 transition-colors' }"
+        :ui="{ base: 'w-full table-auto', root: 'overflow-auto rounded-lg border border-slate-800', thead: 'sticky top-0 z-10 bg-slate-950', th: 'whitespace-normal align-bottom px-2 py-3', td: 'whitespace-normal align-top px-2 py-3', tr: 'hover:bg-white/10 transition-colors' }"
       />
     </div>
 
-    <div class="flex items-center justify-between pt-2">
+    <div v-if="loading" class="flex justify-center items-center py-20">
+      <UIcon name="i-lucide-loader-circle" class="h-6 w-6 animate-spin text-slate-400" />
+    </div>
+
+    <div v-if="!loading" class="flex items-center justify-between pt-2">
       <span class="text-sm text-slate-400">{{ pageLabel }}</span>
       <div class="flex items-center gap-2">
         <UButton

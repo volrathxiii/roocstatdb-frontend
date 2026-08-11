@@ -12,7 +12,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-6 max-w-[50%]">
+  <div class="space-y-6 max-w-2xl">
     <UCard class="border border-cyan-900/40 bg-slate-950/70">
       <div class="space-y-4">
         <UBadge color="primary" variant="soft" size="lg">{{ auth.role ?? "Member" }} Access</UBadge>

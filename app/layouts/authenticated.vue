@@ -60,17 +60,18 @@ onMounted(() => {
         <h1 class="text-xl md:text-2xl font-semibold text-white">{{ siteName }}</h1>
           <p class="text-sm text-slate-400">{{ subtitle }}</p>
       </div>
-      <UButton color="neutral" variant="soft" icon="i-lucide-log-out" @click="logout">
+      <UButton color="neutral" variant="soft" icon="i-lucide-log-out" @click="logout" class="hidden sm:flex">
         Logout
       </UButton>
+      <UButton color="neutral" variant="soft" icon="i-lucide-log-out" @click="logout" class="sm:hidden" square />
     </header>
 
     <!-- Body: sidebar + main -->
     <div class="flex flex-1">
 
-      <!-- Left sidebar (all authenticated users) -->
+      <!-- Left sidebar (md+) -->
       <aside
-        class="flex w-16 flex-col items-center gap-4 border-r border-slate-800 bg-transparent py-6"
+        class="hidden md:flex w-16 flex-col items-center gap-4 border-r border-slate-800 bg-transparent py-6"
       >
         <UTooltip v-for="item in navItems" :key="item.to" :text="item.label" :popper="{ placement: 'right' }">
           <div class="relative">
@@ -96,10 +97,30 @@ onMounted(() => {
       </aside>
 
       <!-- Main content -->
-      <main class="flex-1 p-6 md:p-10">
+      <main class="flex-1 p-4 md:p-6 lg:p-10 pb-20 md:pb-6">
         <slot />
       </main>
 
     </div>
+
+    <!-- Bottom nav (mobile only) -->
+    <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 flex items-center justify-around border-t border-slate-800 bg-slate-950 px-2 py-2">
+      <NuxtLink
+        v-for="item in navItems"
+        :key="item.to"
+        :to="item.to"
+        class="relative flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-slate-400 hover:text-white transition-colors"
+        active-class="text-white"
+      >
+        <div class="relative">
+          <UIcon :name="item.icon" class="h-5 w-5" />
+          <span
+            v-if="item.badge > 0"
+            :class="['absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] font-bold text-white', item.badgeClass]"
+          >{{ item.badge }}</span>
+        </div>
+        <span class="text-[10px] leading-tight">{{ item.label }}</span>
+      </NuxtLink>
+    </nav>
   </div>
 </template>

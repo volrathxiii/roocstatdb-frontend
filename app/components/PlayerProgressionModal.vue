@@ -150,7 +150,7 @@ const classRoleChanged = computed(
   >
     <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
       <!-- Header -->
-      <div class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-700 bg-slate-900 px-6 py-4">
+      <div class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-700 bg-slate-900 px-4 py-3">
         <div>
           <h2 class="text-xl font-semibold text-white">{{ ign }}</h2>
           <p class="text-sm text-slate-400">
@@ -171,7 +171,7 @@ const classRoleChanged = computed(
       </div>
 
       <!-- Body -->
-      <div class="px-6 py-5 space-y-6 overflow-visible">
+      <div class="px-4 py-4 space-y-6 overflow-visible">
         <!-- Loading / Error -->
         <div v-if="loading" class="flex items-center justify-center py-12">
           <UIcon name="i-lucide-loader-circle" class="h-7 w-7 animate-spin text-slate-400" />
@@ -198,11 +198,11 @@ const classRoleChanged = computed(
           <!-- Scores -->
           <div v-if="scores?.current" class="rounded-lg border border-slate-700 bg-slate-800/50 p-4 space-y-3">
             <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Class Scores</p>
-            <div class="grid grid-cols-3 gap-4">
-              <div class="flex flex-col items-center gap-1">
+            <div class="flex flex-nowrap gap-2 sm:gap-4">
+              <div class="w-1/3 min-w-0 flex flex-col items-center gap-1">
                 <UIcon name="i-lucide-sword" class="h-5 w-5 text-orange-400" />
                 <p class="text-xs text-slate-400">Physical</p>
-                <p class="text-2xl font-bold text-white">{{ (scores.classCurrent?.physical ?? scores.current.physical).toFixed(1) }}<span class="text-sm text-slate-400">%</span></p>
+                <p class="text-lg sm:text-2xl font-bold text-white">{{ (scores.classCurrent?.physical ?? scores.current.physical).toFixed(1) }}<span class="text-xs sm:text-sm text-slate-400">%</span></p>
                 <p v-if="playerRank?.physical" class="text-xs text-slate-400 font-medium">
                   Class Rank #{{ playerRank.physical.classRole.rank }} / {{ playerRank.physical.classRole.total }}
                 </p>
@@ -210,10 +210,10 @@ const classRoleChanged = computed(
                   Guild Rank #{{ playerRank.physical.guild.rank }} / {{ playerRank.physical.guild.total }}
                 </p>
               </div>
-              <div class="flex flex-col items-center gap-1">
+              <div class="w-1/3 min-w-0 flex flex-col items-center gap-1">
                 <UIcon name="i-lucide-wand" class="h-5 w-5 text-purple-400" />
                 <p class="text-xs text-slate-400">Magic</p>
-                <p class="text-2xl font-bold text-white">{{ (scores.classCurrent?.magic ?? scores.current.magic).toFixed(1) }}<span class="text-sm text-slate-400">%</span></p>
+                <p class="text-lg sm:text-2xl font-bold text-white">{{ (scores.classCurrent?.magic ?? scores.current.magic).toFixed(1) }}<span class="text-xs sm:text-sm text-slate-400">%</span></p>
                 <p v-if="playerRank?.magic" class="text-xs text-slate-400 font-medium">
                   Class Rank #{{ playerRank.magic.classRole.rank }} / {{ playerRank.magic.classRole.total }}
                 </p>
@@ -221,10 +221,10 @@ const classRoleChanged = computed(
                   Guild Rank #{{ playerRank.magic.guild.rank }} / {{ playerRank.magic.guild.total }}
                 </p>
               </div>
-              <div class="flex flex-col items-center gap-1">
+              <div class="w-1/3 min-w-0 flex flex-col items-center gap-1">
                 <UIcon name="i-lucide-shield" class="h-5 w-5 text-cyan-400" />
                 <p class="text-xs text-slate-400">Defense</p>
-                <p class="text-2xl font-bold text-white">{{ (scores.classCurrent?.defensive ?? scores.current.defensive).toFixed(1) }}<span class="text-sm text-slate-400">%</span></p>
+                <p class="text-lg sm:text-2xl font-bold text-white">{{ (scores.classCurrent?.defensive ?? scores.current.defensive).toFixed(1) }}<span class="text-xs sm:text-sm text-slate-400">%</span></p>
                 <p v-if="playerRank?.defensive" class="text-xs text-slate-400 font-medium">
                   Class Rank #{{ playerRank.defensive.classRole.rank }} / {{ playerRank.defensive.classRole.total }}
                 </p>
@@ -269,7 +269,7 @@ const classRoleChanged = computed(
             <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">
               {{ group.heading }}
             </p>
-            <div class="grid grid-cols-2 gap-x-8 gap-y-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
               <div
                 v-for="stat in group.stats"
                 :key="stat.key"
