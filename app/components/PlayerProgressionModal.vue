@@ -27,6 +27,8 @@ interface Snapshot {
   dmgReductionVsMedium: number;
   pvpDmg: number;
   pvpDmgReduction: number;
+  healingDone: number;
+  healingTaken: number;
 }
 
 const props = defineProps<{
@@ -91,8 +93,8 @@ const STAT_GROUPS: { heading: string; stats: StatDef[] }[] = [
     stats: [
       { key: "patk",          label: "PATK",       format: String },
       { key: "matk",          label: "MATK",       format: String },
-      { key: "ignorePdef",    label: "Ignore PDEF", format: fmtPct },
-      { key: "ignoreMdef",    label: "Ignore MDEF", format: fmtPct },
+      { key: "ignorePdef",    label: "Ignore PDEF", format: String },
+      { key: "ignoreMdef",    label: "Ignore MDEF", format: String },
       { key: "pDmgPct",       label: "P DMG %",    format: fmtPct },
       { key: "mDmgPct",       label: "M DMG %",    format: fmtPct },
     ],
@@ -106,6 +108,8 @@ const STAT_GROUPS: { heading: string; stats: StatDef[] }[] = [
       { key: "mDmgReductionPct",    label: "M DMG Red %",   format: fmtPct  },
       { key: "dmgReductionVsDemiHuman", label: "vs Demi-Human Red %", format: fmtPct },
       { key: "dmgReductionVsMedium",    label: "vs Medium Red %",    format: fmtPct },
+      { key: "healingDone",         label: "Healing Done %", format: fmtPct },
+      { key: "healingTaken",        label: "Healing Taken %", format: fmtPct },
     ],
   },
   {

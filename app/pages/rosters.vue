@@ -44,6 +44,7 @@ interface Snapshot {
   dmgVsDemiHuman: number; dmgReductionVsDemiHuman: number;
   dmgVsMedium: number; dmgReductionVsMedium: number;
   pvpDmg: number; pvpDmgReduction: number;
+  healingDone: number; healingTaken: number;
 }
 interface PlayerRow {
   id: number;
@@ -66,6 +67,7 @@ interface FlatRow {
   dmgVsDemiHuman: number; dmgReductionVsDemiHuman: number;
   dmgVsMedium: number; dmgReductionVsMedium: number;
   pvpDmg: number; pvpDmgReduction: number;
+  healingDone: number; healingTaken: number;
   physicalScore: number; magicScore: number; defensiveScore: number;
   classPhysicalScore: number; classMagicScore: number; classDefensiveScore: number;
 }
@@ -202,6 +204,7 @@ const tableData = computed<FlatRow[]>(() =>
         dmgVsDemiHuman: s?.dmgVsDemiHuman ?? 0, dmgReductionVsDemiHuman: s?.dmgReductionVsDemiHuman ?? 0,
         dmgVsMedium: s?.dmgVsMedium ?? 0, dmgReductionVsMedium: s?.dmgReductionVsMedium ?? 0,
         pvpDmg: s?.pvpDmg ?? 0, pvpDmgReduction: s?.pvpDmgReduction ?? 0,
+        healingDone: s?.healingDone ?? 0, healingTaken: s?.healingTaken ?? 0,
         physicalScore: p.scores?.physical ?? 0,
         magicScore: p.scores?.magic ?? 0,
         defensiveScore: p.scores?.defensive ?? 0,
@@ -289,6 +292,8 @@ const numCols: NumColDef[] = [
   ["dmgReductionVsMedium",    "vs Med Red %",  fmtPct],
   ["pvpDmg",                  "PVP DMG",       fmtFlat],
   ["pvpDmgReduction",         "PVP Red",       fmtFlat],
+  ["healingDone",             "Healing Done %", fmtPct],
+  ["healingTaken",            "Healing Taken %", fmtPct],
   ["physicalScore",           "Guild Physical Score", fmtScore, true],
   ["magicScore",              "Guild Magic Score",    fmtScore, true],
   ["defensiveScore",          "Guild Defense Score",  fmtScore, true],

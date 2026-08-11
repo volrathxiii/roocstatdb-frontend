@@ -32,6 +32,8 @@ const form = reactive({
   dmgReductionVsMedium: 0,
   pvpDmg: 0,
   pvpDmgReduction: 0,
+  healingDone: 0,
+  healingTaken: 0,
 });
 
 const loading = ref(true);
@@ -48,6 +50,7 @@ const numericKeys = [
   'dmgVsDemiHuman', 'dmgReductionVsDemiHuman',
   'dmgVsMedium', 'dmgReductionVsMedium',
   'pvpDmg', 'pvpDmgReduction',
+  'healingDone', 'healingTaken',
 ] as const;
 
 function fieldError(key: keyof typeof form): boolean {
@@ -77,6 +80,8 @@ function applySnapshot(snapshot: Record<string, unknown>) {
   form.dmgReductionVsMedium = Number(snapshot.dmgReductionVsMedium);
   form.pvpDmg = Number(snapshot.pvpDmg);
   form.pvpDmgReduction = Number(snapshot.pvpDmgReduction);
+  form.healingDone = Number(snapshot.healingDone);
+  form.healingTaken = Number(snapshot.healingTaken);
   savedWeekLabel.value = `Week ${snapshot.weekNumber}, ${snapshot.year}`;
 }
 
@@ -139,6 +144,8 @@ async function handleSubmit() {
         dmgReductionVsMedium: form.dmgReductionVsMedium,
         pvpDmg: form.pvpDmg,
         pvpDmgReduction: form.pvpDmgReduction,
+        healingDone: form.healingDone,
+        healingTaken: form.healingTaken,
       },
     });
       successMsg.value = "Stats saved for this week.";
@@ -355,6 +362,19 @@ const classRoleOptions = computed(() =>
           </UFormField>
           <UFormField label="PVP DMG Reduction" class="w-full">
             <UInput v-model.number="form.pvpDmgReduction" type="number" step="0.01" class="w-full" :color="fieldError('pvpDmgReduction') ? 'error' : undefined" />
+          </UFormField>
+        </div>
+      </div>
+
+      <!-- Healing -->
+      <div>
+        <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Healing (%)</p>
+        <div class="grid grid-cols-2 gap-4">
+          <UFormField label="Healing Done" class="w-full">
+            <UInput v-model.number="form.healingDone" type="number" step="0.01" class="w-full" :color="fieldError('healingDone') ? 'error' : undefined" />
+          </UFormField>
+          <UFormField label="Healing Taken" class="w-full">
+            <UInput v-model.number="form.healingTaken" type="number" step="0.01" class="w-full" :color="fieldError('healingTaken') ? 'error' : undefined" />
           </UFormField>
         </div>
       </div>
