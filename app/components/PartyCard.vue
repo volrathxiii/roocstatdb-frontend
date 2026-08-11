@@ -1,13 +1,18 @@
 <script setup lang="ts">
 interface Snapshot {
-  job?: string | null;
-  classRole?: string | null;
+  weekNumber: number;
+  year: number;
+  job: string;
+  classRole: string;
 }
 
 interface PartyMember {
   id: number;
   ign: string;
-  snapshot?: Snapshot | null;
+  playerId: string;
+  role: string | null;
+  position: number;
+  snapshot: Snapshot | null;
 }
 
 type StatKey = "physical" | "magic" | "defensive";
@@ -19,6 +24,7 @@ interface Party {
   name: string;
   category: "Main" | "Sub";
   notes: string | null;
+  groupId: number | null;
   position: number;
   members: PartyMember[];
 }
@@ -58,6 +64,8 @@ const emit = defineEmits<{
   "drag-leave-member-zone": [event: DragEvent];
   "drag-start-member": [event: DragEvent, party: Party, member: PartyMember];
   "drag-end-member": [];
+  "drag-start-party": [event: DragEvent, party: Party];
+  "drag-end-party": [];
   "drop-member-reorder": [event: DragEvent, party: Party, index: number];
   "update:hoveredDropZone": [v: string | null];
 }>();
@@ -106,6 +114,38 @@ function dropZoneStyle(key: string) {
     borderTop: active ? "1px solid rgba(6,182,212,0.7)" : "none",
     borderBottom: active ? "1px solid rgba(6,182,212,0.7)" : "none",
   };
+}
+
+function onPartyDragStart(event: DragEvent) {
+  if (!props.canEdit) return;
+  console.log("[PartyDrag][Card] dragstart", {
+    partyId: props.party.id,
+    canEdit: props.canEdit,
+    hasDataTransfer: Boolean(event.dataTransfer),
+    eventType: event.type,
+  });
+  if (event.dataTransfer) {
+    const payload = String(props.party.id);
+    event.dataTransfer.setData("text/party-id", payload);
+    event.dataTransfer.setData("text/plain", `party:${payload}`);
+    event.dataTransfer.setData("text", `party:${payload}`);
+    event.dataTransfer.effectAllowed = "move";
+    console.log("[PartyDrag][Card] payload set", {
+      partyId: props.party.id,
+      custom: event.dataTransfer.getData("text/party-id"),
+      plain: event.dataTransfer.getData("text/plain"),
+      text: event.dataTransfer.getData("text"),
+    });
+  } else {
+    console.log("[PartyDrag][Card] no dataTransfer available");
+  }
+  event.stopPropagation();
+  emit("drag-start-party", event, props.party);
+}
+
+function onPartyDragEnd() {
+  console.log("[PartyDrag][Card] dragend", { partyId: props.party.id });
+  emit("drag-end-party");
 }
 </script>
 
@@ -159,6 +199,20 @@ function dropZoneStyle(key: string) {
         >{{ party.category }}</span>
       </template>
 
+      <div
+        v-if="canEdit"
+        data-party-drag-handle
+        class="flex cursor-grab select-none items-center gap-1 rounded px-1.5 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+        title="Drag party to group"
+        :draggable="true"
+        style="-webkit-user-drag: element"
+        @dragstart.capture="onPartyDragStart"
+        @dragend.capture="onPartyDragEnd"
+      >
+        <UIcon name="i-lucide-grip-vertical" class="h-3.5 w-3.5" />
+        <span class="hidden sm:inline">Group</span>
+      </div>
+
       <UButton v-if="canEdit" color="error" variant="ghost" size="xs" icon="i-lucide-trash-2" square :disabled="busy" @click="emit('delete-party', party)" />
     </div>
 
@@ -182,6 +236,7 @@ function dropZoneStyle(key: string) {
           />
           <!-- Member row -->
           <div
+            data-party-member-row
             class="flex cursor-grab items-center justify-between border bg-slate-800/60 px-3 py-2 transition-colors"
             :class="member.id === actorId ? 'bg-emerald-900/40' : 'border-slate-700'"
             :style="member.id === actorId ? 'border-color: #10b981;' : ''"

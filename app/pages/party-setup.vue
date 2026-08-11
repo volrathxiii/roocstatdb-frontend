@@ -38,8 +38,17 @@ interface Party {
   name: string;
   category: "Main" | "Sub";
   notes: string | null;
+  groupId: number | null;
   position: number;
   members: PartyMember[];
+}
+
+interface PartyGroup {
+  id: number;
+  name: string;
+  notes: string | null;
+  position: number;
+  partyIds: number[];
 }
 
 interface SetupResponse {
@@ -52,6 +61,7 @@ interface SetupResponse {
     endsAt: string | null;
   };
   parties: Party[];
+  groups: PartyGroup[];
 }
 
 interface RosterPlayer {
@@ -98,8 +108,28 @@ const events = ref<EventItem[]>([]);
 const selectedEventId = ref<number | null>(null);
 const selectedEvent = ref<SetupResponse["event"] | null>(null);
 const parties = ref<Party[]>([]);
+const groups = ref<PartyGroup[]>([]);
 const rosterPlayers = ref<RosterPlayer[]>([]);
 const partyPresets = ref<PartyPreset[]>([]);
+const partyDragSourcePartyId = ref<number | null>(null);
+const partyDragSourceGroupId = ref<number | null>(null);
+const partyDragWasHandled = ref(false);
+const editingGroupId = ref<number | null>(null);
+const editingGroupName = ref("");
+const editingGroupNotesId = ref<number | null>(null);
+const editingGroupNotes = ref("");
+
+function startEditGroupName(group: PartyGroup) {
+  if (!canEdit.value) return;
+  editingGroupId.value = group.id;
+  editingGroupName.value = group.name;
+}
+
+function startEditGroupNotes(group: PartyGroup) {
+  if (!canEdit.value) return;
+  editingGroupNotesId.value = group.id;
+  editingGroupNotes.value = group.notes ?? "";
+}
 
 const showCreateEventModal = ref(false);
 const createEventForm = reactive({
@@ -113,6 +143,34 @@ const showCloneEventModal = ref(false);
 const cloneEventName = ref("");
 
 const confirmDeleteEventOpen = ref(false);
+const confirmDeletePartyOpen = ref(false);
+const partyToDelete = ref<Party | null>(null);
+const confirmDeleteGroupOpen = ref(false);
+const groupToDelete = ref<PartyGroup | null>(null);
+
+function requestDeleteParty(party: Party) {
+  partyToDelete.value = party;
+  confirmDeletePartyOpen.value = true;
+}
+
+async function confirmDeleteParty() {
+  if (!partyToDelete.value) return;
+  await deleteParty(partyToDelete.value);
+  confirmDeletePartyOpen.value = false;
+  partyToDelete.value = null;
+}
+
+function requestDeleteGroup(group: PartyGroup) {
+  groupToDelete.value = group;
+  confirmDeleteGroupOpen.value = true;
+}
+
+async function confirmDeleteGroup() {
+  if (!groupToDelete.value) return;
+  await removeGroup(groupToDelete.value);
+  confirmDeleteGroupOpen.value = false;
+  groupToDelete.value = null;
+}
 
 async function deleteCurrentEvent() {
   if (!canEdit.value || !selectedEventId.value) return;
@@ -127,6 +185,7 @@ async function deleteCurrentEvent() {
     selectedEventId.value = null;
     selectedEvent.value = null;
     parties.value = [];
+    groups.value = [];
     await fetchEvents();
   } catch {
     errorMsg.value = "Failed to delete event.";
@@ -220,6 +279,13 @@ const eventOptions = computed(() =>
   })),
 );
 
+const selectedEventIdModel = computed<number | undefined>({
+  get: () => selectedEventId.value ?? undefined,
+  set: (value) => {
+    selectedEventId.value = value ?? null;
+  },
+});
+
 const assignedPlayers = computed(() => {
   const ids = new Set<number>();
   for (const party of parties.value) {
@@ -229,6 +295,32 @@ const assignedPlayers = computed(() => {
   }
   return ids;
 });
+
+const partiesById = computed(() => {
+  const byId = new Map<number, Party>();
+  for (const party of parties.value) {
+    byId.set(party.id, party);
+  }
+  return byId;
+});
+
+function groupedPartiesByCategory(category: "Main" | "Sub") {
+  return groups.value
+    .map((group) => {
+      const groupParties = group.partyIds
+        .map((partyId) => partiesById.value.get(partyId))
+        .filter((party): party is Party => party !== undefined && party.category === category)
+        .sort((a, b) => a.position - b.position);
+      return { group, parties: groupParties };
+    })
+    .filter((entry) => entry.parties.length > 0);
+}
+
+function ungroupedPartiesByCategory(category: "Main" | "Sub") {
+  return parties.value
+    .filter((party) => party.category === category && !party.groupId)
+    .sort((a, b) => a.position - b.position);
+}
 
 const poolJobOptions = computed(() => {
   const values = Array.from(
@@ -300,10 +392,11 @@ async function fetchEvents() {
     selectedEventId.value = null;
     selectedEvent.value = null;
     parties.value = [];
+    groups.value = [];
     return;
   }
   if (!selectedEventId.value || !res.events.some((event) => event.id === selectedEventId.value)) {
-    selectedEventId.value = res.events[0].id;
+    selectedEventId.value = res.events[0]?.id ?? null;
   }
 }
 
@@ -315,9 +408,16 @@ async function fetchSetup(eventId: number) {
     });
     selectedEvent.value = res.event;
     parties.value = [...res.parties].sort((a, b) => a.position - b.position);
+    groups.value = [...res.groups].sort((a, b) => a.position - b.position);
   } finally {
     loadingSetup.value = false;
   }
+}
+
+function applySetupResponse(res: SetupResponse) {
+  selectedEvent.value = res.event;
+  parties.value = [...res.parties].sort((a, b) => a.position - b.position);
+  groups.value = [...res.groups].sort((a, b) => a.position - b.position);
 }
 
 async function fetchRosterPlayers() {
@@ -519,8 +619,7 @@ async function deleteParty(party: Party) {
         playerId: actorPlayerId.value,
       },
     });
-    selectedEvent.value = res.event;
-    parties.value = [...res.parties].sort((a, b) => a.position - b.position);
+    applySetupResponse(res);
     await fetchEvents();
   } catch {
     errorMsg.value = "Failed to delete party.";
@@ -546,8 +645,7 @@ async function savePartyMembers(party: Party, memberIds: number[]) {
         memberIds,
       },
     });
-    selectedEvent.value = res.event;
-    parties.value = [...res.parties].sort((a, b) => a.position - b.position);
+    applySetupResponse(res);
     await fetchEvents();
   } catch {
     errorMsg.value = "Failed to update party members.";
@@ -653,9 +751,51 @@ function onDragOverParty(event: DragEvent) {
   if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
 }
 
+function parseDraggedPartyId(event: DragEvent) {
+  const customPayload = event.dataTransfer?.getData("text/party-id") ?? "";
+  const customPartyId = Number.parseInt(customPayload, 10);
+  console.log("[PartyDrag][Page] parse custom", {
+    customPayload,
+    customPartyId,
+    isCustomInteger: Number.isInteger(customPartyId),
+  });
+  if (Number.isInteger(customPartyId)) return customPartyId;
+
+  const plainPayload = event.dataTransfer?.getData("text/plain") || event.dataTransfer?.getData("text") || "";
+  console.log("[PartyDrag][Page] parse plain", { plainPayload });
+  const match = plainPayload.match(/^party:(\d+)$/);
+  if (!match) return null;
+  const partyIdRaw = match[1];
+  if (!partyIdRaw) return null;
+  const plainPartyId = Number.parseInt(partyIdRaw, 10);
+  console.log("[PartyDrag][Page] parse resolved", {
+    partyIdRaw,
+    plainPartyId,
+    isPlainInteger: Number.isInteger(plainPartyId),
+  });
+  return Number.isInteger(plainPartyId) ? plainPartyId : null;
+}
+
 async function onDropToParty(event: DragEvent, party: Party) {
   if (!canEdit.value) return;
   event.preventDefault();
+
+  console.log("[PartyDrag][Page] drop-to-party", {
+    targetPartyId: party.id,
+    hasDataTransfer: Boolean(event.dataTransfer),
+  });
+
+  const draggedPartyId = parseDraggedPartyId(event);
+  if (draggedPartyId !== null) {
+    partyDragWasHandled.value = true;
+    console.log("[PartyDrag][Page] treating as party drag", {
+      sourcePartyId: draggedPartyId,
+      targetPartyId: party.id,
+    });
+    if (draggedPartyId === party.id) return;
+    await groupPartyToTarget(draggedPartyId, party);
+    return;
+  }
   
   // If this is a same-party drag, the inner reorder handler already dealt with it
   const memberPartyId = event.dataTransfer?.getData("text/member-party-id");
@@ -673,6 +813,193 @@ async function onDropToParty(event: DragEvent, party: Party) {
   }
 
   await savePartyMembers(party, [...current, playerId]);
+}
+
+function onDragStartParty(event: DragEvent, party: Party) {
+  if (!canEdit.value) return;
+  partyDragSourcePartyId.value = party.id;
+  partyDragSourceGroupId.value = party.groupId;
+  partyDragWasHandled.value = false;
+  event.dataTransfer?.setData("text/party-id", String(party.id));
+  event.dataTransfer?.setData("text/plain", `party:${party.id}`);
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+  console.log("[PartyDrag][Page] drag-start-party emit", {
+    partyId: party.id,
+    partyGroupId: party.groupId,
+    hasDataTransfer: Boolean(event.dataTransfer),
+    custom: event.dataTransfer?.getData("text/party-id") ?? "",
+    plain: event.dataTransfer?.getData("text/plain") ?? "",
+  });
+}
+
+async function onDragEndParty() {
+  console.log("[PartyDrag][Page] drag-end-party");
+  const sourcePartyId = partyDragSourcePartyId.value;
+  const sourceGroupId = partyDragSourceGroupId.value;
+  const wasHandled = partyDragWasHandled.value;
+
+  partyDragSourcePartyId.value = null;
+  partyDragSourceGroupId.value = null;
+  partyDragWasHandled.value = false;
+
+  // Drag ended outside a valid party/group target: auto-ungroup grouped party.
+  if (!canEdit.value || wasHandled || sourcePartyId === null || sourceGroupId === null) return;
+  try {
+    await assignPartyToGroup(sourcePartyId, null);
+  } catch {
+    if (!errorMsg.value) errorMsg.value = "Failed to ungroup party.";
+  }
+}
+
+async function createGroup(name?: string, notes?: string | null) {
+  if (!selectedEventId.value) return null;
+  const playerId = actorPlayerId.value.trim();
+  console.log("[PartyDrag][Page] create-group request", {
+    eventId: selectedEventId.value,
+    playerId,
+    name,
+  });
+  const res = await $fetch<{ group: PartyGroup }>(`${backendUrl}/api/party-setup/events/${selectedEventId.value}/groups`, {
+    method: "POST",
+    body: {
+      playerId,
+      name,
+      notes,
+    },
+  });
+  console.log("[PartyDrag][Page] create-group response", { groupId: res.group.id });
+  return res.group;
+}
+
+async function assignPartyToGroup(partyId: number, groupId: number | null) {
+  const playerId = actorPlayerId.value.trim();
+  console.log("[PartyDrag][Page] assign-party-group request", { partyId, groupId, playerId });
+  try {
+    const res = await $fetch<SetupResponse>(`${backendUrl}/api/party-setup/parties/${partyId}/group`, {
+      method: "PATCH",
+      body: {
+        playerId,
+        groupId,
+      },
+    });
+    applySetupResponse(res);
+  } catch (e: any) {
+    const backendMessage = e?.data?.message;
+    console.log("[PartyDrag][Page] assign-party-group error", {
+      partyId,
+      groupId,
+      playerId,
+      status: e?.status,
+      backendMessage,
+      raw: e,
+    });
+    errorMsg.value = Array.isArray(backendMessage)
+      ? backendMessage.join(", ")
+      : (backendMessage || "Failed to assign party group.");
+    throw e;
+  }
+}
+
+async function groupPartyToTarget(sourcePartyId: number, targetParty: Party) {
+  if (!canEdit.value) return;
+  busy.value = true;
+  errorMsg.value = null;
+  try {
+    const sourceParty = parties.value.find((party) => party.id === sourcePartyId);
+    if (!sourceParty) return;
+
+    if (sourceParty.category !== targetParty.category) {
+      errorMsg.value = "Only parties in the same category can be grouped.";
+      return;
+    }
+
+    if (targetParty.groupId) {
+      await assignPartyToGroup(sourcePartyId, targetParty.groupId);
+      return;
+    }
+
+    const group = await createGroup(`${targetParty.name} Group`);
+    if (!group) return;
+    await assignPartyToGroup(targetParty.id, group.id);
+    await assignPartyToGroup(sourcePartyId, group.id);
+  } catch {
+    if (!errorMsg.value) errorMsg.value = "Failed to group parties.";
+    await onEventChange();
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function onDropToGroup(event: DragEvent, groupId: number) {
+  if (!canEdit.value) return;
+  event.preventDefault();
+  console.log("[PartyDrag][Page] drop-to-group", { groupId, hasDataTransfer: Boolean(event.dataTransfer) });
+  const draggedPartyId = parseDraggedPartyId(event);
+  if (draggedPartyId === null) return;
+  partyDragWasHandled.value = true;
+
+  busy.value = true;
+  errorMsg.value = null;
+  try {
+    await assignPartyToGroup(draggedPartyId, groupId);
+  } catch {
+    if (!errorMsg.value) errorMsg.value = "Failed to add party to group.";
+    await onEventChange();
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function saveGroupName(group: PartyGroup) {
+  const name = editingGroupName.value.trim();
+  if (!name) return;
+  busy.value = true;
+  errorMsg.value = null;
+  try {
+    await $fetch(`${backendUrl}/api/party-setup/groups/${group.id}`, {
+      method: "PATCH",
+      body: { playerId: actorPlayerId.value, name },
+    });
+    editingGroupId.value = null;
+    await onEventChange();
+  } catch {
+    errorMsg.value = "Failed to save group name.";
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function saveGroupNotes(group: PartyGroup) {
+  busy.value = true;
+  errorMsg.value = null;
+  try {
+    await $fetch(`${backendUrl}/api/party-setup/groups/${group.id}`, {
+      method: "PATCH",
+      body: { playerId: actorPlayerId.value, notes: editingGroupNotes.value.trim() || null },
+    });
+    editingGroupNotesId.value = null;
+    await onEventChange();
+  } catch {
+    errorMsg.value = "Failed to save group notes.";
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function removeGroup(group: PartyGroup) {
+  busy.value = true;
+  errorMsg.value = null;
+  try {
+    const res = await $fetch<SetupResponse>(`${backendUrl}/api/party-setup/groups/${group.id}`, {
+      method: "DELETE",
+      query: { playerId: actorPlayerId.value },
+    });
+    applySetupResponse(res);
+  } catch {
+    errorMsg.value = "Failed to delete group.";
+  } finally {
+    busy.value = false;
+  }
 }
 
 async function onDropToPool(event: DragEvent) {
@@ -776,7 +1103,10 @@ const classRanksByPlayerId = computed(() => {
       const sorted = [...players].sort((a, b) => (b.classScores?.[stat] ?? 0) - (a.classScores?.[stat] ?? 0));
       const ranks = new Map<number, number>();
       for (let index = 0; index < sorted.length; index += 1) {
-        ranks.set(sorted[index].id, index + 1);
+        const rankedPlayer = sorted[index];
+        if (rankedPlayer) {
+          ranks.set(rankedPlayer.id, index + 1);
+        }
       }
       rankMaps.set(stat, ranks);
     }
@@ -923,7 +1253,7 @@ onMounted(async () => {
   <div class="space-y-4">
     <div class="flex flex-wrap items-center gap-2">
       <USelect
-        v-model="selectedEventId"
+        v-model="selectedEventIdModel"
         :items="eventOptions"
         value-key="value"
         label-key="label"
@@ -1044,10 +1374,129 @@ onMounted(async () => {
           <div v-for="category in (['Main', 'Sub'] as const)" :key="category">
             <div v-if="parties.some(p => p.category === category)" class="space-y-2">
               <p class="text-xs font-semibold uppercase tracking-widest" :class="category === 'Main' ? 'text-amber-400/70' : 'text-slate-500'">{{ category }}</p>
-              <div class="flex flex-wrap items-start gap-3">
-                <template v-for="party in parties" :key="party.id">
+              <div class="space-y-4">
+                <article
+                  v-for="entry in groupedPartiesByCategory(category)"
+                  :key="entry.group.id"
+                  class="rounded-xl border border-cyan-500/55 bg-slate-950/40 p-3"
+                  @dragover="onDragOverParty"
+                  @drop="onDropToGroup($event, entry.group.id)"
+                >
+                  <div class="mb-2">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="min-w-0 flex-1 space-y-1">
+                        <!-- Name field -->
+                        <div v-if="canEdit && editingGroupId === entry.group.id" class="flex items-center gap-1">
+                          <UInput
+                            v-model="editingGroupName"
+                            size="sm"
+                            autofocus
+                            class="flex-1"
+                            @keyup.enter="saveGroupName(entry.group)"
+                            @keyup.escape="editingGroupId = null"
+                            @blur="saveGroupName(entry.group)"
+                          />
+                          <UButton size="xs" icon="i-lucide-check" :disabled="busy" @click="saveGroupName(entry.group)" />
+                          <UButton size="xs" variant="ghost" icon="i-lucide-x" :disabled="busy" @click="editingGroupId = null" />
+                        </div>
+                        <p
+                          v-else
+                          class="truncate text-sm font-semibold text-cyan-100"
+                          :class="canEdit ? 'cursor-pointer hover:text-white' : ''"
+                          @click="startEditGroupName(entry.group)"
+                        >
+                          {{ entry.group.name }}
+                        </p>
+                        <!-- Notes field -->
+                        <div v-if="canEdit && editingGroupNotesId === entry.group.id" class="flex items-start gap-1">
+                          <UTextarea
+                            v-model="editingGroupNotes"
+                            :rows="2"
+                            size="sm"
+                            class="flex-1"
+                            @keyup.escape="editingGroupNotesId = null"
+                            @blur="saveGroupNotes(entry.group)"
+                          />
+                          <div class="flex flex-col gap-1">
+                            <UButton size="xs" icon="i-lucide-check" :disabled="busy" @click="saveGroupNotes(entry.group)" />
+                            <UButton size="xs" variant="ghost" icon="i-lucide-x" :disabled="busy" @click="editingGroupNotesId = null" />
+                          </div>
+                        </div>
+                        <p
+                          v-else-if="entry.group.notes"
+                          class="mt-1 text-xs text-rose-300"
+                          :class="canEdit ? 'cursor-pointer hover:text-rose-200' : ''"
+                          @click="startEditGroupNotes(entry.group)"
+                        >
+                          {{ entry.group.notes }}
+                        </p>
+                        <button
+                          v-else-if="canEdit"
+                          type="button"
+                          class="mt-1 text-xs text-slate-500 hover:text-slate-300"
+                          @click="startEditGroupNotes(entry.group)"
+                        >
+                          Add group notes…
+                        </button>
+                      </div>
+                      <UButton
+                        v-if="canEdit"
+                        color="error"
+                        variant="ghost"
+                        size="xs"
+                        icon="i-lucide-trash-2"
+                        :disabled="busy"
+                        @click="requestDeleteGroup(entry.group)"
+                      />
+                    </div>
+                  </div>
+                  <div class="flex flex-wrap items-start gap-3">
+                    <PartyCard
+                      v-for="party in entry.parties"
+                      :key="party.id"
+                      :party="party"
+                      :can-edit="canEdit"
+                      :busy="busy"
+                      :actor-id="actorId"
+                      :editing-name-party-id="editingNamePartyId"
+                      :editing-name-value="editingNameValue"
+                      :editing-category-party-id="editingCategoryPartyId"
+                      :editing-note-party-id="editingNotePartyId"
+                      :editing-note-value="editingNoteValue"
+                      :is-dragging-member="isDraggingMember"
+                      :hovered-drop-zone="hoveredDropZone"
+                      :party-category-options="partyCategoryOptions"
+                      :class-ranks-by-player-id="classRanksByPlayerId"
+                      @update:editing-name-value="editingNameValue = $event"
+                      @update:editing-note-value="editingNoteValue = $event"
+                      @update:hovered-drop-zone="hoveredDropZone = $event"
+                      @start-edit-name="startEditName"
+                      @commit-edit-name="commitEditName"
+                      @cancel-edit-name="cancelEditName"
+                      @start-edit-category="startEditCategory"
+                      @commit-edit-category="commitEditCategory"
+                      @cancel-edit-category="editingCategoryPartyId = null"
+                      @start-edit-note="startEditNote"
+                      @commit-edit-note="commitEditNote"
+                      @delete-party="requestDeleteParty"
+                      @remove-from-party="removeFromParty"
+                      @drag-over-party="onDragOverParty"
+                      @drop-to-party="onDropToParty"
+                      @drag-over-member-zone="onDragOverMemberZone"
+                      @drag-leave-member-zone="onDragLeaveMemberZone"
+                      @drag-start-member="onDragStartMember"
+                      @drag-end-member="isDraggingMember = false; hoveredDropZone = null"
+                      @drag-start-party="onDragStartParty"
+                      @drag-end-party="onDragEndParty"
+                      @drop-member-reorder="onDropMemberReorder"
+                    />
+                  </div>
+                </article>
+
+                <div class="flex flex-wrap items-start gap-3">
                   <PartyCard
-                    v-if="party.category === category"
+                    v-for="party in ungroupedPartiesByCategory(category)"
+                    :key="party.id"
                     :party="party"
                     :can-edit="canEdit"
                     :busy="busy"
@@ -1072,7 +1521,7 @@ onMounted(async () => {
                     @cancel-edit-category="editingCategoryPartyId = null"
                     @start-edit-note="startEditNote"
                     @commit-edit-note="commitEditNote"
-                    @delete-party="deleteParty"
+                    @delete-party="requestDeleteParty"
                     @remove-from-party="removeFromParty"
                     @drag-over-party="onDragOverParty"
                     @drop-to-party="onDropToParty"
@@ -1080,9 +1529,11 @@ onMounted(async () => {
                     @drag-leave-member-zone="onDragLeaveMemberZone"
                     @drag-start-member="onDragStartMember"
                     @drag-end-member="isDraggingMember = false; hoveredDropZone = null"
+                    @drag-start-party="onDragStartParty"
+                    @drag-end-party="onDragEndParty"
                     @drop-member-reorder="onDropMemberReorder"
                   />
-                </template>
+                </div>
               </div>
             </div>
           </div>
@@ -1298,6 +1749,52 @@ onMounted(async () => {
           <div class="flex justify-end gap-2">
             <UButton color="neutral" variant="soft" @click="showCreatePartyModal = false">Cancel</UButton>
             <UButton color="primary" :loading="busy" @click="createParty">Create</UButton>
+          </div>
+        </template>
+      </UCard>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="confirmDeletePartyOpen">
+    <template #content>
+      <UCard class="border border-rose-900/40 bg-slate-950">
+        <template #header>
+          <span class="font-semibold text-white">Delete Party</span>
+        </template>
+        <div class="space-y-2">
+          <p class="text-sm text-slate-200">
+            Are you sure you want to delete
+            <span class="font-semibold text-white">{{ partyToDelete?.name }}</span>?
+          </p>
+          <p class="text-sm text-rose-300">This action cannot be undone.</p>
+        </div>
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton color="neutral" variant="soft" @click="confirmDeletePartyOpen = false; partyToDelete = null">Cancel</UButton>
+            <UButton color="error" :loading="busy" @click="confirmDeleteParty">Delete</UButton>
+          </div>
+        </template>
+      </UCard>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="confirmDeleteGroupOpen">
+    <template #content>
+      <UCard class="border border-rose-900/40 bg-slate-950">
+        <template #header>
+          <span class="font-semibold text-white">Delete Group</span>
+        </template>
+        <div class="space-y-2">
+          <p class="text-sm text-slate-200">
+            Are you sure you want to delete
+            <span class="font-semibold text-white">{{ groupToDelete?.name }}</span>?
+          </p>
+          <p class="text-sm text-rose-300">Parties in this group will be ungrouped.</p>
+        </div>
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton color="neutral" variant="soft" @click="confirmDeleteGroupOpen = false; groupToDelete = null">Cancel</UButton>
+            <UButton color="error" :loading="busy" @click="confirmDeleteGroup">Delete</UButton>
           </div>
         </template>
       </UCard>
