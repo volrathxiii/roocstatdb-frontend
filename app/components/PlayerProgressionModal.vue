@@ -106,7 +106,6 @@ const STAT_GROUPS: { heading: string; stats: StatDef[] }[] = [
       { key: "mDmgReductionPct",    label: "M DMG Red %",   format: fmtPct  },
       { key: "dmgReductionVsDemiHuman", label: "vs Demi-Human Red %", format: fmtPct },
       { key: "dmgReductionVsMedium",    label: "vs Medium Red %",    format: fmtPct },
-      { key: "pvpDmgReduction",     label: "PVP Red",       format: String  },
     ],
   },
   {
