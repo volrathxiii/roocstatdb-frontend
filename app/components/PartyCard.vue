@@ -10,6 +10,10 @@ interface PartyMember {
   snapshot?: Snapshot | null;
 }
 
+type StatKey = "physical" | "magic" | "defensive";
+interface RankEntry { rank: number; total: number }
+type RankMap = Map<number, Record<StatKey, RankEntry>>;
+
 interface Party {
   id: number;
   name: string;
@@ -32,6 +36,7 @@ const props = defineProps<{
   isDraggingMember: boolean;
   hoveredDropZone: string | null;
   partyCategoryOptions: { label: string; value: string }[];
+  classRanksByPlayerId?: RankMap;
 }>();
 
 const emit = defineEmits<{
@@ -73,6 +78,25 @@ function classRoleTextClass(classRole?: string | null) {
   return colors[Math.abs(hash) % colors.length];
 }
 
+function ordinal(n: number | undefined) {
+  if (n === undefined) return "—";
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
+}
+
+function bestRankStat(playerId: number): StatKey[] {
+  const ranks = props.classRanksByPlayerId?.get(playerId);
+  if (!ranks) return [];
+  const entries: Array<[StatKey, number]> = [
+    ["physical", ranks.physical.rank],
+    ["magic", ranks.magic.rank],
+    ["defensive", ranks.defensive.rank],
+  ];
+  const minRank = Math.min(...entries.map((e) => e[1]));
+  return entries.filter((e) => e[1] === minRank).map((e) => e[0]);
+}
+
 function dropZoneStyle(key: string) {
   const active = props.hoveredDropZone === key;
   return {
@@ -101,6 +125,7 @@ function dropZoneStyle(key: string) {
           @update:model-value="emit('update:editingNameValue', $event as string)"
           @keyup.enter="emit('commit-edit-name', party)"
           @keyup.escape="emit('cancel-edit-name')"
+          @blur="emit('commit-edit-name', party)"
         />
         <UButton color="primary" variant="ghost" size="xs" icon="i-lucide-check" square @click="emit('commit-edit-name', party)" />
       </template>
@@ -167,13 +192,39 @@ function dropZoneStyle(key: string) {
             @dragleave="emit('drag-leave-member-zone', $event)"
             @drop="emit('drop-member-reorder', $event, party, idx)"
           >
-            <div>
-              <p class="text-sm font-medium text-slate-100">{{ member.ign }}</p>
-              <p class="text-xs">
-                <span :class="jobTextClass(member.snapshot?.job)">{{ member.snapshot?.job ?? "Unknown" }}</span>
-                <span class="text-slate-500"> - </span>
-                <span :class="classRoleTextClass(member.snapshot?.classRole)">{{ member.snapshot?.classRole ?? "Unknown" }}</span>
-              </p>
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
+                <p class="text-sm font-medium text-slate-100">{{ member.ign }}</p>
+                <span :class="['text-xs', jobTextClass(member.snapshot?.job)]">{{ member.snapshot?.job ?? "Unknown" }}</span>
+                <span class="text-xs text-slate-500">·</span>
+                <span :class="['text-xs', classRoleTextClass(member.snapshot?.classRole)]">{{ member.snapshot?.classRole ?? "Unknown" }}</span>
+              </div>
+              <div v-if="classRanksByPlayerId" class="mt-1.5 flex flex-wrap gap-1">
+                <span
+                  class="flex items-center gap-0.5 rounded border border-slate-600 px-1.5 py-0.5 text-[10px] text-slate-300"
+                  :class="bestRankStat(member.id).includes('physical') ? 'border-emerald-400/70 bg-emerald-500/20 text-emerald-200' : ''"
+                  title="Physical DMG rank"
+                >
+                  <UIcon name="i-lucide-sword" class="h-2.5 w-2.5 shrink-0" />
+                  {{ ordinal(classRanksByPlayerId?.get(member.id)?.physical.rank) }}
+                </span>
+                <span
+                  class="flex items-center gap-0.5 rounded border border-slate-600 px-1.5 py-0.5 text-[10px] text-slate-300"
+                  :class="bestRankStat(member.id).includes('magic') ? 'border-emerald-400/70 bg-emerald-500/20 text-emerald-200' : ''"
+                  title="Magic DMG rank"
+                >
+                  <UIcon name="i-lucide-sparkles" class="h-2.5 w-2.5 shrink-0" />
+                  {{ ordinal(classRanksByPlayerId?.get(member.id)?.magic.rank) }}
+                </span>
+                <span
+                  class="flex items-center gap-0.5 rounded border border-slate-600 px-1.5 py-0.5 text-[10px] text-slate-300"
+                  :class="bestRankStat(member.id).includes('defensive') ? 'border-emerald-400/70 bg-emerald-500/20 text-emerald-200' : ''"
+                  title="Defensive rank"
+                >
+                  <UIcon name="i-lucide-shield" class="h-2.5 w-2.5 shrink-0" />
+                  {{ ordinal(classRanksByPlayerId?.get(member.id)?.defensive.rank) }}
+                </span>
+              </div>
             </div>
             <UButton v-if="canEdit" color="error" variant="ghost" size="xs" icon="i-lucide-x" :disabled="busy" @click="emit('remove-from-party', party, member.id)" />
           </div>

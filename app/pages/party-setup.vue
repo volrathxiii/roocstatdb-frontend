@@ -70,18 +70,36 @@ interface RosterPlayer {
   } | null;
 }
 
+interface PartyPresetRecord {
+  id: number;
+  position: number;
+  jobId: number;
+  classRoleId: number | null;
+  classRank: "PDMG" | "MDMG" | "DEF" | null;
+  job: { id: number; name: string };
+  classRole: { id: number; name: string } | null;
+}
+
+interface PartyPreset {
+  id: number;
+  name: string;
+  records: PartyPresetRecord[];
+}
+
 const loading = ref(true);
 const loadingSetup = ref(false);
 const busy = ref(false);
 const isDraggingMember = ref(false);
 const hoveredDropZone = ref<string | null>(null);
 const errorMsg = ref<string | null>(null);
+const toast = useToast();
 
 const events = ref<EventItem[]>([]);
 const selectedEventId = ref<number | null>(null);
 const selectedEvent = ref<SetupResponse["event"] | null>(null);
 const parties = ref<Party[]>([]);
 const rosterPlayers = ref<RosterPlayer[]>([]);
+const partyPresets = ref<PartyPreset[]>([]);
 
 const showCreateEventModal = ref(false);
 const createEventForm = reactive({
@@ -323,12 +341,25 @@ async function fetchRosterPlayers() {
   rosterPlayers.value = all;
 }
 
+async function fetchPartyPresets() {
+  try {
+    const res = await $fetch<{ presets: PartyPreset[] }>(`${backendUrl}/api/party-presets`, {
+      query: { playerId: actorPlayerId.value },
+    });
+    partyPresets.value = res.presets;
+  } catch {
+    partyPresets.value = [];
+  }
+}
+
 async function loadAll() {
   if (!ensureMemberAccess()) return;
   loading.value = true;
   errorMsg.value = null;
   try {
-    await Promise.all([fetchEvents(), fetchRosterPlayers()]);
+    const fetches: Promise<unknown>[] = [fetchEvents(), fetchRosterPlayers()];
+    if (auth.value.role === "Admin") fetches.push(fetchPartyPresets());
+    await Promise.all(fetches);
     if (selectedEventId.value) {
       await fetchSetup(selectedEventId.value);
     }
@@ -774,6 +805,109 @@ function bestRankStat(playerId: number) {
   return entries.filter((entry) => entry[1] === minRank).map((entry) => entry[0]);
 }
 
+const presetMenuItems = computed(() => {
+  if (partyPresets.value.length === 0) {
+    return [[{ label: "No presets available", disabled: true }]];
+  }
+  return [
+    partyPresets.value.map((preset) => ({
+      label: `${preset.name} (${preset.records.length})`,
+      icon: "i-lucide-layout-template",
+      onSelect: () => applyPreset(preset),
+    })),
+  ];
+});
+
+async function applyPreset(preset: PartyPreset) {
+  if (!canEdit.value || !selectedEventId.value) return;
+  busy.value = true;
+  errorMsg.value = null;
+  try {
+    // Create the party using the preset name
+    const { party: newParty } = await $fetch<{ party: { id: number } }>(
+      `${backendUrl}/api/party-setup/events/${selectedEventId.value}/parties`,
+      {
+        method: "POST",
+        body: {
+          playerId: actorPlayerId.value,
+          name: preset.name,
+          category: "Main",
+        },
+      },
+    );
+
+    // Build set of already-assigned player ids (before this party)
+    const alreadyAssigned = new Set(assignedPlayers.value);
+    const pickedThisPreset = new Set<number>();
+
+    const sortedRecords = [...preset.records].sort((a, b) => a.position - b.position);
+    const memberIds: number[] = [];
+    const unfilledLabels: string[] = [];
+
+    for (const record of sortedRecords) {
+      let candidates = rosterPlayers.value.filter((player) => {
+        if (alreadyAssigned.has(player.id)) return false;
+        if (pickedThisPreset.has(player.id)) return false;
+        if (!player.snapshot) return false;
+        if (player.snapshot.job !== record.job.name) return false;
+        if (record.classRole && player.snapshot.classRole !== record.classRole.name) return false;
+        return true;
+      });
+
+      if (record.classRank) {
+        let statKey: "physical" | "magic" | "defensive";
+        if (record.classRank === "PDMG") statKey = "physical";
+        else if (record.classRank === "MDMG") statKey = "magic";
+        else statKey = "defensive";
+        candidates = [...candidates].sort(
+          (a, b) => (b.classScores?.[statKey] ?? 0) - (a.classScores?.[statKey] ?? 0),
+        );
+      }
+
+      const picked = candidates[0];
+      if (picked) {
+        pickedThisPreset.add(picked.id);
+        memberIds.push(picked.id);
+      } else {
+        const label = record.classRole
+          ? `${record.job.name} / ${record.classRole.name}`
+          : record.job.name;
+        unfilledLabels.push(label);
+      }
+    }
+
+    if (memberIds.length > 0) {
+      await $fetch(`${backendUrl}/api/party-setup/parties/${newParty.id}/members`, {
+        method: "PATCH",
+        body: { playerId: actorPlayerId.value, memberIds },
+      });
+    }
+
+    await fetchEvents();
+    await fetchSetup(selectedEventId.value);
+
+    if (unfilledLabels.length > 0) {
+      toast.add({
+        title: "Some slots could not be filled",
+        description: `No match found for: ${unfilledLabels.join(", ")}`,
+        color: "warning",
+        icon: "i-lucide-triangle-alert",
+        duration: 5000,
+        ui: {
+          title: 'text-white',
+          description: 'text-white/90',
+          icon: 'text-white',
+          progress: 'bg-white/30',
+        },
+      });
+    }
+  } catch {
+    errorMsg.value = "Failed to apply preset.";
+  } finally {
+    busy.value = false;
+  }
+}
+
 watch(selectedEventId, async () => {
   if (selectedEventId.value) await onEventChange();
 });
@@ -847,15 +981,51 @@ onMounted(async () => {
       <section class="space-y-4">
         <div class="flex items-center justify-between">
           <h2 class="text-lg font-semibold text-white">Parties</h2>
+          <div class="flex items-center gap-2">
+            <UButton
+              v-if="selectedEventId && parties.length > 0"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-printer"
+              :to="`/party-print/${selectedEventId}`"
+              target="_blank"
+            >
+              Print
+            </UButton>
+            <!-- Admin: split button with preset dropdown -->
+          <div v-if="auth.role === 'Admin' && selectedEventId" class="flex">
+            <UButton
+              class="rounded-r-none"
+              color="primary"
+              variant="solid"
+              icon="i-lucide-plus"
+              :loading="busy"
+              @click="showCreatePartyModal = true"
+            >
+              Create Party
+            </UButton>
+            <UDropdownMenu :items="presetMenuItems" :content="{ align: 'end' }">
+              <UButton
+                class="rounded-l-none border-l border-white/20 px-2"
+                color="primary"
+                variant="solid"
+                icon="i-lucide-chevron-down"
+                :loading="busy"
+              />
+            </UDropdownMenu>
+          </div>
+          <!-- Officer: plain button -->
           <UButton
-            v-if="canEdit && selectedEventId"
+            v-else-if="canEdit && selectedEventId"
             color="primary"
             variant="solid"
             icon="i-lucide-plus"
+            :loading="busy"
             @click="showCreatePartyModal = true"
           >
             Create Party
           </UButton>
+          </div>
         </div>
 
         <div v-if="loadingSetup" class="rounded-lg border border-slate-800 bg-slate-950/40 p-8 text-center text-slate-400">
@@ -890,6 +1060,7 @@ onMounted(async () => {
                     :is-dragging-member="isDraggingMember"
                     :hovered-drop-zone="hoveredDropZone"
                     :party-category-options="partyCategoryOptions"
+                    :class-ranks-by-player-id="classRanksByPlayerId"
                     @update:editing-name-value="editingNameValue = $event"
                     @update:editing-note-value="editingNoteValue = $event"
                     @update:hovered-drop-zone="hoveredDropZone = $event"
@@ -920,7 +1091,7 @@ onMounted(async () => {
 
       <aside
         v-if="canEdit"
-        class="rounded-xl border border-slate-800 bg-slate-950/60 p-3"
+        class="rounded-xl border border-slate-800 bg-slate-950/60 p-3 lg:sticky lg:top-4 lg:self-start"
         @dragover="onDragOverParty"
         @drop="onDropToPool($event)"
       >
