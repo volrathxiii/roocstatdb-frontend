@@ -174,6 +174,19 @@ const classRoleOptions = computed(() =>
 
     <form v-else class="space-y-6" @submit.prevent="handleSubmit">
 
+      <UAlert
+        color="warning"
+        variant="soft"
+        icon="i-lucide-triangle-alert"
+      >
+        <template #title>
+          Please provide stats that are <strong>not buffed</strong>.
+        </template>
+        <template #description>
+          This means <strong>no self-buffs</strong>, <strong>no food buffs</strong>, and <strong>no consumables</strong>. Only your <strong>base stats</strong> and <strong>equipment</strong> values.
+        </template>
+      </UAlert>
+
       <!-- Job & Role -->
       <div class="grid grid-cols-2 gap-4">
         <UFormField label="Job Class" required class="w-full">
@@ -230,10 +243,46 @@ const classRoleOptions = computed(() =>
       <div>
         <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Equipment DEF</p>
         <div class="grid grid-cols-2 gap-4">
-          <UFormField label="EQ PDEF (flat)" class="w-full">
+          <UFormField class="w-full">
+            <template #label>
+              <span class="flex items-center gap-1">
+                EQ PDEF (flat)
+                <UPopover mode="hover" :popper="{ placement: 'right' }">
+                  <UIcon name="i-lucide-info" class="h-3.5 w-3.5 text-slate-400 cursor-help" />
+                  <template #content>
+                    <div class="p-3 text-sm max-w-xs space-y-1">
+                      <p>To find your <strong>Equipment PDEF</strong>:</p>
+                      <ol class="list-decimal list-inside space-y-1 text-slate-300">
+                        <li>Open the <strong>Character Details</strong> screen</li>
+                        <li>Under <strong>General Stats</strong>, click on <strong>PDEF</strong></li>
+                        <li>A breakdown modal will open — use the <strong>Equipment PDEF</strong> value</li>
+                      </ol>
+                    </div>
+                  </template>
+                </UPopover>
+              </span>
+            </template>
             <UInput v-model.number="form.eqPdef" type="number" :min="0" class="w-full" :color="fieldError('eqPdef') ? 'error' : undefined" />
           </UFormField>
-          <UFormField label="EQ MDEF (flat)" class="w-full">
+          <UFormField class="w-full">
+            <template #label>
+              <span class="flex items-center gap-1">
+                EQ MDEF (flat)
+                <UPopover mode="hover" :popper="{ placement: 'right' }">
+                  <UIcon name="i-lucide-info" class="h-3.5 w-3.5 text-slate-400 cursor-help" />
+                  <template #content>
+                    <div class="p-3 text-sm max-w-xs space-y-1">
+                      <p>To find your <strong>Equipment MDEF</strong>:</p>
+                      <ol class="list-decimal list-inside space-y-1 text-slate-300">
+                        <li>Open the <strong>Character Details</strong> screen</li>
+                        <li>Under <strong>General Stats</strong>, click on <strong>MDEF</strong></li>
+                        <li>A breakdown modal will open — use the <strong>Equipment MDEF</strong> value</li>
+                      </ol>
+                    </div>
+                  </template>
+                </UPopover>
+              </span>
+            </template>
             <UInput v-model.number="form.eqMdef" type="number" :min="0" class="w-full" :color="fieldError('eqMdef') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="EQ PDEF %" class="w-full">
