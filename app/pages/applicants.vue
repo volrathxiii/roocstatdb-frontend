@@ -377,6 +377,24 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener("click", closeMenu);
 });
+
+// ── Progression modal ─────────────────────────────────────────────────────────
+const progressionPlayer = ref<{ id: number; ign: string } | null>(null);
+
+function onTableRowClick(e: MouseEvent) {
+  const tr = (e.target as HTMLElement).closest("tr");
+  if (!tr) return;
+  const tbody = tr.closest("tbody");
+  if (!tbody) return;
+  const rowIndex = Array.from(tbody.children).indexOf(tr);
+  if (rowIndex < 0) return;
+  const allRows = tableRef.value?.tableApi?.getRowModel()?.rows ?? [];
+  const tableRow = allRows.find((_, i) => i === rowIndex);
+  if (tableRow === undefined) return;
+  const row = tableRow.original as FlatRow;
+  if (row.weekNumber === null) return; // no snapshot, nothing to show
+  progressionPlayer.value = { id: row.id, ign: row.ign };
+}
 </script>
 
 <template>
@@ -433,7 +451,7 @@ onUnmounted(() => {
     <UAlert v-if="errorMsg" color="error" variant="soft" :description="errorMsg" />
     <UAlert v-if="actionError" color="error" variant="soft" :description="actionError" />
 
-    <div @contextmenu.prevent="onTableContextMenu">
+    <div @click="onTableRowClick($event)" @contextmenu.prevent="onTableContextMenu">
       <UTable
         ref="tableRef"
         v-model:sorting="sorting"
@@ -515,6 +533,16 @@ onUnmounted(() => {
           Delete Player
         </button>
       </div>
+    </Teleport>
+
+    <!-- Progression Modal -->
+    <Teleport to="body">
+      <PlayerProgressionModal
+        v-if="progressionPlayer"
+        :player-id="progressionPlayer.id"
+        :ign="progressionPlayer.ign"
+        @close="progressionPlayer = null"
+      />
     </Teleport>
   </div>
 </template>
