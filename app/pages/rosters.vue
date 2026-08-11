@@ -447,6 +447,8 @@ const menuVisible = ref(false);
 const menuX = ref(0);
 const menuY = ref(0);
 const actionError = ref<string | null>(null);
+const confirmDeleteOpen = ref(false);
+const deleteTarget = ref<FlatRow | null>(null);
 
 function onTableContextMenu(e: MouseEvent) {
   const rowData = getRowFromMouseEvent(e);
@@ -503,6 +505,26 @@ async function deletePlayer(row: FlatRow) {
   } catch {
     actionError.value = "Failed to delete player. Please try again.";
   }
+}
+
+function requestDeletePlayer(row: FlatRow) {
+  actionError.value = null;
+  closeMenu();
+  deleteTarget.value = row;
+  confirmDeleteOpen.value = true;
+}
+
+function cancelDeletePlayer() {
+  confirmDeleteOpen.value = false;
+  deleteTarget.value = null;
+}
+
+async function confirmDeletePlayer() {
+  if (!deleteTarget.value) return;
+  const row = deleteTarget.value;
+  await deletePlayer(row);
+  confirmDeleteOpen.value = false;
+  deleteTarget.value = null;
 }
 
 onMounted(() => {
@@ -672,13 +694,42 @@ onUnmounted(() => {
           v-if="!contextRow.isFirstPlayer && (auth.role === 'Officer' || auth.role === 'Admin')"
           type="button"
           class="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-slate-700"
-          @click="deletePlayer(contextRow!)"
+          @click="requestDeletePlayer(contextRow!)"
         >
           <UIcon name="i-lucide-trash-2" class="h-4 w-4" />
           Delete Player
         </button>
       </div>
     </Teleport>
+
+    <UModal v-model:open="confirmDeleteOpen">
+      <template #content>
+        <UCard class="border border-rose-900/40 bg-slate-950">
+          <template #header>
+            <span class="font-semibold text-white">Delete Player Record</span>
+          </template>
+
+          <div class="space-y-2">
+            <p class="text-sm text-slate-200">
+              Are you sure you want to delete this record?
+            </p>
+            <p class="text-sm text-rose-300">
+              This action cannot be undone.
+            </p>
+            <p v-if="deleteTarget" class="text-xs text-slate-400">
+              Player: {{ deleteTarget.ign }}
+            </p>
+          </div>
+
+          <template #footer>
+            <div class="flex justify-end gap-2">
+              <UButton color="neutral" variant="soft" @click="cancelDeletePlayer">Cancel</UButton>
+              <UButton color="error" @click="confirmDeletePlayer">Delete</UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
 
     <!-- Progression Modal -->
     <Teleport to="body">
