@@ -6,7 +6,7 @@ import { upperFirst } from "scule";
 
 definePageMeta({ layout: "authenticated" });
 
-const auth = useAuth();
+const { auth } = useAuth();
 const { setSubtitle } = usePageSubtitle();
 const config = useRuntimeConfig();
 const backendUrl = config.public.backendUrl;
