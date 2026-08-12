@@ -140,6 +140,16 @@ function isHighest(key: StatKey, player: PlayerRow): boolean {
     data.value.players.some((p) => p !== player && (p[key] as number) < val)
   );
 }
+
+// Delta between active player's value and the highest among all OTHER players.
+// Positive = active player leads, negative = active player is behind.
+function deltaVsHighest(key: StatKey, player: PlayerRow): number | null {
+  if (!data.value || data.value.players.length < 2) return null;
+  const others = data.value.players.filter((p) => p.id !== player.id);
+  if (others.length === 0) return null;
+  const highest = Math.max(...others.map((p) => p[key] as number));
+  return (player[key] as number) - highest;
+}
 </script>
 
 <template>
@@ -252,20 +262,39 @@ function isHighest(key: StatKey, player: PlayerRow): boolean {
                   <td
                     v-for="player in sortedPlayers"
                     :key="player.id"
-                    class="px-4 py-2 text-center"
+                    class="px-4 py-2"
                     :class="player.id === activePlayerId
-                      ? 'sticky left-[160px] z-10 bg-[#1e2d4a] border-r border-indigo-500/40'
-                      : ''"
+                      ? 'sticky left-[160px] z-10 bg-[#1e2d4a] border-r border-indigo-500/40 text-left'
+                      : 'text-center'"
                   >
-                    <span class="inline-flex items-center justify-center gap-1">
-                      <UIcon
-                        v-if="isHighest(stat.key, player)"
-                        name="i-lucide-arrow-up"
-                        class="h-3 w-3 text-green-400 shrink-0"
-                      />
-                      <span :class="isHighest(stat.key, player) ? 'text-green-400 font-medium' : 'text-white'">
-                        {{ stat.format(player[stat.key] as number) }}
+                    <span
+                      class="inline-flex items-center gap-1.5 whitespace-nowrap"
+                      :class="player.id === activePlayerId ? 'w-full justify-between' : 'justify-center'"
+                    >
+                      <span class="inline-flex items-center gap-1.5">
+                        <UIcon
+                          v-if="isHighest(stat.key, player)"
+                          name="i-lucide-arrow-up"
+                          class="h-3 w-3 text-green-400 shrink-0"
+                        />
+                        <span :class="isHighest(stat.key, player) ? 'text-green-400 font-medium' : 'text-white'">
+                          {{ stat.format(player[stat.key] as number) }}
+                        </span>
                       </span>
+                      <!-- Delta vs highest other player (active player only) -->
+                      <template v-if="player.id === activePlayerId">
+                        <span
+                          v-if="deltaVsHighest(stat.key, player) !== null && deltaVsHighest(stat.key, player)! < 0"
+                          class="inline-flex items-center gap-0.5 text-sm font-medium text-red-400"
+                        >
+                          <UIcon
+                            name="i-lucide-trending-down"
+                            class="h-2.5 w-2.5 shrink-0"
+                          />
+                          {{ stat.format(Math.abs(deltaVsHighest(stat.key, player)!)) }}
+                        </span>
+                        <span v-else-if="deltaVsHighest(stat.key, player) === 0" class="text-sm text-slate-500">tied</span>
+                      </template>
                     </span>
                   </td>
                 </tr>
