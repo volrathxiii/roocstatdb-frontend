@@ -461,7 +461,7 @@ onUnmounted(() => {
 });
 
 // ── Progression modal ─────────────────────────────────────────────────────────
-const progressionPlayer = ref<{ id: number; ign: string } | null>(null);
+const progressionPlayer = ref<{ id: number; playerStringId: string; ign: string } | null>(null);
 
 function onTableRowClick(e: MouseEvent) {
   const tr = (e.target as HTMLElement).closest("tr");
@@ -475,7 +475,7 @@ function onTableRowClick(e: MouseEvent) {
   if (tableRow === undefined) return;
   const row = tableRow.original as FlatRow;
   if (row.weekNumber === null) return; // no snapshot, nothing to show
-  progressionPlayer.value = { id: row.id, ign: row.ign };
+  progressionPlayer.value = { id: row.id, playerStringId: row.playerId, ign: row.ign };
 }
 </script>
 
@@ -654,6 +654,7 @@ function onTableRowClick(e: MouseEvent) {
       <PlayerProgressionModal
         v-if="progressionPlayer"
         :player-id="progressionPlayer.id"
+        :player-string-id="progressionPlayer.playerStringId"
         :ign="progressionPlayer.ign"
         @close="progressionPlayer = null"
       />

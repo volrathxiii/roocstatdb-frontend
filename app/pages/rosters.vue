@@ -438,7 +438,7 @@ const progressionPlayer = ref<{ id: number; ign: string } | null>(null);
 
 function openProgression(row: FlatRow) {
   closeMenu();
-  progressionPlayer.value = { id: row.id, ign: row.ign };
+  progressionPlayer.value = { id: row.id, playerStringId: row.playerId, ign: row.ign };
 }
 
 // ── Row context menu ──────────────────────────────────────────────────────────
@@ -494,11 +494,6 @@ async function changePlayerRole(row: FlatRow, role: string) {
   } catch {
     actionError.value = "Failed to update player role. Please try again.";
   }
-}
-
-async function deletePlayer(row: FlatRow) {
-  actionError.value = null;
-  closeMenu();
   try {
     await $fetch(`${backendUrl}/api/players/${row.id}`, { method: "DELETE" });
     await fetchPlayers();
@@ -736,6 +731,7 @@ onUnmounted(() => {
       <PlayerProgressionModal
         v-if="progressionPlayer"
         :player-id="progressionPlayer.id"
+        :player-string-id="progressionPlayer.playerStringId"
         :ign="progressionPlayer.ign"
         @close="progressionPlayer = null"
       />

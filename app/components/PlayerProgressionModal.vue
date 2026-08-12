@@ -33,6 +33,7 @@ interface Snapshot {
 
 const props = defineProps<{
   playerId: number;
+  playerStringId: string;
   ign: string;
 }>();
 
@@ -49,15 +50,67 @@ interface RankSet { rank: number; total: number; }
 interface ScopedRank { guild: RankSet; classRole: RankSet; }
 interface RankResponse { physical: ScopedRank | null; magic: ScopedRank | null; defensive: ScopedRank | null; }
 
+interface SearchPlayer {
+  id: number;
+  ign: string;
+  playerId: string;
+  jobClass: string | null;
+}
+
 const snapshots = ref<Snapshot[]>([]);
 const scores = ref<ScoresResponse | null>(null);
 const playerRank = ref<RankResponse | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
+// Compare search state
+const compareQuery = ref("");
+const compareResults = ref<SearchPlayer[]>([]);
+const compareSearching = ref(false);
+const showDropdown = ref(false);
+const compareInputRef = ref<HTMLInputElement | null>(null);
+const compareTarget = ref<SearchPlayer | null>(null);
+const showCompareModal = ref(false);
+
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+function onCompareInput() {
+  showDropdown.value = true;
+  if (searchTimer) clearTimeout(searchTimer);
+  if (!compareQuery.value.trim()) {
+    compareResults.value = [];
+    return;
+  }
+  searchTimer = setTimeout(async () => {
+    compareSearching.value = true;
+    try {
+      const res = await $fetch<{ players: SearchPlayer[] }>(
+        `${backendUrl}/api/players/search?q=${encodeURIComponent(compareQuery.value.trim())}`,
+      );
+      compareResults.value = res.players.filter((p) => p.id !== props.playerId);
+    } catch {
+      compareResults.value = [];
+    } finally {
+      compareSearching.value = false;
+    }
+  }, 250);
+}
+
+function selectComparePlayer(player: SearchPlayer) {
+  compareTarget.value = player;
+  showDropdown.value = false;
+  compareQuery.value = "";
+  showCompareModal.value = true;
+}
+
+function closeDropdown() {
+  setTimeout(() => { showDropdown.value = false; }, 150);
+}
+
 onMounted(async () => {
   const onKeydown = (e: KeyboardEvent) => { if (e.key === "Escape") emit("close"); };
   document.addEventListener("keydown", onKeydown);
+  nextTick(() => compareInputRef.value?.focus());
   onUnmounted(() => document.removeEventListener("keydown", onKeydown));
 
   try {
@@ -150,8 +203,8 @@ const classRoleChanged = computed(
   >
     <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
       <!-- Header -->
-      <div class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-700 bg-slate-900 px-4 py-3">
-        <div>
+      <div class="sticky top-0 z-10 flex items-center gap-3 border-b border-slate-700 bg-slate-900 px-4 py-3">
+        <div class="flex-1 min-w-0">
           <h2 class="text-xl font-semibold text-white">{{ ign }}</h2>
           <p class="text-sm text-slate-400">
             Week progression
@@ -161,9 +214,50 @@ const classRoleChanged = computed(
             </span>
           </p>
         </div>
+
+        <!-- Compare search (inline in header) -->
+        <div class="relative w-52 shrink-0">
+          <UIcon name="i-lucide-users" class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+          <input
+            v-model="compareQuery"
+            type="text"
+            ref="compareInputRef"
+            placeholder="Compare…"
+            class="w-full rounded-lg border border-slate-600 bg-slate-800 pl-8 pr-7 py-1.5 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+            @input="onCompareInput"
+            @focus="showDropdown = true"
+            @blur="closeDropdown"
+          />
+          <UIcon
+            v-if="compareSearching"
+            name="i-lucide-loader-circle"
+            class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-slate-400"
+          />
+
+          <!-- Dropdown -->
+          <div
+            v-if="showDropdown && (compareResults.length > 0 || (compareQuery.trim() && !compareSearching))"
+            class="absolute right-0 top-full z-20 mt-1 w-64 rounded-lg border border-slate-700 bg-slate-800 shadow-xl overflow-hidden"
+          >
+            <div v-if="compareResults.length === 0" class="px-4 py-3 text-sm text-slate-400">
+              No players found.
+            </div>
+            <button
+              v-for="player in compareResults"
+              :key="player.id"
+              type="button"
+              class="flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-slate-700 transition-colors"
+              @mousedown.prevent="selectComparePlayer(player)"
+            >
+              <span class="text-sm font-medium text-white">{{ player.ign }}</span>
+            <span class="text-xs text-slate-400">{{ player.jobClass ?? '—' }}</span>
+            </button>
+          </div>
+        </div>
+
         <button
           type="button"
-          class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+          class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white shrink-0"
           @click="emit('close')"
         >
           <UIcon name="i-lucide-x" class="h-5 w-5" />
@@ -308,4 +402,14 @@ const classRoleChanged = computed(
       </div>
     </div>
   </div>
+
+  <!-- Compare modal -->
+  <PlayerCompareModal
+    v-if="showCompareModal && compareTarget"
+    :player-id-a="playerStringId"
+    :player-id-b="compareTarget.playerId"
+    :ign-a="ign"
+    :ign-b="compareTarget.ign"
+    @close="showCompareModal = false"
+  />
 </template>
