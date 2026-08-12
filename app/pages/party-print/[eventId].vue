@@ -47,6 +47,8 @@ interface SetupResponse {
     status: string;
     startsAt: string | null;
     endsAt: string | null;
+    mainCommander: { ign: string; playerId: string } | null;
+    subCommander: { ign: string; playerId: string } | null;
   };
   parties: Party[];
   groups: PartyGroup[];
@@ -67,7 +69,13 @@ useHead({
     },
     {
       name: "og:description",
-      content: computed(() => `Guild party setup: ${event.value?.name ?? "Event"}`),
+      content: computed(() => {
+        if (!event.value) return "Guild party setup";
+        const mainCount = parties.value.filter((p) => p.category === "Main").length;
+        const subCount = parties.value.filter((p) => p.category === "Sub").length;
+        const totalMembers = parties.value.reduce((sum, p) => sum + p.members.length, 0);
+        return `${event.value.name} • ${mainCount} Main + ${subCount} Sub • ${totalMembers} Members`;
+      }),
     },
     {
       name: "og:type",
@@ -346,14 +354,17 @@ const subGroupLegendEntries = computed(() => groupLegendEntriesByCategory("Sub")
           <p v-if="event.eventType" class="event-type">{{ event.eventType }}</p>
         </div>
         <div class="meta">
-          <span v-if="event.startsAt">{{ formatDate(event.startsAt) }}</span>
+          <span v-if="event.startsAt">Event Date: {{ formatDate(event.startsAt) }}</span>
           <span class="status">{{ event.status }}</span>
         </div>
       </div>
 
       <!-- Main row -->
       <div v-if="hasMainContent" class="category-section">
-        <h2 class="category-label main">Main Battlefield</h2>
+        <h2 class="category-label main">
+          Main Battlefield
+          <span v-if="event.mainCommander" class="commander-tag">⚔ {{ event.mainCommander.ign }}</span>
+        </h2>
         <div class="category-row">
         <aside v-if="mainGroupLegendEntries.length > 0" class="legend-panel">
           <h3>Groups</h3>
@@ -400,7 +411,10 @@ const subGroupLegendEntries = computed(() => groupLegendEntriesByCategory("Sub")
 
       <!-- Sub row -->
       <div v-if="hasSubContent" class="category-section">
-        <h2 class="category-label sub">Sub Battlefield</h2>
+        <h2 class="category-label sub">
+          Sub Battlefield
+          <span v-if="event.subCommander" class="commander-tag commander-tag-sub">⚔ {{ event.subCommander.ign }}</span>
+        </h2>
         <div class="category-row">
         <aside v-if="subGroupLegendEntries.length > 0" class="legend-panel">
           <h3>Groups</h3>
@@ -489,9 +503,23 @@ const subGroupLegendEntries = computed(() => groupLegendEntriesByCategory("Sub")
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-bottom: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
 }
 .category-label.main { color: #b45309; }
 .category-label.sub  { color: #475569; }
+
+.commander-tag {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #b45309;
+}
+.commander-tag-sub {
+  color: #64748b;
+}
 
 .category-section {
   margin-bottom: 24px;

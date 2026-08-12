@@ -18,6 +18,8 @@ interface EventItem {
   endsAt: string | null;
   updatedAt: string;
   partyCount: number;
+  mainCommander: { ign: string; playerId: string } | null;
+  subCommander: { ign: string; playerId: string } | null;
 }
 
 interface PartyMember {
@@ -61,6 +63,8 @@ interface SetupResponse {
     status: "Draft" | "Locked" | "Archived";
     startsAt: string | null;
     endsAt: string | null;
+    mainCommander: { ign: string; playerId: string } | null;
+    subCommander: { ign: string; playerId: string } | null;
   };
   parties: Party[];
   groups: PartyGroup[];
@@ -153,6 +157,10 @@ const previewUrl = computed(() =>
   selectedEvent.value?.shareToken ? `/party-print/${selectedEvent.value.shareToken}` : null,
 );
 
+const commanderOptions = computed(() =>
+  rosterPlayers.value.map((p) => ({ label: p.ign, value: p.playerId })),
+);
+
 function startEditGroupName(group: PartyGroup) {
   if (!canEdit.value) return;
   editingGroupId.value = group.id;
@@ -170,8 +178,28 @@ const createEventForm = reactive({
   name: "",
   eventType: "",
   startsAt: "",
-  endsAt: "",
 });
+
+const showEditEventModal = ref(false);
+const editEventForm = reactive({
+  name: "",
+  eventType: "",
+  startsAt: "",
+  mainCommanderPlayerId: "",
+  subCommanderPlayerId: "",
+});
+
+function openEditEventModal() {
+  if (!selectedEvent.value) return;
+  editEventForm.name = selectedEvent.value.name;
+  editEventForm.eventType = selectedEvent.value.eventType ?? "";
+  editEventForm.startsAt = selectedEvent.value.startsAt
+    ? new Date(selectedEvent.value.startsAt).toISOString().slice(0, 10)
+    : "";
+  editEventForm.mainCommanderPlayerId = selectedEvent.value.mainCommander?.playerId ?? "";
+  editEventForm.subCommanderPlayerId = selectedEvent.value.subCommander?.playerId ?? "";
+  showEditEventModal.value = true;
+}
 
 const showCloneEventModal = ref(false);
 const cloneEventName = ref("");
@@ -548,7 +576,6 @@ async function createEvent() {
     };
     if (createEventForm.eventType.trim()) payload.eventType = createEventForm.eventType.trim();
     if (createEventForm.startsAt) payload.startsAt = new Date(createEventForm.startsAt).toISOString();
-    if (createEventForm.endsAt) payload.endsAt = new Date(createEventForm.endsAt).toISOString();
 
     const res = await $fetch<{ event: EventItem }>(`${backendUrl}/api/party-setup/events`, {
       method: "POST",
@@ -559,13 +586,44 @@ async function createEvent() {
     createEventForm.name = "";
     createEventForm.eventType = "";
     createEventForm.startsAt = "";
-    createEventForm.endsAt = "";
 
     await fetchEvents();
     selectedEventId.value = res.event.id;
     await fetchSetup(res.event.id);
   } catch {
     errorMsg.value = "Failed to create event.";
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function updateEvent() {
+  if (!canEdit.value || !selectedEventId.value) return;
+  const name = editEventForm.name.trim();
+  if (!name) return;
+
+  busy.value = true;
+  errorMsg.value = null;
+  try {
+    const body: Record<string, string | null> = {
+      playerId: actorPlayerId.value,
+      name,
+      eventType: editEventForm.eventType.trim() || null,
+      startsAt: editEventForm.startsAt ? new Date(editEventForm.startsAt).toISOString() : null,
+      mainCommanderPlayerId: editEventForm.mainCommanderPlayerId || null,
+      subCommanderPlayerId: editEventForm.subCommanderPlayerId || null,
+    };
+
+    const res = await $fetch<{ event: EventItem }>(`${backendUrl}/api/party-setup/events/${selectedEventId.value}`, {
+      method: "PATCH",
+      body,
+    });
+
+    showEditEventModal.value = false;
+    selectedEvent.value = res.event;
+    await fetchEvents();
+  } catch {
+    errorMsg.value = "Failed to update event.";
   } finally {
     busy.value = false;
   }
@@ -1329,6 +1387,16 @@ onMounted(async () => {
         v-if="canEdit && selectedEventId"
         color="neutral"
         variant="outline"
+        icon="i-lucide-pencil"
+        @click="openEditEventModal"
+      >
+        Edit Event
+      </UButton>
+
+      <UButton
+        v-if="canEdit && selectedEventId"
+        color="neutral"
+        variant="outline"
         icon="i-lucide-copy"
         @click="showCloneEventModal = true"
       >
@@ -1353,6 +1421,21 @@ onMounted(async () => {
       >
         {{ selectedEvent.status }}
       </UBadge>
+    </div>
+
+    <div v-if="selectedEvent && (selectedEvent.startsAt || selectedEvent.mainCommander || selectedEvent.subCommander)" class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-400">
+      <span v-if="selectedEvent.startsAt" class="flex items-center gap-1">
+        <UIcon name="i-lucide-calendar" class="h-3.5 w-3.5" />
+        {{ new Date(selectedEvent.startsAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }) }}
+      </span>
+      <span v-if="selectedEvent.mainCommander" class="flex items-center gap-1 text-amber-400/80">
+        <UIcon name="i-lucide-shield" class="h-3.5 w-3.5" />
+        Main: <span class="font-medium text-amber-400">{{ selectedEvent.mainCommander.ign }}</span>
+      </span>
+      <span v-if="selectedEvent.subCommander" class="flex items-center gap-1 text-slate-400">
+        <UIcon name="i-lucide-shield" class="h-3.5 w-3.5" />
+        Sub: <span class="font-medium text-slate-300">{{ selectedEvent.subCommander.ign }}</span>
+      </span>
     </div>
 
     <UAlert v-if="errorMsg" color="error" variant="soft" :description="errorMsg" />
@@ -1437,7 +1520,15 @@ onMounted(async () => {
         <div v-else class="space-y-4">
           <div v-for="category in (['Main', 'Sub'] as const)" :key="category">
             <div v-if="parties.some(p => p.category === category)" class="space-y-2">
-              <p class="text-xs font-semibold uppercase tracking-widest" :class="category === 'Main' ? 'text-amber-400/70' : 'text-slate-500'">{{ category }}</p>
+              <div class="flex items-center gap-2">
+                <p class="text-xs font-semibold uppercase tracking-widest" :class="category === 'Main' ? 'text-amber-400/70' : 'text-slate-500'">{{ category }}</p>
+                <span v-if="category === 'Main' && selectedEvent?.mainCommander" class="flex items-center gap-1 text-xs text-amber-400/80">
+                  <UIcon name="i-lucide-shield" class="h-3 w-3" />{{ selectedEvent.mainCommander.ign }}
+                </span>
+                <span v-if="category === 'Sub' && selectedEvent?.subCommander" class="flex items-center gap-1 text-xs text-slate-400">
+                  <UIcon name="i-lucide-shield" class="h-3 w-3" />{{ selectedEvent.subCommander.ign }}
+                </span>
+              </div>
               <div class="space-y-4">
                 <article
                   v-for="entry in groupedPartiesByCategory(category)"
@@ -1709,20 +1800,62 @@ onMounted(async () => {
           <UFormField label="Event Type">
             <UInput v-model="createEventForm.eventType" placeholder="WoE" class="w-full" />
           </UFormField>
-          <div class="grid gap-2 sm:grid-cols-2">
-            <UFormField label="Starts At">
-              <UInput v-model="createEventForm.startsAt" type="datetime-local" class="w-full" />
-            </UFormField>
-            <UFormField label="Ends At">
-              <UInput v-model="createEventForm.endsAt" type="datetime-local" class="w-full" />
-            </UFormField>
-          </div>
+          <UFormField label="Event Date">
+            <UInput v-model="createEventForm.startsAt" type="date" class="w-full" />
+          </UFormField>
         </div>
 
         <template #footer>
           <div class="flex justify-end gap-2">
             <UButton color="neutral" variant="soft" @click="showCreateEventModal = false">Cancel</UButton>
             <UButton color="primary" :loading="busy" @click="createEvent">Create</UButton>
+          </div>
+        </template>
+      </UCard>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="showEditEventModal">
+    <template #content>
+      <UCard class="border border-cyan-900/40 bg-slate-950">
+        <template #header>
+          <span class="font-semibold text-white">Edit Event</span>
+        </template>
+
+        <div class="space-y-3">
+          <UFormField label="Event Name" required>
+            <UInput v-model="editEventForm.name" placeholder="WoE Saturday" class="w-full" />
+          </UFormField>
+          <UFormField label="Event Type">
+            <UInput v-model="editEventForm.eventType" placeholder="WoE" class="w-full" />
+          </UFormField>
+          <UFormField label="Event Date">
+            <UInput v-model="editEventForm.startsAt" type="date" class="w-full" />
+          </UFormField>
+          <UFormField label="Main Commander">
+            <USelect
+              v-model="editEventForm.mainCommanderPlayerId"
+              :items="[{ label: '— None —', value: '' }, ...commanderOptions]"
+              value-key="value"
+              label-key="label"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField label="Sub Commander">
+            <USelect
+              v-model="editEventForm.subCommanderPlayerId"
+              :items="[{ label: '— None —', value: '' }, ...commanderOptions]"
+              value-key="value"
+              label-key="label"
+              class="w-full"
+            />
+          </UFormField>
+        </div>
+
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton color="neutral" variant="soft" @click="showEditEventModal = false">Cancel</UButton>
+            <UButton color="primary" :loading="busy" @click="updateEvent">Save</UButton>
           </div>
         </template>
       </UCard>
