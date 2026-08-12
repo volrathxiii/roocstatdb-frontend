@@ -173,32 +173,39 @@ function startEditGroupNotes(group: PartyGroup) {
   editingGroupNotes.value = group.notes ?? "";
 }
 
-const showCreateEventModal = ref(false);
-const createEventForm = reactive({
+type EventModalMode = 'create' | 'edit';
+
+const showEventModal = ref(false);
+const eventModalMode = ref<EventModalMode>('create');
+const eventForm = reactive({
   name: "",
   eventType: "",
   startsAt: "",
+  mainCommanderPlayerId: null as string | null,
+  subCommanderPlayerId: null as string | null,
 });
 
-const showEditEventModal = ref(false);
-const editEventForm = reactive({
-  name: "",
-  eventType: "",
-  startsAt: "",
-  mainCommanderPlayerId: "",
-  subCommanderPlayerId: "",
-});
+function openNewEventModal() {
+  eventModalMode.value = 'create';
+  eventForm.name = "";
+  eventForm.eventType = "";
+  eventForm.startsAt = "";
+  eventForm.mainCommanderPlayerId = null;
+  eventForm.subCommanderPlayerId = null;
+  showEventModal.value = true;
+}
 
 function openEditEventModal() {
   if (!selectedEvent.value) return;
-  editEventForm.name = selectedEvent.value.name;
-  editEventForm.eventType = selectedEvent.value.eventType ?? "";
-  editEventForm.startsAt = selectedEvent.value.startsAt
+  eventModalMode.value = 'edit';
+  eventForm.name = selectedEvent.value.name;
+  eventForm.eventType = selectedEvent.value.eventType ?? "";
+  eventForm.startsAt = selectedEvent.value.startsAt
     ? new Date(selectedEvent.value.startsAt).toISOString().slice(0, 10)
     : "";
-  editEventForm.mainCommanderPlayerId = selectedEvent.value.mainCommander?.playerId ?? "";
-  editEventForm.subCommanderPlayerId = selectedEvent.value.subCommander?.playerId ?? "";
-  showEditEventModal.value = true;
+  eventForm.mainCommanderPlayerId = selectedEvent.value.mainCommander?.playerId ?? null;
+  eventForm.subCommanderPlayerId = selectedEvent.value.subCommander?.playerId ?? null;
+  showEventModal.value = true;
 }
 
 const showCloneEventModal = ref(false);
@@ -562,68 +569,57 @@ async function postToDiscord() {
   }
 }
 
-async function createEvent() {
+async function saveEvent() {
   if (!canEdit.value) return;
-  const name = createEventForm.name.trim();
+  const name = eventForm.name.trim();
   if (!name) return;
 
   busy.value = true;
   errorMsg.value = null;
   try {
-    const payload: Record<string, string> = {
-      playerId: actorPlayerId.value,
-      name,
-    };
-    if (createEventForm.eventType.trim()) payload.eventType = createEventForm.eventType.trim();
-    if (createEventForm.startsAt) payload.startsAt = new Date(createEventForm.startsAt).toISOString();
+    if (eventModalMode.value === 'create') {
+      // Create mode
+      const payload: Record<string, string | null> = {
+        playerId: actorPlayerId.value,
+        name,
+      };
+      if (eventForm.eventType.trim()) payload.eventType = eventForm.eventType.trim();
+      if (eventForm.startsAt) payload.startsAt = new Date(eventForm.startsAt).toISOString();
+      if (eventForm.mainCommanderPlayerId) payload.mainCommanderPlayerId = eventForm.mainCommanderPlayerId;
+      if (eventForm.subCommanderPlayerId) payload.subCommanderPlayerId = eventForm.subCommanderPlayerId;
 
-    const res = await $fetch<{ event: EventItem }>(`${backendUrl}/api/party-setup/events`, {
-      method: "POST",
-      body: payload,
-    });
+      const res = await $fetch<{ event: EventItem }>(`${backendUrl}/api/party-setup/events`, {
+        method: "POST",
+        body: payload,
+      });
 
-    showCreateEventModal.value = false;
-    createEventForm.name = "";
-    createEventForm.eventType = "";
-    createEventForm.startsAt = "";
+      await fetchEvents();
+      selectedEventId.value = res.event.id;
+      await fetchSetup(res.event.id);
+    } else {
+      // Edit mode
+      if (!selectedEventId.value) return;
+      const body: Record<string, string | null> = {
+        playerId: actorPlayerId.value,
+        name,
+        eventType: eventForm.eventType.trim() || null,
+        startsAt: eventForm.startsAt ? new Date(eventForm.startsAt).toISOString() : null,
+        mainCommanderPlayerId: eventForm.mainCommanderPlayerId ?? null,
+        subCommanderPlayerId: eventForm.subCommanderPlayerId ?? null,
+      };
 
-    await fetchEvents();
-    selectedEventId.value = res.event.id;
-    await fetchSetup(res.event.id);
+      const res = await $fetch<{ event: EventItem }>(`${backendUrl}/api/party-setup/events/${selectedEventId.value}`, {
+        method: "PATCH",
+        body,
+      });
+
+      selectedEvent.value = res.event;
+      await fetchEvents();
+    }
+
+    showEventModal.value = false;
   } catch {
-    errorMsg.value = "Failed to create event.";
-  } finally {
-    busy.value = false;
-  }
-}
-
-async function updateEvent() {
-  if (!canEdit.value || !selectedEventId.value) return;
-  const name = editEventForm.name.trim();
-  if (!name) return;
-
-  busy.value = true;
-  errorMsg.value = null;
-  try {
-    const body: Record<string, string | null> = {
-      playerId: actorPlayerId.value,
-      name,
-      eventType: editEventForm.eventType.trim() || null,
-      startsAt: editEventForm.startsAt ? new Date(editEventForm.startsAt).toISOString() : null,
-      mainCommanderPlayerId: editEventForm.mainCommanderPlayerId || null,
-      subCommanderPlayerId: editEventForm.subCommanderPlayerId || null,
-    };
-
-    const res = await $fetch<{ event: EventItem }>(`${backendUrl}/api/party-setup/events/${selectedEventId.value}`, {
-      method: "PATCH",
-      body,
-    });
-
-    showEditEventModal.value = false;
-    selectedEvent.value = res.event;
-    await fetchEvents();
-  } catch {
-    errorMsg.value = "Failed to update event.";
+    errorMsg.value = eventModalMode.value === 'create' ? "Failed to create event." : "Failed to update event.";
   } finally {
     busy.value = false;
   }
@@ -1378,7 +1374,7 @@ onMounted(async () => {
         color="primary"
         variant="soft"
         icon="i-lucide-calendar-plus"
-        @click="showCreateEventModal = true"
+        @click="openNewEventModal()"
       >
         New Event
       </UButton>
@@ -1786,76 +1782,53 @@ onMounted(async () => {
     </div>
   </div>
 
-  <UModal v-model:open="showCreateEventModal">
+  <UModal v-model:open="showEventModal">
     <template #content>
       <UCard class="border border-cyan-900/40 bg-slate-950">
         <template #header>
-          <span class="font-semibold text-white">Create Event</span>
+          <span class="font-semibold text-white">{{ eventModalMode === 'create' ? 'Create Event' : 'Edit Event' }}</span>
         </template>
 
         <div class="space-y-3">
           <UFormField label="Event Name" required>
-            <UInput v-model="createEventForm.name" placeholder="WoE Saturday" class="w-full" />
+            <UInput v-model="eventForm.name" placeholder="WoE Saturday" class="w-full" />
           </UFormField>
           <UFormField label="Event Type">
-            <UInput v-model="createEventForm.eventType" placeholder="WoE" class="w-full" />
+            <UInput v-model="eventForm.eventType" placeholder="WoE" class="w-full" />
           </UFormField>
           <UFormField label="Event Date">
-            <UInput v-model="createEventForm.startsAt" type="date" class="w-full" />
-          </UFormField>
-        </div>
-
-        <template #footer>
-          <div class="flex justify-end gap-2">
-            <UButton color="neutral" variant="soft" @click="showCreateEventModal = false">Cancel</UButton>
-            <UButton color="primary" :loading="busy" @click="createEvent">Create</UButton>
-          </div>
-        </template>
-      </UCard>
-    </template>
-  </UModal>
-
-  <UModal v-model:open="showEditEventModal">
-    <template #content>
-      <UCard class="border border-cyan-900/40 bg-slate-950">
-        <template #header>
-          <span class="font-semibold text-white">Edit Event</span>
-        </template>
-
-        <div class="space-y-3">
-          <UFormField label="Event Name" required>
-            <UInput v-model="editEventForm.name" placeholder="WoE Saturday" class="w-full" />
-          </UFormField>
-          <UFormField label="Event Type">
-            <UInput v-model="editEventForm.eventType" placeholder="WoE" class="w-full" />
-          </UFormField>
-          <UFormField label="Event Date">
-            <UInput v-model="editEventForm.startsAt" type="date" class="w-full" />
+            <UInput v-model="eventForm.startsAt" type="date" class="w-full" />
           </UFormField>
           <UFormField label="Main Commander">
             <USelect
-              v-model="editEventForm.mainCommanderPlayerId"
-              :items="[{ label: '— None —', value: '' }, ...commanderOptions]"
+              v-model="eventForm.mainCommanderPlayerId"
+              :items="commanderOptions"
               value-key="value"
               label-key="label"
               class="w-full"
+              clearable
+              searchable
+              nullable
             />
           </UFormField>
           <UFormField label="Sub Commander">
             <USelect
-              v-model="editEventForm.subCommanderPlayerId"
-              :items="[{ label: '— None —', value: '' }, ...commanderOptions]"
+              v-model="eventForm.subCommanderPlayerId"
+              :items="commanderOptions"
               value-key="value"
               label-key="label"
               class="w-full"
+              clearable
+              searchable
+              nullable
             />
           </UFormField>
         </div>
 
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton color="neutral" variant="soft" @click="showEditEventModal = false">Cancel</UButton>
-            <UButton color="primary" :loading="busy" @click="updateEvent">Save</UButton>
+            <UButton color="neutral" variant="soft" @click="showEventModal = false">Cancel</UButton>
+            <UButton color="primary" :loading="busy" @click="saveEvent">{{ eventModalMode === 'create' ? 'Create' : 'Save' }}</UButton>
           </div>
         </template>
       </UCard>
