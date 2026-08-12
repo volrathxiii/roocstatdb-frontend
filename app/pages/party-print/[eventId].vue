@@ -67,15 +67,35 @@ useHead({
     },
     {
       name: "og:description",
-      content: "Party setup for guild event",
+      content: computed(() => `Guild party setup: ${event.value?.name ?? "Event"}`),
     },
     {
       name: "og:type",
       content: "website",
     },
     {
+      name: "og:url",
+      content: computed(() => typeof window !== "undefined" ? window.location.href : ""),
+    },
+    {
+      name: "og:image",
+      content: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='630'%3E%3Crect fill='%236366f1' width='1200' height='630'/%3E%3Ctext x='50%25' y='50%25' font-size='72' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif'%3EParty Setup%3C/text%3E%3C/svg%3E",
+    },
+    {
+      name: "og:image:width",
+      content: "1200",
+    },
+    {
+      name: "og:image:height",
+      content: "630",
+    },
+    {
       name: "twitter:card",
-      content: "summary",
+      content: "summary_large_image",
+    },
+    {
+      name: "twitter:image",
+      content: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='630'%3E%3Crect fill='%236366f1' width='1200' height='630'/%3E%3Ctext x='50%25' y='50%25' font-size='72' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif'%3EParty Setup%3C/text%3E%3C/svg%3E",
     },
   ],
 });
