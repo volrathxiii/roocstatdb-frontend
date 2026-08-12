@@ -10,7 +10,19 @@
     "postinstall": "nuxt prepare",
     "serve": "yarn dev",
     "serve:prod": "yarn dev",
-    "deploy:ci": "yarn build && node .output/server/index.mjs"
+    "deploy:ci": "yarn build && node .output/server/index.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@nuxt/test-utils": "3.16.0",
+    "@types/node": "^26.2.0",
+    "@vitest/ui": "^4.1.10",
+    "@vue/test-utils": "^2.4.11",
+    "happy-dom": "^20.11.2",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.123",
