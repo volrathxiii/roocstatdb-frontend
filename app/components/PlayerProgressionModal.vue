@@ -57,6 +57,15 @@ interface SearchPlayer {
   jobClass: string | null;
 }
 
+interface JobClass { id: number; name: string; }
+interface ClassRole { id: number; name: string; }
+interface ClassGroupOption {
+  jobId: number;
+  classRoleId: number;
+  label: string;
+  count: number;
+}
+
 const snapshots = ref<Snapshot[]>([]);
 const scores = ref<ScoresResponse | null>(null);
 const playerRank = ref<RankResponse | null>(null);
@@ -72,15 +81,59 @@ const compareInputRef = ref<HTMLInputElement | null>(null);
 const compareTarget = ref<SearchPlayer | null>(null);
 const showCompareModal = ref(false);
 
+// Class group search state
+const allJobClasses = ref<JobClass[]>([]);
+const allClassRoles = ref<ClassRole[]>([]);
+const classGroupCounts = ref<Map<string, number>>(new Map());
+const classGroupsLoaded = ref(false);
+const classGroupResults = ref<ClassGroupOption[]>([]);
+const showClassGroupModal = ref(false);
+const classGroupTarget = ref<ClassGroupOption | null>(null);
+
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function loadClassGroups() {
+  if (classGroupsLoaded.value) return;
+  try {
+    const [jobs, roles, counts] = await Promise.all([
+      $fetch<JobClass[]>(`${backendUrl}/api/ref-data/job-classes`),
+      $fetch<ClassRole[]>(`${backendUrl}/api/ref-data/class-roles`),
+      $fetch<{ jobId: number; classRoleId: number; count: number }[]>(`${backendUrl}/api/stat-snapshots/class-group-counts`),
+    ]);
+    allJobClasses.value = jobs;
+    allClassRoles.value = roles;
+    const map = new Map<string, number>();
+    for (const c of counts) map.set(`${c.jobId}:${c.classRoleId}`, c.count);
+    classGroupCounts.value = map;
+    classGroupsLoaded.value = true;
+  } catch { /* non-critical */ }
+}
+
+function filterClassGroups(q: string) {
+  const lower = q.toLowerCase();
+  const results: ClassGroupOption[] = [];
+  for (const job of allJobClasses.value) {
+    for (const role of allClassRoles.value) {
+      const label = `${job.name} · ${role.name}`;
+      if (label.toLowerCase().includes(lower)) {
+        const count = classGroupCounts.value.get(`${job.id}:${role.id}`) ?? 0;
+        if (count > 0) results.push({ jobId: job.id, classRoleId: role.id, label, count });
+      }
+    }
+  }
+  classGroupResults.value = results.slice(0, 8);
+}
 
 function onCompareInput() {
   showDropdown.value = true;
   if (searchTimer) clearTimeout(searchTimer);
-  if (!compareQuery.value.trim()) {
+  const q = compareQuery.value.trim();
+  if (!q) {
     compareResults.value = [];
+    classGroupResults.value = [];
     return;
   }
+  filterClassGroups(q);
   searchTimer = setTimeout(async () => {
     compareSearching.value = true;
     try {
@@ -101,6 +154,13 @@ function selectComparePlayer(player: SearchPlayer) {
   showDropdown.value = false;
   compareQuery.value = "";
   showCompareModal.value = true;
+}
+
+function selectClassGroup(group: ClassGroupOption) {
+  classGroupTarget.value = group;
+  showDropdown.value = false;
+  compareQuery.value = "";
+  showClassGroupModal.value = true;
 }
 
 function closeDropdown() {
@@ -225,7 +285,7 @@ const classRoleChanged = computed(
             placeholder="Compare…"
             class="w-full rounded-lg border border-slate-600 bg-slate-800 pl-8 pr-7 py-1.5 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
             @input="onCompareInput"
-            @focus="showDropdown = true"
+            @focus="showDropdown = true; loadClassGroups()"
             @blur="closeDropdown"
           />
           <UIcon
@@ -236,22 +296,47 @@ const classRoleChanged = computed(
 
           <!-- Dropdown -->
           <div
-            v-if="showDropdown && (compareResults.length > 0 || (compareQuery.trim() && !compareSearching))"
-            class="absolute right-0 top-full z-20 mt-1 w-64 rounded-lg border border-slate-700 bg-slate-800 shadow-xl overflow-hidden"
+            v-if="showDropdown && (compareResults.length > 0 || classGroupResults.length > 0 || (compareQuery.trim() && !compareSearching))"
+            class="absolute right-0 top-full z-20 mt-1 w-72 rounded-lg border border-slate-700 bg-slate-800 shadow-xl overflow-hidden"
           >
-            <div v-if="compareResults.length === 0" class="px-4 py-3 text-sm text-slate-400">
-              No players found.
-            </div>
-            <button
-              v-for="player in compareResults"
-              :key="player.id"
-              type="button"
-              class="flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-slate-700 transition-colors"
-              @mousedown.prevent="selectComparePlayer(player)"
+            <!-- Players section -->
+            <template v-if="compareResults.length > 0">
+              <div class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500 bg-slate-900/60">Players</div>
+              <button
+                v-for="player in compareResults"
+                :key="player.id"
+                type="button"
+                class="flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-slate-700 transition-colors"
+                @mousedown.prevent="selectComparePlayer(player)"
+              >
+                <span class="text-sm font-medium text-white">{{ player.ign }}</span>
+                <span class="text-xs text-slate-400">{{ player.jobClass ?? '—' }}</span>
+              </button>
+            </template>
+
+            <!-- Class groups section -->
+            <template v-if="classGroupResults.length > 0">
+              <div class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500 bg-slate-900/60">Class Groups</div>
+              <button
+                v-for="group in classGroupResults"
+                :key="group.jobId + '-' + group.classRoleId"
+                type="button"
+                class="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-slate-700 transition-colors"
+                @mousedown.prevent="selectClassGroup(group)"
+              >
+                <UIcon name="i-lucide-users" class="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+                <span class="text-sm font-medium text-white flex-1">{{ group.label }}</span>
+                <span class="text-xs text-slate-400">{{ group.count }}</span>
+              </button>
+            </template>
+
+            <!-- Empty state -->
+            <div
+              v-if="compareResults.length === 0 && classGroupResults.length === 0"
+              class="px-4 py-3 text-sm text-slate-400"
             >
-              <span class="text-sm font-medium text-white">{{ player.ign }}</span>
-            <span class="text-xs text-slate-400">{{ player.jobClass ?? '—' }}</span>
-            </button>
+              No players or class groups found.
+            </div>
           </div>
         </div>
 
@@ -411,5 +496,16 @@ const classRoleChanged = computed(
     :ign-a="ign"
     :ign-b="compareTarget.ign"
     @close="showCompareModal = false"
+  />
+
+  <!-- Class group modal -->
+  <PlayerClassGroupModal
+    v-if="showClassGroupModal && classGroupTarget"
+    :job-id="classGroupTarget.jobId"
+    :class-role-id="classGroupTarget.classRoleId"
+    :label="classGroupTarget.label"
+    :active-player-id="props.playerId"
+    :include-player-id="props.playerStringId"
+    @close="showClassGroupModal = false"
   />
 </template>

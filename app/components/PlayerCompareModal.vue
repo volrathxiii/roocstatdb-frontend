@@ -15,6 +15,8 @@ interface Snapshot {
   eqMdef: number;
   eqPdefPct: number;
   eqMdefPct: number;
+  rawPdef: number;
+  rawMdef: number;
   pDmgPct: number;
   pDmgReductionPct: number;
   mDmgPct: number;
@@ -71,6 +73,7 @@ onMounted(async () => {
 type StatKey =
   | "patk" | "matk" | "ignorePdef" | "ignoreMdef"
   | "eqPdef" | "eqMdef" | "eqPdefPct" | "eqMdefPct"
+  | "rawPdef" | "rawMdef"
   | "pDmgPct" | "pDmgReductionPct" | "mDmgPct" | "mDmgReductionPct"
   | "dmgVsDemiHuman" | "dmgReductionVsDemiHuman"
   | "dmgVsMedium" | "dmgReductionVsMedium"
@@ -101,8 +104,8 @@ const STAT_GROUPS: { heading: string; stats: StatDef[] }[] = [
   {
     heading: "Defense",
     stats: [
-      { key: "eqPdef",                  label: "EQ PDEF",             format: fmtFp  },
-      { key: "eqMdef",                  label: "EQ MDEF",             format: fmtFp  },
+      { key: "rawPdef",                 label: "Raw PDEF",            format: fmtFp  },
+      { key: "rawMdef",                 label: "Raw MDEF",            format: fmtFp  },
       { key: "pDmgReductionPct",        label: "P DMG Red %",         format: fmtPct },
       { key: "mDmgReductionPct",        label: "M DMG Red %",         format: fmtPct },
       { key: "dmgReductionVsDemiHuman", label: "vs Demi-Human Red %", format: fmtPct },
