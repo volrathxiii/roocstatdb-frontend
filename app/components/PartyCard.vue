@@ -6,6 +6,13 @@ interface Snapshot {
   classRole: string;
 }
 
+interface Suggestion {
+  job: string;
+  jobId: number;
+  classRole: string;
+  classRoleId: number;
+}
+
 interface PartyMember {
   id: number;
   ign: string;
@@ -13,6 +20,7 @@ interface PartyMember {
   role: string | null;
   position: number;
   snapshot: Snapshot | null;
+  suggestion: Suggestion | null;
 }
 
 type StatKey = "physical" | "magic" | "defensive";
@@ -58,6 +66,8 @@ const emit = defineEmits<{
   "commit-edit-note": [party: Party];
   "delete-party": [party: Party];
   "remove-from-party": [party: Party, memberId: number];
+  "suggest-class": [party: Party, member: PartyMember];
+  "open-progression": [member: PartyMember];
   "drag-over-party": [event: DragEvent];
   "drop-to-party": [event: DragEvent, party: Party];
   "drag-over-member-zone": [event: DragEvent];
@@ -249,10 +259,52 @@ function onPartyDragEnd() {
           >
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
-                <p class="text-sm font-medium text-slate-100">{{ member.ign }}</p>
-                <span :class="['text-xs', jobTextClass(member.snapshot?.job)]">{{ member.snapshot?.job ?? "Unknown" }}</span>
-                <span class="text-xs text-slate-500">·</span>
-                <span :class="['text-xs', classRoleTextClass(member.snapshot?.classRole)]">{{ member.snapshot?.classRole ?? "Unknown" }}</span>
+                <button
+                  type="button"
+                  class="text-sm font-medium text-slate-100 hover:text-white hover:underline"
+                  title="View progression"
+                  @click.stop="emit('open-progression', member)"
+                >{{ member.ign }}</button>
+                <!-- Current job class -->
+                <template v-if="!member.suggestion || member.suggestion.job === member.snapshot?.job">
+                  <span :class="['text-xs', jobTextClass(member.snapshot?.job)]">
+                    {{ member.snapshot?.job ?? "Unknown" }}
+                  </span>
+                </template>
+                <template v-else>
+                  <span :class="['text-xs', 'line-through', 'opacity-60', jobTextClass(member.snapshot?.job)]">
+                    {{ member.snapshot?.job ?? "Unknown" }}
+                  </span>
+                </template>
+                <!-- Current class role -->
+                <template v-if="!member.suggestion || (member.suggestion.job === member.snapshot?.job && member.suggestion.classRole === member.snapshot?.classRole)">
+                  <span class="text-xs text-slate-500">-</span>
+                  <span :class="['text-xs', classRoleTextClass(member.snapshot?.classRole)]">
+                    {{ member.snapshot?.classRole ?? "Unknown" }}
+                  </span>
+                </template>
+                <template v-else-if="member.suggestion.job === member.snapshot?.job">
+                  <!-- Same job, different role -->
+                  <span class="text-xs text-slate-500">-</span>
+                  <span :class="['text-xs', 'line-through', 'opacity-60', classRoleTextClass(member.snapshot?.classRole)]">
+                    {{ member.snapshot?.classRole ?? "Unknown" }}
+                  </span>
+                </template>
+                <!-- Suggested class -->
+                <template v-if="member.suggestion && (member.suggestion.job !== member.snapshot?.job || member.suggestion.classRole !== member.snapshot?.classRole)">
+                  <template v-if="member.suggestion.job === member.snapshot?.job">
+                    <!-- Same job, different role - show only role -->
+                    <span class="text-xs font-semibold text-amber-400">
+                      → {{ member.suggestion.classRole }}
+                    </span>
+                  </template>
+                  <template v-else>
+                    <!-- Different job - show job and role -->
+                    <span class="text-xs font-semibold text-amber-400">
+                      → {{ member.suggestion.job }} - {{ member.suggestion.classRole }}
+                    </span>
+                  </template>
+                </template>
               </div>
               <div v-if="classRanksByPlayerId" class="mt-1.5 flex flex-wrap gap-1">
                 <span
@@ -281,7 +333,19 @@ function onPartyDragEnd() {
                 </span>
               </div>
             </div>
-            <UButton v-if="canEdit" color="error" variant="ghost" size="xs" icon="i-lucide-x" :disabled="busy" @click="emit('remove-from-party', party, member.id)" />
+            <div class="flex shrink-0 gap-1">
+              <UButton
+                v-if="canEdit"
+                color="warning"
+                variant="ghost"
+                size="xs"
+                icon="i-lucide-lightbulb"
+                :class="member.suggestion ? 'opacity-100' : 'opacity-45'"
+                :disabled="busy"
+                title="Suggest Job Class"
+                @click="emit('suggest-class', party, member)"
+              />
+            </div>
           </div>
         </div>
         <!-- Drop zone after last member -->
@@ -319,8 +383,8 @@ function onPartyDragEnd() {
           :class="canEdit ? 'cursor-pointer hover:bg-slate-800/40' : ''"
           @click="canEdit ? emit('start-edit-note', party) : undefined"
         >
-          <UIcon name="i-lucide-notebook" class="mt-0.5 h-3 w-3 shrink-0 text-slate-400" />
-          <p class="text-[11px] leading-snug text-slate-300">{{ party.notes }}</p>
+          <UIcon name="i-lucide-notebook" class="mt-0.5 h-3 w-3 shrink-0 text-amber-400" />
+          <p class="text-[11px] leading-snug text-amber-400">{{ party.notes }}</p>
         </div>
         <button
           v-else-if="canEdit"

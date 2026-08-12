@@ -18,6 +18,12 @@ interface PartyMember {
     job: string;
     classRole: string;
   } | null;
+  suggestion: {
+    job: string;
+    jobId: number;
+    classRole: string;
+    classRoleId: number;
+  } | null;
 }
 
 interface Party {
@@ -177,6 +183,24 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString("en-US", {
     weekday: "short", month: "short", day: "numeric", year: "numeric",
   });
+}
+
+function memberSuggestionChanged(member: PartyMember) {
+  if (!member.suggestion) return false;
+  if (!member.snapshot) return true;
+  return member.suggestion.job !== member.snapshot.job
+    || member.suggestion.classRole !== member.snapshot.classRole;
+}
+
+function memberDisplayJob(member: PartyMember) {
+  if (memberSuggestionChanged(member) && member.suggestion?.job) {
+    return member.suggestion.job;
+  }
+  return member.snapshot?.job ?? null;
+}
+
+function shouldShowSuggestionIcon(member: PartyMember) {
+  return memberSuggestionChanged(member);
 }
 
 function hashText(value: string) {
@@ -355,7 +379,6 @@ const subGroupLegendEntries = computed(() => groupLegendEntriesByCategory("Sub")
         </div>
         <div class="meta">
           <span v-if="event.startsAt">Event Date: {{ formatDate(event.startsAt) }}</span>
-          <span class="status">{{ event.status }}</span>
         </div>
       </div>
 
@@ -363,7 +386,10 @@ const subGroupLegendEntries = computed(() => groupLegendEntriesByCategory("Sub")
       <div v-if="hasMainContent" class="category-section">
         <h2 class="category-label main">
           Main Battlefield
-          <span v-if="event.mainCommander" class="commander-tag">⚔ {{ event.mainCommander.ign }}</span>
+          <span v-if="event.mainCommander" class="commander-tag">
+            <UIcon name="i-lucide-shield" class="commander-icon" />
+            {{ event.mainCommander.ign }}
+          </span>
         </h2>
         <div class="category-row">
         <aside v-if="mainGroupLegendEntries.length > 0" class="legend-panel">
@@ -387,14 +413,28 @@ const subGroupLegendEntries = computed(() => groupLegendEntriesByCategory("Sub")
                 <tbody>
                   <tr v-for="member in party.members" :key="member.id">
                     <td class="member-inline">
-                      <span class="member-name">{{ member.ign }}</span>
+                      <span class="member-name-wrap">
+                        <span class="member-name">{{ member.ign }}</span>
+                      </span>
                       <span
+                        v-if="!shouldShowSuggestionIcon(member)"
                         class="job-pill"
-                        :style="member.snapshot
-                          ? jobPillStyle(member.snapshot.job)
+                        :style="memberDisplayJob(member)
+                          ? jobPillStyle(memberDisplayJob(member)!)
                           : undefined"
                       >
-                        {{ member.snapshot?.job ?? "—" }}
+                        {{ memberDisplayJob(member) ?? "—" }}
+                      </span>
+                      <span
+                        v-else
+                        class="job-pill suggestion-job-pill"
+                        :style="member.suggestion?.job
+                          ? jobPillStyle(member.suggestion.job)
+                          : undefined"
+                        title="Suggested class change"
+                      >
+                        {{ member.suggestion?.job ?? memberDisplayJob(member) ?? "—" }}
+                        <UIcon name="i-lucide-lightbulb" class="suggestion-icon" />
                       </span>
                     </td>
                   </tr>
@@ -413,7 +453,10 @@ const subGroupLegendEntries = computed(() => groupLegendEntriesByCategory("Sub")
       <div v-if="hasSubContent" class="category-section">
         <h2 class="category-label sub">
           Sub Battlefield
-          <span v-if="event.subCommander" class="commander-tag commander-tag-sub">⚔ {{ event.subCommander.ign }}</span>
+          <span v-if="event.subCommander" class="commander-tag commander-tag-sub">
+            <UIcon name="i-lucide-shield" class="commander-icon" />
+            {{ event.subCommander.ign }}
+          </span>
         </h2>
         <div class="category-row">
         <aside v-if="subGroupLegendEntries.length > 0" class="legend-panel">
@@ -437,14 +480,28 @@ const subGroupLegendEntries = computed(() => groupLegendEntriesByCategory("Sub")
                 <tbody>
                   <tr v-for="member in party.members" :key="member.id">
                     <td class="member-inline">
-                      <span class="member-name">{{ member.ign }}</span>
+                      <span class="member-name-wrap">
+                        <span class="member-name">{{ member.ign }}</span>
+                      </span>
                       <span
+                        v-if="!shouldShowSuggestionIcon(member)"
                         class="job-pill"
-                        :style="member.snapshot
-                          ? jobPillStyle(member.snapshot.job)
+                        :style="memberDisplayJob(member)
+                          ? jobPillStyle(memberDisplayJob(member)!)
                           : undefined"
                       >
-                        {{ member.snapshot?.job ?? "—" }}
+                        {{ memberDisplayJob(member) ?? "—" }}
+                      </span>
+                      <span
+                        v-else
+                        class="job-pill suggestion-job-pill"
+                        :style="member.suggestion?.job
+                          ? jobPillStyle(member.suggestion.job)
+                          : undefined"
+                        title="Suggested class change"
+                      >
+                        {{ member.suggestion?.job ?? memberDisplayJob(member) ?? "—" }}
+                        <UIcon name="i-lucide-lightbulb" class="suggestion-icon" />
                       </span>
                     </td>
                   </tr>
@@ -494,7 +551,6 @@ const subGroupLegendEntries = computed(() => groupLegendEntriesByCategory("Sub")
 .page-header h1 { font-size: 20px; font-weight: 700; }
 .event-type { font-size: 11px; color: #64748b; margin-top: 2px; }
 .meta { text-align: right; font-size: 11px; color: #475569; display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
-.status { font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* Category labels */
 .category-label {
@@ -511,11 +567,18 @@ const subGroupLegendEntries = computed(() => groupLegendEntriesByCategory("Sub")
 .category-label.sub  { color: #475569; }
 
 .commander-tag {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0;
   color: #b45309;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.commander-icon {
+  width: 14px;
+  height: 14px;
 }
 .commander-tag-sub {
   color: #64748b;
@@ -709,16 +772,32 @@ const subGroupLegendEntries = computed(() => groupLegendEntriesByCategory("Sub")
   justify-content: space-between;
   gap: 8px;
 }
+.members-table td.member-inline .member-name-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
 .members-table td.member-inline .member-name { font-weight: 700; }
 .members-table td.member-inline .job-pill {
   border: 1px solid #94a3b8;
   background: #334155;
   border-radius: 999px;
-  padding: 2px 8px;
-  font-size: 11px;
+  padding: 3px 10px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.2;
   white-space: nowrap;
+}
+.members-table td.member-inline .suggestion-job-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45);
+}
+.members-table td.member-inline .suggestion-icon {
+  width: 12px;
+  height: 12px;
 }
 .empty-row td { color: #cbd5e1; text-align: center; }
 

@@ -13,7 +13,7 @@ interface EventItem {
   shareToken: string;
   name: string;
   eventType: string | null;
-  status: "Draft" | "Locked" | "Archived";
+  status: "Locked" | "Archived";
   startsAt: string | null;
   endsAt: string | null;
   updatedAt: string;
@@ -33,6 +33,12 @@ interface PartyMember {
     year: number;
     job: string;
     classRole: string;
+  } | null;
+  suggestion: {
+    job: string;
+    jobId: number;
+    classRole: string;
+    classRoleId: number;
   } | null;
 }
 
@@ -60,7 +66,7 @@ interface SetupResponse {
     shareToken: string;
     name: string;
     eventType: string | null;
-    status: "Draft" | "Locked" | "Archived";
+    status: "Locked" | "Archived";
     startsAt: string | null;
     endsAt: string | null;
     mainCommander: { ign: string; playerId: string } | null;
@@ -86,6 +92,16 @@ interface RosterPlayer {
   } | null;
 }
 
+interface RefJob {
+  id: number;
+  name: string;
+}
+
+interface RefClassRole {
+  id: number;
+  name: string;
+}
+
 interface PartyPresetRecord {
   id: number;
   position: number;
@@ -108,6 +124,17 @@ const busy = ref(false);
 const isDraggingMember = ref(false);
 const hoveredDropZone = ref<string | null>(null);
 const errorMsg = ref<string | null>(null);
+
+// Suggestion modal state
+const showSuggestionModal = ref(false);
+const suggestionMember = ref<PartyMember | null>(null);
+const suggestionPartyId = ref<number | null>(null);
+const suggestionForm = reactive({
+  jobId: null as number | null,
+  classRoleId: null as number | null,
+});
+const refJobs = ref<RefJob[]>([]);
+const refClassRoles = ref<RefClassRole[]>([]);
 const toast = useToast();
 
 const events = ref<EventItem[]>([]);
@@ -120,6 +147,7 @@ const partyPresets = ref<PartyPreset[]>([]);
 const discordWebhookAvailable = ref(false);
 const discordPosting = ref(false);
 const discordPosted = ref(false);
+const progressionPlayer = ref<{ id: number; playerStringId: string; ign: string } | null>(null);
 const partyDragSourcePartyId = ref<number | null>(null);
 const partyDragSourceGroupId = ref<number | null>(null);
 const partyDragWasHandled = ref(false);
@@ -171,6 +199,22 @@ function startEditGroupNotes(group: PartyGroup) {
   if (!canEdit.value) return;
   editingGroupNotesId.value = group.id;
   editingGroupNotes.value = group.notes ?? "";
+}
+
+function openProgressionForMember(member: PartyMember) {
+  progressionPlayer.value = {
+    id: member.id,
+    playerStringId: member.playerId,
+    ign: member.ign,
+  };
+}
+
+function openProgressionForRosterPlayer(player: RosterPlayer) {
+  progressionPlayer.value = {
+    id: player.id,
+    playerStringId: player.playerId,
+    ign: player.ign,
+  };
 }
 
 type EventModalMode = 'create' | 'edit';
@@ -526,7 +570,7 @@ async function loadAll() {
   loading.value = true;
   errorMsg.value = null;
   try {
-    const fetches: Promise<unknown>[] = [fetchEvents(), fetchRosterPlayers()];
+    const fetches: Promise<unknown>[] = [fetchEvents(), fetchRosterPlayers(), fetchRefData()];
     if (auth.value.role === "Admin") fetches.push(fetchPartyPresets());
     const webhookCheck = $fetch<{ available: boolean }>(`${backendUrl}/api/settings/discord-webhook-available`)
       .then((r) => { discordWebhookAvailable.value = r.available; })
@@ -1346,6 +1390,80 @@ async function applyPreset(preset: PartyPreset) {
   }
 }
 
+async function fetchRefData() {
+  try {
+    const [jobsRes, rolesRes] = await Promise.all([
+      $fetch<RefJob[]>(`${backendUrl}/api/ref-data/job-classes`),
+      $fetch<RefClassRole[]>(`${backendUrl}/api/ref-data/class-roles`),
+    ]);
+    refJobs.value = jobsRes || [];
+    refClassRoles.value = rolesRes || [];
+  } catch {
+    console.error("Failed to fetch ref data");
+  }
+}
+
+function openSuggestionModal(party: Party, member: PartyMember) {
+  if (!canEdit.value) return;
+  suggestionMember.value = member;
+  suggestionPartyId.value = party.id;
+  
+  // Pre-populate form if member already has a suggestion
+  if (member.suggestion) {
+    suggestionForm.jobId = member.suggestion.jobId;
+    suggestionForm.classRoleId = member.suggestion.classRoleId;
+  } else {
+    suggestionForm.jobId = null;
+    suggestionForm.classRoleId = null;
+  }
+  
+  showSuggestionModal.value = true;
+}
+
+async function createMemberSuggestion() {
+  if (!canEdit.value || !suggestionPartyId.value || !suggestionMember.value || !suggestionForm.jobId || !suggestionForm.classRoleId || !selectedEventId.value) return;
+
+  busy.value = true;
+  errorMsg.value = null;
+  try {
+    await $fetch(`${backendUrl}/api/party-setup/parties/${suggestionPartyId.value}/members/${suggestionMember.value.id}/suggestion`, {
+      method: "POST",
+      body: {
+        playerId: actorPlayerId.value,
+        jobId: suggestionForm.jobId,
+        classRoleId: suggestionForm.classRoleId,
+      },
+    });
+
+    showSuggestionModal.value = false;
+    await fetchSetup(selectedEventId.value);
+  } catch {
+    errorMsg.value = "Failed to create suggestion.";
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function deleteMemberSuggestion() {
+  if (!canEdit.value || !suggestionPartyId.value || !suggestionMember.value || !selectedEventId.value) return;
+
+  busy.value = true;
+  errorMsg.value = null;
+  try {
+    await $fetch(`${backendUrl}/api/party-setup/parties/${suggestionPartyId.value}/members/${suggestionMember.value.id}/suggestion`, {
+      method: "DELETE",
+      query: { playerId: actorPlayerId.value },
+    });
+
+    showSuggestionModal.value = false;
+    await fetchSetup(selectedEventId.value);
+  } catch {
+    errorMsg.value = "Failed to remove suggestion.";
+  } finally {
+    busy.value = false;
+  }
+}
+
 watch(selectedEventId, async () => {
   if (selectedEventId.value) await onEventChange();
 });
@@ -1409,14 +1527,6 @@ onMounted(async () => {
         Delete Event
       </UButton>
 
-      <UBadge
-        v-if="selectedEvent"
-        class="ml-auto"
-        color="neutral"
-        variant="soft"
-      >
-        {{ selectedEvent.status }}
-      </UBadge>
     </div>
 
     <div v-if="selectedEvent && (selectedEvent.startsAt || selectedEvent.mainCommander || selectedEvent.subCommander)" class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-400">
@@ -1631,6 +1741,8 @@ onMounted(async () => {
                       @commit-edit-note="commitEditNote"
                       @delete-party="requestDeleteParty"
                       @remove-from-party="removeFromParty"
+                      @suggest-class="openSuggestionModal"
+                      @open-progression="openProgressionForMember"
                       @drag-over-party="onDragOverParty"
                       @drop-to-party="onDropToParty"
                       @drag-over-member-zone="onDragOverMemberZone"
@@ -1674,6 +1786,8 @@ onMounted(async () => {
                     @commit-edit-note="commitEditNote"
                     @delete-party="requestDeleteParty"
                     @remove-from-party="removeFromParty"
+                    @suggest-class="openSuggestionModal"
+                    @open-progression="openProgressionForMember"
                     @drag-over-party="onDragOverParty"
                     @drop-to-party="onDropToParty"
                     @drag-over-member-zone="onDragOverMemberZone"
@@ -1738,7 +1852,12 @@ onMounted(async () => {
             @dragstart="onDragStartPlayer($event, player.id)"
           >
             <div class="flex items-center justify-between">
-              <p class="text-sm font-semibold text-slate-100">{{ player.ign }}</p>
+              <button
+                type="button"
+                class="text-sm font-semibold text-slate-100 hover:text-white hover:underline"
+                title="View progression"
+                @click.stop="openProgressionForRosterPlayer(player)"
+              >{{ player.ign }}</button>
               <span
                 :class="['rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide', roleBadgeClass(player.role)]"
               >
@@ -1801,7 +1920,7 @@ onMounted(async () => {
           </UFormField>
           <UFormField label="Main Commander">
             <USelect
-              v-model="eventForm.mainCommanderPlayerId"
+              v-model:model-value="eventForm.mainCommanderPlayerId"
               :items="commanderOptions"
               value-key="value"
               label-key="label"
@@ -1813,7 +1932,7 @@ onMounted(async () => {
           </UFormField>
           <UFormField label="Sub Commander">
             <USelect
-              v-model="eventForm.subCommanderPlayerId"
+              v-model:model-value="eventForm.subCommanderPlayerId"
               :items="commanderOptions"
               value-key="value"
               label-key="label"
@@ -2004,4 +2123,83 @@ onMounted(async () => {
       </div>
     </template>
   </UModal>
+
+  <!-- Suggestion Modal -->
+  <UModal v-model:open="showSuggestionModal">
+    <template #content>
+      <UCard class="border border-amber-900/40 bg-slate-950">
+        <template #header>
+          <span class="font-semibold text-white">Suggest Job Class for {{ suggestionMember?.ign }}</span>
+        </template>
+
+        <div class="space-y-3">
+          <div v-if="suggestionMember?.snapshot" class="rounded bg-slate-900/50 p-3">
+            <p class="text-xs text-slate-400">Current:</p>
+            <p class="text-sm font-medium text-slate-100">{{ suggestionMember.snapshot.job }} / {{ suggestionMember.snapshot.classRole }}</p>
+          </div>
+
+          <UFormField label="Job Class" required>
+            <USelect
+              v-model:model-value="suggestionForm.jobId"
+              :items="refJobs.map(j => ({ label: j.name, value: j.id }))"
+              value-key="value"
+              label-key="label"
+              class="w-full"
+              searchable
+              clearable
+              nullable
+              placeholder="Select a job class"
+            />
+          </UFormField>
+
+          <UFormField label="Class Role" required>
+            <USelect
+              v-model:model-value="suggestionForm.classRoleId"
+              :items="refClassRoles.map(r => ({ label: r.name, value: r.id }))"
+              value-key="value"
+              label-key="label"
+              class="w-full"
+              searchable
+              clearable
+              nullable
+              placeholder="Select a class role"
+            />
+          </UFormField>
+        </div>
+
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton
+              v-if="suggestionMember?.suggestion"
+              color="error"
+              variant="soft"
+              :loading="busy"
+              @click="deleteMemberSuggestion"
+            >
+              Remove Suggestion
+            </UButton>
+            <UButton color="neutral" variant="soft" :disabled="busy" @click="showSuggestionModal = false">Cancel</UButton>
+            <UButton
+              color="warning"
+              :loading="busy"
+              :disabled="!suggestionForm.jobId || !suggestionForm.classRoleId"
+              @click="createMemberSuggestion"
+            >
+              {{ suggestionMember?.suggestion ? 'Update' : 'Suggest' }}
+            </UButton>
+          </div>
+        </template>
+      </UCard>
+    </template>
+  </UModal>
+
+  <Teleport to="body">
+    <PlayerProgressionModal
+      v-if="progressionPlayer"
+      :player-id="progressionPlayer.id"
+      :player-string-id="progressionPlayer.playerStringId"
+      :ign="progressionPlayer.ign"
+      @close="progressionPlayer = null"
+    />
+  </Teleport>
 </template>
