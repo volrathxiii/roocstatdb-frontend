@@ -58,6 +58,28 @@ const event = ref<SetupResponse["event"] | null>(null);
 const parties = ref<Party[]>([]);
 const groups = ref<PartyGroup[]>([]);
 
+useHead({
+  title: computed(() => event.value?.name ? `${event.value.name} - Party Setup` : "Party Setup"),
+  meta: [
+    {
+      name: "og:title",
+      content: computed(() => event.value?.name ? `${event.value.name} - Party Setup` : "Party Setup"),
+    },
+    {
+      name: "og:description",
+      content: "Party setup for guild event",
+    },
+    {
+      name: "og:type",
+      content: "website",
+    },
+    {
+      name: "twitter:card",
+      content: "summary",
+    },
+  ],
+});
+
 onMounted(async () => {
   if (!shareToken) {
     errorMsg.value = "Invalid print link.";
