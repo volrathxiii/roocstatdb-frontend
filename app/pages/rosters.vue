@@ -494,12 +494,6 @@ async function changePlayerRole(row: FlatRow, role: string) {
   } catch {
     actionError.value = "Failed to update player role. Please try again.";
   }
-  try {
-    await $fetch(`${backendUrl}/api/players/${row.id}`, { method: "DELETE" });
-    await fetchPlayers();
-  } catch {
-    actionError.value = "Failed to delete player. Please try again.";
-  }
 }
 
 function requestDeletePlayer(row: FlatRow) {

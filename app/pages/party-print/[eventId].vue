@@ -4,9 +4,7 @@ definePageMeta({ layout: false });
 const route = useRoute();
 const config = useRuntimeConfig();
 const backendUrl = config.public.backendUrl;
-const { auth } = useAuth();
-
-const eventId = Number(route.params.eventId);
+const shareToken = String(route.params.eventId ?? "");
 
 interface PartyMember {
   id: number;
@@ -43,6 +41,7 @@ interface PartyGroup {
 interface SetupResponse {
   event: {
     id: number;
+    shareToken: string;
     name: string;
     eventType: string | null;
     status: string;
@@ -60,14 +59,14 @@ const parties = ref<Party[]>([]);
 const groups = ref<PartyGroup[]>([]);
 
 onMounted(async () => {
-  if (!auth.value.player) {
-    navigateTo("/login");
+  if (!shareToken) {
+    errorMsg.value = "Invalid print link.";
+    loading.value = false;
     return;
   }
   try {
     const res = await $fetch<SetupResponse>(
-      `${backendUrl}/api/party-setup/events/${eventId}`,
-      { query: { playerId: auth.value.player.playerId } },
+      `${backendUrl}/api/party-setup/public/events/${encodeURIComponent(shareToken)}`,
     );
     event.value = res.event;
     parties.value = [...res.parties].sort((a, b) => a.position - b.position);

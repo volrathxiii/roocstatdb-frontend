@@ -10,6 +10,7 @@ const canEdit = computed(() => auth.value.role === "Officer" || auth.value.role 
 
 interface EventItem {
   id: number;
+  shareToken: string;
   name: string;
   eventType: string | null;
   status: "Draft" | "Locked" | "Archived";
@@ -54,6 +55,7 @@ interface PartyGroup {
 interface SetupResponse {
   event: {
     id: number;
+    shareToken: string;
     name: string;
     eventType: string | null;
     status: "Draft" | "Locked" | "Archived";
@@ -111,6 +113,9 @@ const parties = ref<Party[]>([]);
 const groups = ref<PartyGroup[]>([]);
 const rosterPlayers = ref<RosterPlayer[]>([]);
 const partyPresets = ref<PartyPreset[]>([]);
+const discordWebhookAvailable = ref(false);
+const discordPosting = ref(false);
+const discordPosted = ref(false);
 const partyDragSourcePartyId = ref<number | null>(null);
 const partyDragSourceGroupId = ref<number | null>(null);
 const partyDragWasHandled = ref(false);
@@ -119,9 +124,33 @@ const editingGroupName = ref("");
 const editingGroupNotesId = ref<number | null>(null);
 const editingGroupNotes = ref("");
 const showPreviewModal = ref(false);
+const previewLinkCopied = ref(false);
+
+function copyPreviewLink() {
+  if (!previewUrl.value) return;
+  const url = window.location.origin + previewUrl.value;
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      previewLinkCopied.value = true;
+      setTimeout(() => { previewLinkCopied.value = false; }, 2500);
+    });
+  } else {
+    // Fallback for browsers without clipboard API
+    const el = document.createElement("textarea");
+    el.value = url;
+    el.style.position = "fixed";
+    el.style.opacity = "0";
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand("copy");
+    el.remove();
+    previewLinkCopied.value = true;
+    setTimeout(() => { previewLinkCopied.value = false; }, 2500);
+  }
+}
 
 const previewUrl = computed(() =>
-  selectedEventId.value ? `/party-print/${selectedEventId.value}` : null,
+  selectedEvent.value?.shareToken ? `/party-print/${selectedEvent.value.shareToken}` : null,
 );
 
 function startEditGroupName(group: PartyGroup) {
@@ -464,7 +493,10 @@ async function loadAll() {
   try {
     const fetches: Promise<unknown>[] = [fetchEvents(), fetchRosterPlayers()];
     if (auth.value.role === "Admin") fetches.push(fetchPartyPresets());
-    await Promise.all(fetches);
+    const webhookCheck = $fetch<{ available: boolean }>(`${backendUrl}/api/settings/discord-webhook-available`)
+      .then((r) => { discordWebhookAvailable.value = r.available; })
+      .catch(() => {});
+    await Promise.all([...fetches, webhookCheck]);
     if (selectedEventId.value) {
       await fetchSetup(selectedEventId.value);
     }
@@ -482,6 +514,23 @@ async function onEventChange() {
     await fetchSetup(selectedEventId.value);
   } catch {
     errorMsg.value = "Failed to load selected event.";
+  }
+}
+
+async function postToDiscord() {
+  if (!selectedEventId.value || discordPosting.value) return;
+  discordPosting.value = true;
+  try {
+    await $fetch(`${backendUrl}/api/party-setup/events/${selectedEventId.value}/notify-discord`, {
+      method: "POST",
+      body: { playerId: actorPlayerId.value, printBaseUrl: window.location.origin },
+    });
+    discordPosted.value = true;
+    setTimeout(() => { discordPosted.value = false; }, 3000);
+  } catch {
+    errorMsg.value = "Failed to post to Discord.";
+  } finally {
+    discordPosting.value = false;
   }
 }
 
@@ -1326,6 +1375,17 @@ onMounted(async () => {
             >
               Preview
             </UButton>
+
+            <UButton
+              v-if="discordWebhookAvailable && selectedEventId && parties.length > 0"
+              color="neutral"
+              variant="outline"
+              :icon="discordPosted ? 'i-lucide-check' : 'i-simple-icons-discord'"
+              :loading="discordPosting"
+              @click="postToDiscord"
+            >
+              {{ discordPosted ? 'Posted!' : 'Post to Discord' }}
+            </UButton>
             <!-- Admin: split button with preset dropdown -->
           <div v-if="auth.role === 'Admin' && selectedEventId" class="flex">
             <UButton
@@ -1810,14 +1870,24 @@ onMounted(async () => {
       <div class="h-screen w-screen overflow-hidden bg-white">
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <p class="text-sm font-semibold text-slate-900">Party Preview</p>
-          <UButton
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-x"
-            @click="showPreviewModal = false"
-          >
-            Close
-          </UButton>
+          <div class="flex items-center gap-2">
+            <UButton
+              color="neutral"
+              variant="outline"
+              :icon="previewLinkCopied ? 'i-lucide-check' : 'i-lucide-link'"
+              @click="copyPreviewLink"
+            >
+              {{ previewLinkCopied ? 'Copied!' : 'Copy Link' }}
+            </UButton>
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-x"
+              @click="showPreviewModal = false"
+            >
+              Close
+            </UButton>
+          </div>
         </div>
         <iframe
           v-if="previewUrl"

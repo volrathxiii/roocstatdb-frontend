@@ -6,11 +6,16 @@ import { upperFirst } from "scule";
 
 definePageMeta({ layout: "authenticated" });
 
+const auth = useAuth();
 const { setSubtitle } = usePageSubtitle();
 const config = useRuntimeConfig();
 const backendUrl = config.public.backendUrl;
 
-onMounted(() => setSubtitle("Applicants"));
+onMounted(() => {
+  if (!auth.value.player) { navigateTo("/login"); return; }
+  if (auth.value.role !== "Officer" && auth.value.role !== "Admin") { navigateTo("/dashboard"); return; }
+  setSubtitle("Applicants");
+});
 
 const UBadge = resolveComponent("UBadge");
 

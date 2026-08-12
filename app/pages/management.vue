@@ -35,10 +35,24 @@ interface PartyPreset {
   updatedAt: string;
 }
 
+// ── Types ── (settings) ─────────────────────────────────────────────────────
+interface AppSetting {
+  key: string;
+  label: string;
+  description: string;
+  defaultValue: string;
+  value: string;
+  isOverridden: boolean;
+}
+
 // ── State ────────────────────────────────────────────────────────────────────
 const jobClasses  = ref<RefItem[]>([]);
 const classRoles  = ref<RefItem[]>([]);
 const partyPresets = ref<PartyPreset[]>([]);
+const appSettings = ref<AppSetting[]>([]);
+const settingDrafts = ref<Record<string, string>>({});
+const settingSaving = ref<Record<string, boolean>>({});
+const settingSaved  = ref<Record<string, boolean>>({});
 
 const modal = reactive({
   open:    false,
@@ -80,16 +94,50 @@ const canAddPresetRecord = computed(() => presetModal.records.length < 5);
 
 // ── Fetch ────────────────────────────────────────────────────────────────────
 async function fetchAll() {
-  const [j, c, p] = await Promise.all([
+  const [j, c, p, s] = await Promise.all([
     $fetch<RefItem[]>(`${backendUrl}/api/ref-data/job-classes`),
     $fetch<RefItem[]>(`${backendUrl}/api/ref-data/class-roles`),
     $fetch<{ presets: PartyPreset[] }>(`${backendUrl}/api/party-presets`, {
       query: { playerId: actorPlayerId.value },
     }),
+    $fetch<AppSetting[]>(`${backendUrl}/api/settings`, {
+      query: { playerId: actorPlayerId.value },
+    }),
   ]);
-  jobClasses.value  = j;
-  classRoles.value  = c;
+  jobClasses.value   = j;
+  classRoles.value   = c;
   partyPresets.value = p.presets;
+  appSettings.value  = s;
+  settingDrafts.value = Object.fromEntries(s.map((setting) => [setting.key, setting.value]));
+}
+
+async function saveSetting(key: string) {
+  settingSaving.value[key] = true;
+  try {
+    await $fetch(`${backendUrl}/api/settings/${encodeURIComponent(key)}`, {
+      method: "PUT",
+      body: { playerId: actorPlayerId.value, value: settingDrafts.value[key] ?? "" },
+    });
+    const setting = appSettings.value.find((s) => s.key === key);
+    if (setting) { setting.value = settingDrafts.value[key] ?? ""; setting.isOverridden = true; }
+    settingSaved.value[key] = true;
+    setTimeout(() => { settingSaved.value[key] = false; }, 2500);
+  } finally {
+    settingSaving.value[key] = false;
+  }
+}
+
+async function resetSetting(key: string) {
+  await $fetch(`${backendUrl}/api/settings/${encodeURIComponent(key)}`, {
+    method: "DELETE",
+    query: { playerId: actorPlayerId.value },
+  });
+  const setting = appSettings.value.find((s) => s.key === key);
+  if (setting) {
+    setting.value = setting.defaultValue;
+    setting.isOverridden = false;
+    settingDrafts.value[key] = setting.defaultValue;
+  }
 }
 
 onMounted(fetchAll);
@@ -315,6 +363,62 @@ async function confirmDeletePreset() {
         </li>
         <li v-if="!classRoles.length" class="py-3 text-center text-sm text-slate-500">
           No class roles yet.
+        </li>
+      </ul>
+    </UCard>
+
+    <!-- Settings card -->
+    <UCard class="border border-cyan-900/40 bg-slate-950/70">
+      <template #header>
+        <div class="flex items-center gap-2">
+          <UIcon name="i-lucide-settings-2" class="h-4 w-4 text-slate-400" />
+          <span class="font-semibold text-white">Settings</span>
+        </div>
+      </template>
+
+      <ul class="divide-y divide-slate-800">
+        <li
+          v-for="setting in appSettings"
+          :key="setting.key"
+          class="py-3"
+        >
+          <div class="mb-1.5 flex items-start justify-between gap-2">
+            <div>
+              <p class="text-sm font-medium text-slate-200">{{ setting.label }}</p>
+              <p class="text-xs text-slate-500">{{ setting.description }}</p>
+            </div>
+            <UButton
+              v-if="setting.isOverridden"
+              icon="i-lucide-rotate-ccw"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              title="Reset to default"
+              @click="resetSetting(setting.key)"
+            />
+          </div>
+          <div class="flex gap-2">
+            <UInput
+              v-model="settingDrafts[setting.key]"
+              :placeholder="setting.defaultValue || 'Not set'"
+              class="flex-1 font-mono text-xs"
+              size="sm"
+              @keyup.enter="saveSetting(setting.key)"
+            />
+            <UButton
+              size="sm"
+              :color="settingSaved[setting.key] ? 'success' : 'primary'"
+              :icon="settingSaved[setting.key] ? 'i-lucide-check' : 'i-lucide-save'"
+              :loading="settingSaving[setting.key]"
+              :disabled="settingDrafts[setting.key] === setting.value"
+              @click="saveSetting(setting.key)"
+            >
+              {{ settingSaved[setting.key] ? 'Saved' : 'Save' }}
+            </UButton>
+          </div>
+        </li>
+        <li v-if="!appSettings.length" class="py-3 text-center text-sm text-slate-500">
+          No settings available.
         </li>
       </ul>
     </UCard>
