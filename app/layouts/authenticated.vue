@@ -35,6 +35,9 @@ const navItems = computed(() => [
   ...(auth.value.role !== "Applicant" && auth.value.role !== "Waitlisted"
     ? [{ label: "Rosters", icon: "i-lucide-users", to: "/rosters", badge: rosterMissingStatsCount.value, badgeClass: "bg-red-500", badgeTooltip: "Members missing this week's stats" }]
     : []),
+  ...(auth.value.role !== "Applicant" && auth.value.role !== "Waitlisted"
+    ? [{ label: "Party Setup", icon: "i-lucide-swords", to: "/party-setup", badge: 0, badgeClass: "bg-sky-500", badgeTooltip: "" }]
+    : []),
   ...(isPrivileged.value
     ? [{ label: "Applicants", icon: "i-lucide-user-plus", to: "/applicants", badge: applicantStatsCount.value, badgeClass: "bg-sky-500", badgeTooltip: "Applicant stat submissions this week" }]
     : []),
