@@ -518,7 +518,7 @@ async function onEventChange() {
 }
 
 async function postToDiscord() {
-  if (!selectedEventId.value || discordPosting.value) return;
+  if (!canEdit.value || !selectedEventId.value || discordPosting.value) return;
   discordPosting.value = true;
   try {
     await $fetch(`${backendUrl}/api/party-setup/events/${selectedEventId.value}/notify-discord`, {
@@ -1367,7 +1367,7 @@ onMounted(async () => {
           <h2 class="text-lg font-semibold text-white">Parties</h2>
           <div class="flex items-center gap-2">
             <UButton
-              v-if="selectedEventId && parties.length > 0"
+              v-if="canEdit && selectedEventId && parties.length > 0"
               color="neutral"
               variant="outline"
               icon="i-lucide-printer"
@@ -1377,7 +1377,7 @@ onMounted(async () => {
             </UButton>
 
             <UButton
-              v-if="discordWebhookAvailable && selectedEventId && parties.length > 0"
+              v-if="canEdit && discordWebhookAvailable && selectedEventId && parties.length > 0"
               color="neutral"
               variant="outline"
               :icon="discordPosted ? 'i-lucide-check' : 'i-simple-icons-discord'"
@@ -1865,7 +1865,7 @@ onMounted(async () => {
     </template>
   </UModal>
 
-  <UModal v-model:open="showPreviewModal" fullscreen>
+  <UModal v-if="canEdit" v-model:open="showPreviewModal" fullscreen>
     <template #content>
       <div class="h-screen w-screen overflow-hidden bg-white">
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
