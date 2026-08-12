@@ -508,6 +508,16 @@ function cancelDeletePlayer() {
   deleteTarget.value = null;
 }
 
+async function deletePlayer(row: FlatRow) {
+  actionError.value = null;
+  try {
+    await $fetch(`${backendUrl}/api/players/${row.id}`, { method: "DELETE" });
+    await fetchPlayers();
+  } catch {
+    actionError.value = "Failed to delete player. Please try again.";
+  }
+}
+
 async function confirmDeletePlayer() {
   if (!deleteTarget.value) return;
   const row = deleteTarget.value;
