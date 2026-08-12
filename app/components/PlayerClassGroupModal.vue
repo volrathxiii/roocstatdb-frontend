@@ -90,6 +90,7 @@ interface StatDef { key: StatKey; label: string; format: (v: number) => string; 
 
 function fmtPct(v: number) { return `${v}%`; }
 function fmtFp(v: number) { return v.toFixed(2); }
+function fmtDelta(v: number) { return v.toFixed(2); }
 
 const STAT_GROUPS: { heading: string; stats: StatDef[] }[] = [
   {
@@ -291,7 +292,7 @@ function deltaVsHighest(key: StatKey, player: PlayerRow): number | null {
                             name="i-lucide-trending-down"
                             class="h-2.5 w-2.5 shrink-0"
                           />
-                          {{ stat.format(Math.abs(deltaVsHighest(stat.key, player)!)) }}
+                          {{ fmtDelta(Math.abs(deltaVsHighest(stat.key, player)!)) }}
                         </span>
                         <span v-else-if="deltaVsHighest(stat.key, player) === 0" class="text-sm text-slate-500">tied</span>
                       </template>
