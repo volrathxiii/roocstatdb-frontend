@@ -118,6 +118,11 @@ const editingGroupId = ref<number | null>(null);
 const editingGroupName = ref("");
 const editingGroupNotesId = ref<number | null>(null);
 const editingGroupNotes = ref("");
+const showPreviewModal = ref(false);
+
+const previewUrl = computed(() =>
+  selectedEventId.value ? `/party-print/${selectedEventId.value}` : null,
+);
 
 function startEditGroupName(group: PartyGroup) {
   if (!canEdit.value) return;
@@ -1317,10 +1322,9 @@ onMounted(async () => {
               color="neutral"
               variant="outline"
               icon="i-lucide-printer"
-              :to="`/party-print/${selectedEventId}`"
-              target="_blank"
+              @click="showPreviewModal = true"
             >
-              Print
+              Preview
             </UButton>
             <!-- Admin: split button with preset dropdown -->
           <div v-if="auth.role === 'Admin' && selectedEventId" class="flex">
@@ -1798,6 +1802,30 @@ onMounted(async () => {
           </div>
         </template>
       </UCard>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="showPreviewModal" fullscreen>
+    <template #content>
+      <div class="h-screen w-screen overflow-hidden bg-white">
+        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <p class="text-sm font-semibold text-slate-900">Party Preview</p>
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-x"
+            @click="showPreviewModal = false"
+          >
+            Close
+          </UButton>
+        </div>
+        <iframe
+          v-if="previewUrl"
+          :src="previewUrl"
+          class="h-[calc(100vh-57px)] w-full border-0 bg-white"
+          title="Party setup print preview"
+        />
+      </div>
     </template>
   </UModal>
 </template>

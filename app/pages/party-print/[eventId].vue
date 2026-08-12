@@ -130,12 +130,12 @@ function formatDate(iso: string | null) {
   });
 }
 
-function colorByText(value: string, palette: string[]) {
+function hashText(value: string) {
   let hash = 0;
   for (let i = 0; i < value.length; i += 1) {
     hash = (hash * 31 + (value.codePointAt(i) ?? 0)) % 2147483647;
   }
-  return palette[Math.abs(hash) % palette.length];
+  return Math.abs(hash);
 }
 
 const JOB_PILL_PALETTE = [
@@ -145,17 +145,71 @@ const JOB_PILL_PALETTE = [
   { bg: "#134e4a", text: "#ccfbf1" },
   { bg: "#831843", text: "#fce7f3" },
   { bg: "#3f3f46", text: "#f4f4f5" },
+  { bg: "#0f766e", text: "#ccfbf1" },
+  { bg: "#1d4ed8", text: "#dbeafe" },
+  { bg: "#9a3412", text: "#ffedd5" },
+  { bg: "#166534", text: "#dcfce7" },
+  { bg: "#6b21a8", text: "#f3e8ff" },
+  { bg: "#b91c1c", text: "#fee2e2" },
+  { bg: "#0e7490", text: "#cffafe" },
+  { bg: "#be185d", text: "#fce7f3" },
+  { bg: "#4338ca", text: "#e0e7ff" },
+  { bg: "#365314", text: "#ecfccb" },
+  { bg: "#a16207", text: "#fef3c7" },
+  { bg: "#374151", text: "#f3f4f6" },
+  { bg: "#0369a1", text: "#e0f2fe" },
+  { bg: "#047857", text: "#d1fae5" },
+  { bg: "#7f1d1d", text: "#fee2e2" },
+  { bg: "#701a75", text: "#fae8ff" },
+  { bg: "#312e81", text: "#e0e7ff" },
+  { bg: "#92400e", text: "#fef3c7" },
+  { bg: "#14532d", text: "#dcfce7" },
+  { bg: "#111827", text: "#f9fafb" },
 ];
 
 function jobPillStyle(job: string) {
-  const bg = colorByText(job, JOB_PILL_PALETTE.map((item) => item.bg));
-  const match = JOB_PILL_PALETTE.find((item) => item.bg === bg) ?? JOB_PILL_PALETTE[0];
+  const match = jobPaletteByName.value.get(job)
+    ?? JOB_PILL_PALETTE[hashText(job) % JOB_PILL_PALETTE.length]
+    ?? JOB_PILL_PALETTE[0];
   return {
     backgroundColor: match.bg,
     color: match.text,
     borderColor: match.bg,
   };
 }
+
+const jobPaletteByName = computed(() => {
+  const jobs = Array.from(
+    new Set(
+      parties.value
+        .flatMap((party) => party.members)
+        .map((member) => member.snapshot?.job)
+        .filter((job): job is string => Boolean(job)),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+
+  const usedIndexes = new Set<number>();
+  const map = new Map<string, { bg: string; text: string }>();
+
+  for (const job of jobs) {
+    const start = hashText(job) % JOB_PILL_PALETTE.length;
+    let selected = start;
+
+    // Prefer unique palette slots for the jobs visible in this preview.
+    for (let step = 0; step < JOB_PILL_PALETTE.length; step += 1) {
+      const idx = (start + step) % JOB_PILL_PALETTE.length;
+      if (!usedIndexes.has(idx)) {
+        selected = idx;
+        usedIndexes.add(idx);
+        break;
+      }
+    }
+
+    map.set(job, JOB_PILL_PALETTE[selected] ?? JOB_PILL_PALETTE[0]);
+  }
+
+  return map;
+});
 
 const GROUP_PALETTE = [
   { border: "#1d4ed8", bg: "#eff6ff", heading: "#1e3a8a", noteBg: "#dbeafe" },
@@ -164,6 +218,26 @@ const GROUP_PALETTE = [
   { border: "#be185d", bg: "#fdf2f8", heading: "#831843", noteBg: "#fbcfe8" },
   { border: "#6d28d9", bg: "#f5f3ff", heading: "#4c1d95", noteBg: "#ddd6fe" },
   { border: "#b45309", bg: "#fff7ed", heading: "#7c2d12", noteBg: "#fed7aa" },
+  { border: "#166534", bg: "#f0fdf4", heading: "#14532d", noteBg: "#dcfce7" },
+  { border: "#0e7490", bg: "#ecfeff", heading: "#155e75", noteBg: "#cffafe" },
+  { border: "#4338ca", bg: "#eef2ff", heading: "#3730a3", noteBg: "#e0e7ff" },
+  { border: "#b91c1c", bg: "#fef2f2", heading: "#7f1d1d", noteBg: "#fee2e2" },
+  { border: "#7e22ce", bg: "#faf5ff", heading: "#581c87", noteBg: "#f3e8ff" },
+  { border: "#365314", bg: "#f7fee7", heading: "#3f6212", noteBg: "#ecfccb" },
+  { border: "#9a3412", bg: "#fff7ed", heading: "#7c2d12", noteBg: "#ffedd5" },
+  { border: "#1f2937", bg: "#f9fafb", heading: "#111827", noteBg: "#e5e7eb" },
+  { border: "#0f172a", bg: "#f8fafc", heading: "#1e293b", noteBg: "#e2e8f0" },
+  { border: "#0d9488", bg: "#f0fdfa", heading: "#115e59", noteBg: "#ccfbf1" },
+  { border: "#4f46e5", bg: "#eef2ff", heading: "#312e81", noteBg: "#c7d2fe" },
+  { border: "#ca8a04", bg: "#fefce8", heading: "#713f12", noteBg: "#fde68a" },
+  { border: "#0369a1", bg: "#f0f9ff", heading: "#0c4a6e", noteBg: "#e0f2fe" },
+  { border: "#047857", bg: "#ecfdf5", heading: "#065f46", noteBg: "#d1fae5" },
+  { border: "#7f1d1d", bg: "#fef2f2", heading: "#7f1d1d", noteBg: "#fee2e2" },
+  { border: "#701a75", bg: "#fdf4ff", heading: "#581c87", noteBg: "#fae8ff" },
+  { border: "#312e81", bg: "#eef2ff", heading: "#312e81", noteBg: "#e0e7ff" },
+  { border: "#92400e", bg: "#fffbeb", heading: "#78350f", noteBg: "#fef3c7" },
+  { border: "#14532d", bg: "#f0fdf4", heading: "#14532d", noteBg: "#dcfce7" },
+  { border: "#155e75", bg: "#ecfeff", heading: "#164e63", noteBg: "#cffafe" },
 ];
 
 function paletteForGroupId(groupId: number) {
