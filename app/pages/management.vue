@@ -1,17 +1,15 @@
 <script setup lang="ts">
+definePageMeta({
+  layout: "authenticated",
+  middleware: "auth-admin",
+});
+
 const { auth } = useAuth();
 const { setSubtitle } = usePageSubtitle();
 const config = useRuntimeConfig();
 const backendUrl = config.public.backendUrl;
 
-definePageMeta({
-  layout: "authenticated",
-});
-
-// Admin-only guard
 onMounted(() => {
-  if (!auth.value.player) return navigateTo("/login");
-  if (auth.value.role !== "Admin") return navigateTo("/dashboard");
   setSubtitle("Management");
 });
 

@@ -6,6 +6,7 @@ const backendUrl = config.public.backendUrl;
 
 definePageMeta({
   layout: "authenticated",
+  middleware: "auth",
 });
 
 interface DashboardStatusResponse {

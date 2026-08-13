@@ -111,40 +111,9 @@ describe("rosters.vue", () => {
   });
 
   // ── Auth guards ─────────────────────────────────────────────────────────────
-
-  describe("auth guards", () => {
-    it("redirects to /login when not logged in", async () => {
-      authState.value = { player: null, isMember: false, role: null };
-      setupDefaultFetches();
-      await mountSuspended(RostersPage);
-      await flushPromises();
-      expect(navigateToMock).toHaveBeenCalledWith("/login");
-    });
-
-    it("redirects to /applicant when role is Applicant", async () => {
-      authState.value = { player: { id: 2, ign: "NewGuy", playerId: "new-001" }, isMember: false, role: "Applicant" };
-      setupDefaultFetches();
-      await mountSuspended(RostersPage);
-      await flushPromises();
-      expect(navigateToMock).toHaveBeenCalledWith("/applicant");
-    });
-
-    it("redirects to /applicant when role is Waitlisted", async () => {
-      authState.value = { player: { id: 3, ign: "WL", playerId: "wl-001" }, isMember: false, role: "Waitlisted" };
-      setupDefaultFetches();
-      await mountSuspended(RostersPage);
-      await flushPromises();
-      expect(navigateToMock).toHaveBeenCalledWith("/applicant");
-    });
-
-    it("does not redirect when role is Member", async () => {
-      authState.value = { player: { id: 4, ign: "Mem", playerId: "m-001" }, isMember: true, role: "Member" };
-      setupDefaultFetches();
-      await mountSuspended(RostersPage);
-      await flushPromises();
-      expect(navigateToMock).not.toHaveBeenCalled();
-    });
-  });
+  // Auth guards are now handled by app/middleware/auth.ts (route middleware).
+  // They cannot be tested at the page component level — the middleware runs
+  // before the component mounts and is a Nuxt router concern.
 
   // ── Data fetching ────────────────────────────────────────────────────────────
 
