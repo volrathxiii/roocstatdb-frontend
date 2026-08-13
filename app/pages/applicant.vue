@@ -71,7 +71,7 @@ watch(() => auth.value.isMember, (isMember) => {
         </div>
       </UCard>
 
-      <StatSnapshotForm v-if="auth.player?.playerId" />
+      <StatSnapshotForm v-if="auth.player?.playerId" :show-builds="false" />
     </div>
   </div>
 </template>

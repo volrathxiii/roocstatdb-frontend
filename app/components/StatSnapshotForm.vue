@@ -1,12 +1,92 @@
 <script setup lang="ts">
+const props = withDefaults(defineProps<{ showBuilds?: boolean }>(), { showBuilds: true });
+
 const api = useApi();
-const config = useRuntimeConfig();
 
 // ── Ref data ────────────────────────────────────────────────────────────────
 interface RefItem { id: number; name: string }
+interface StatBuild { id: number; name: string; isDefault: boolean; createdAt: string }
 
 const jobClasses = ref<RefItem[]>([]);
 const classRoles = ref<RefItem[]>([]);
+
+// ── Build state ──────────────────────────────────────────────────────────────
+const builds = ref<StatBuild[]>([]);
+const selectedBuildId = ref<number | null>(null);
+const newBuildName = ref('');
+const buildModalOpen = ref(false);
+const buildPopoverOpen = ref(false);
+const editingBuildId = ref<number | null>(null);
+const editingName = ref('');
+
+async function fetchBuilds() {
+  const res = await api.get<StatBuild[]>('/api/stat-snapshots/builds');
+  builds.value = [...res].sort((a, b) => a.name.localeCompare(b.name));
+  if (!selectedBuildId.value) {
+    selectedBuildId.value = res.find(b => b.isDefault)?.id ?? res[0]?.id ?? null;
+  }
+}
+
+async function loadSnapshotForBuild(buildId: number) {
+  const res = await api.get<{ snapshot: Record<string, unknown> | null }>(
+    `/api/stat-snapshots/latest?buildId=${buildId}`
+  );
+  savedWeekLabel.value = null;
+  resetForm();
+  if (res.snapshot) applySnapshot(res.snapshot);
+}
+
+async function onBuildChange(buildId: number) {
+  if (buildId === selectedBuildId.value) return;
+  selectedBuildId.value = buildId;
+  buildPopoverOpen.value = false;
+  await loadSnapshotForBuild(buildId);
+}
+
+async function addBuild() {
+  if (!newBuildName.value.trim()) return;
+  await api.post('/api/stat-snapshots/builds', { name: newBuildName.value.trim() });
+  newBuildName.value = '';
+  buildModalOpen.value = false;
+  await fetchBuilds();
+}
+
+function startEdit(build: StatBuild) {
+  editingBuildId.value = build.id;
+  editingName.value = build.name;
+}
+
+function cancelEdit() {
+  editingBuildId.value = null;
+  editingName.value = '';
+}
+
+async function saveEdit(buildId: number) {
+  if (!editingName.value.trim()) return;
+  await api.patch(`/api/stat-snapshots/builds/${buildId}/rename`, { name: editingName.value.trim() });
+  editingBuildId.value = null;
+  await fetchBuilds();
+}
+
+async function setDefault(buildId: number) {
+  await api.patch(`/api/stat-snapshots/builds/${buildId}/set-default`, {});
+  await fetchBuilds();
+}
+
+async function deleteBuild(buildId: number) {
+  await api.del(`/api/stat-snapshots/builds/${buildId}`);
+  const remaining = builds.value.filter(b => b.id !== buildId);
+  const defaultBuild = remaining.find(b => b.isDefault) ?? remaining[0];
+  selectedBuildId.value = defaultBuild?.id ?? null;
+  await fetchBuilds();
+  if (selectedBuildId.value) await loadSnapshotForBuild(selectedBuildId.value);
+}
+
+function resetForm() {
+  form.jobId = null;
+  form.classRoleId = null;
+  for (const k of numericKeys) form[k] = 0;
+}
 
 // ── Form state ──────────────────────────────────────────────────────────────
 const form = reactive({
@@ -85,18 +165,29 @@ function applySnapshot(snapshot: Record<string, unknown>) {
 
 onMounted(async () => {
   try {
-    const [jobRes, roleRes, snapRes] = await Promise.all([
+    const [jobRes, roleRes, buildsRes] = await Promise.all([
       api.get<RefItem[]>("/api/ref-data/job-classes"),
       api.get<RefItem[]>("/api/ref-data/class-roles"),
-      api.get<{ snapshot: Record<string, unknown> | null }>(
-        `/api/stat-snapshots/latest`
-      ),
+      props.showBuilds ? api.get<StatBuild[]>("/api/stat-snapshots/builds") : Promise.resolve([] as StatBuild[]),
     ]);
     jobClasses.value = jobRes;
     classRoles.value = roleRes;
 
-    if (snapRes.snapshot) {
-      applySnapshot(snapRes.snapshot);
+    if (props.showBuilds) {
+      builds.value = [...buildsRes].sort((a, b) => a.name.localeCompare(b.name));
+      const defaultBuild = buildsRes.find(b => b.isDefault) ?? buildsRes[0];
+      selectedBuildId.value = defaultBuild?.id ?? null;
+      if (defaultBuild) {
+        const snapRes = await api.get<{ snapshot: Record<string, unknown> | null }>(
+          `/api/stat-snapshots/latest?buildId=${defaultBuild.id}`
+        );
+        if (snapRes.snapshot) applySnapshot(snapRes.snapshot);
+      }
+    } else {
+      const snapRes = await api.get<{ snapshot: Record<string, unknown> | null }>(
+        `/api/stat-snapshots/latest`
+      );
+      if (snapRes.snapshot) applySnapshot(snapRes.snapshot);
     }
   } catch (e) {
     errorMsg.value = "Failed to load data. Please refresh.";
@@ -119,6 +210,7 @@ async function handleSubmit() {
   saving.value = true;
   try {
     await api.post(`/api/stat-snapshots`, {
+      ...(selectedBuildId.value ? { buildId: selectedBuildId.value } : {}),
       jobId: form.jobId,
       classRoleId: form.classRoleId,
       patk: form.patk,
@@ -163,9 +255,95 @@ const classRoleOptions = computed(() =>
     <template #header>
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-white">Character Stats</h3>
-        <span v-if="savedWeekLabel" class="text-xs text-slate-400">
-          Last saved: {{ savedWeekLabel }}
-        </span>
+
+        <!-- Build split button -->
+        <div v-if="props.showBuilds && builds.length > 0" class="flex items-center gap-0">
+          <span class="inline-flex items-center px-3 h-8 text-sm font-medium text-slate-300 bg-slate-800 border border-slate-600 rounded-l-md border-r-0 select-none">
+            Build
+          </span>
+          <UPopover v-model:open="buildPopoverOpen" :content="{ align: 'end', side: 'bottom' }">
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 px-3 h-8 text-sm font-medium text-white bg-slate-700 border border-slate-600 rounded-r-md hover:bg-slate-600 transition-colors"
+            >
+              <UIcon
+                v-if="builds.find(b => b.id === selectedBuildId)?.isDefault"
+                name="i-lucide-star"
+                class="size-3.5 text-white fill-white"
+              />
+              {{ builds.find(b => b.id === selectedBuildId)?.name ?? '—' }}
+              <UIcon name="i-lucide-chevron-down" class="size-3.5 text-slate-400" />
+            </button>
+            <template #content>
+              <div class="py-1 min-w-48">
+                <!-- All builds -->
+                <div
+                  v-for="build in builds"
+                  :key="build.id"
+                  class="flex items-center gap-2 px-3 py-1.5 group"
+                  :class="build.id !== selectedBuildId ? 'cursor-pointer hover:bg-slate-700' : 'opacity-60 cursor-default'"
+                  @click="build.id !== selectedBuildId && onBuildChange(build.id)"
+                >
+                  <!-- Name / edit input -->
+                  <div class="flex-1 flex items-center gap-1.5 min-w-0">
+                    <UIcon
+                      v-if="build.isDefault"
+                      name="i-lucide-star"
+                      class="size-3.5 shrink-0 text-yellow-400 fill-yellow-400"
+                    />
+                    <template v-if="editingBuildId === build.id">
+                      <UInput
+                        v-model="editingName"
+                        size="xs"
+                        class="flex-1"
+                        autofocus
+                        @click.stop
+                        @keydown.enter.stop="saveEdit(build.id)"
+                        @keydown.esc.stop="cancelEdit"
+                      />
+                    </template>
+                    <span v-else class="text-sm text-white truncate">{{ build.name }}</span>
+                  </div>
+
+                  <!-- Action icons -->
+                  <div class="flex items-center gap-1 shrink-0" @click.stop>
+                    <template v-if="editingBuildId === build.id">
+                      <UButton size="xs" variant="ghost" color="primary" icon="i-lucide-check" @click="saveEdit(build.id)" />
+                      <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" @click="cancelEdit" />
+                    </template>
+                    <template v-else>
+                      <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-pencil" class="opacity-0 group-hover:opacity-100" @click="startEdit(build)" />
+                      <UButton
+                        v-if="!build.isDefault"
+                        size="xs" variant="ghost" color="neutral" icon="i-lucide-star"
+                        class="opacity-0 group-hover:opacity-100"
+                        @click="setDefault(build.id)"
+                      />
+                      <UButton
+                        v-if="!build.isDefault"
+                        size="xs" variant="ghost" color="error" icon="i-lucide-trash-2"
+                        class="opacity-0 group-hover:opacity-100"
+                        @click="deleteBuild(build.id)"
+                      />
+                    </template>
+                  </div>
+                </div>
+
+                <!-- Divider + New build -->
+                <div class="border-t border-slate-700 mt-1 pt-1">
+                  <button
+                    type="button"
+                    class="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
+                    @click="buildModalOpen = true; buildPopoverOpen = false"
+                  >
+                    <UIcon name="i-lucide-plus" class="size-4" />
+                    New build…
+                  </button>
+                </div>
+              </div>
+            </template>
+          </UPopover>
+        </div>
       </div>
     </template>
 
@@ -174,6 +352,16 @@ const classRoleOptions = computed(() =>
     </div>
 
     <form v-else class="space-y-6" @submit.prevent="handleSubmit">
+
+      <!-- New build modal -->
+      <UModal v-model:open="buildModalOpen" title="New Build">
+        <template #body>
+          <div class="flex gap-2">
+            <UInput v-model="newBuildName" placeholder="Build name (e.g. PVP)" class="flex-1" @keydown.enter="addBuild" />
+            <UButton @click="addBuild">Create</UButton>
+          </div>
+        </template>
+      </UModal>
 
       <UAlert
         color="warning"
@@ -187,6 +375,9 @@ const classRoleOptions = computed(() =>
           This means <strong>no self-buffs</strong>, <strong>no food buffs</strong>, and <strong>no consumables</strong>. Only your <strong>base stats</strong> and <strong>equipment</strong> values.
         </template>
       </UAlert>
+
+      <!-- Last saved label -->
+      <p v-if="savedWeekLabel" class="text-xs text-slate-400">Last saved: {{ savedWeekLabel }}</p>
 
       <!-- Job & Role -->
       <div class="grid grid-cols-2 gap-4">
