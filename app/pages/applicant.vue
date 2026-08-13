@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: false });
+definePageMeta({ layout: false, middleware: "auth-required" });
 
 const { auth, logout } = useAuth();
 const { getLatestSnapshot } = useStatSnapshots();
@@ -9,13 +9,8 @@ const roleLabel = computed(() => auth.value.role || "Applicant");
 const hasStatRecord = ref(false);
 
 onMounted(async () => {
-  if (!auth.value.player) {
-    await navigateTo("/login");
-    return;
-  }
-
   try {
-    const latest = await getLatestSnapshot(auth.value.player.playerId);
+    const latest = await getLatestSnapshot(auth.value.player!.playerId);
     hasStatRecord.value = latest.snapshot !== null;
   } catch {
     hasStatRecord.value = false;

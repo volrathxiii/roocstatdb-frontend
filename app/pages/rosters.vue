@@ -4,7 +4,7 @@ import type { TableColumn } from "@nuxt/ui";
 import type { Column } from "@tanstack/vue-table";
 import { upperFirst } from "scule";
 
-definePageMeta({ layout: "authenticated" });
+definePageMeta({ layout: "authenticated", middleware: "auth" });
 
 const { auth } = useAuth();
 const { setSubtitle } = usePageSubtitle();
@@ -12,8 +12,6 @@ const config = useRuntimeConfig();
 const backendUrl = config.public.backendUrl;
 
 onMounted(() => {
-  if (!auth.value.player) { navigateTo("/login"); return; }
-  if (auth.value.role === "Applicant" || auth.value.role === "Waitlisted") { navigateTo("/applicant"); return; }
   setSubtitle("Rosters");
 });
 

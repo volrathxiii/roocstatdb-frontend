@@ -32,7 +32,7 @@ export const useAuth = () => {
   const authCookie = useCookie<AuthState | null>("rooc_auth", {
     maxAge: 60 * 60,
     sameSite: "lax",
-    secure: false,
+    secure: process.env.NODE_ENV === "production",
   });
 
   // Persistent state across the app

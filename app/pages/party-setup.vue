@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: "authenticated" });
+definePageMeta({ layout: "authenticated", middleware: "auth" });
 
 const { auth } = useAuth();
 const { setSubtitle } = usePageSubtitle();
@@ -485,14 +485,7 @@ const filteredRosterPlayers = computed(() => {
 });
 
 function ensureMemberAccess() {
-  if (!auth.value.player) {
-    navigateTo("/login");
-    return false;
-  }
-  if (auth.value.role === "Applicant" || auth.value.role === "Waitlisted") {
-    navigateTo("/applicant");
-    return false;
-  }
+  // Auth is now handled by the route middleware (app/middleware/auth.ts)
   return true;
 }
 
