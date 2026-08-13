@@ -3,10 +3,27 @@ const { auth } = useAuth();
 const api = useApi();
 const { setSubtitle } = usePageSubtitle();
 const config = useRuntimeConfig();
+const toast = useToast();
+const route = useRoute();
+const router = useRouter();
 
 definePageMeta({
   layout: "authenticated",
   middleware: "auth",
+});
+
+onMounted(() => {
+  if (route.query.welcome === '1') {
+    toast.add({
+      title: `Welcome, ${auth.value.player?.ign ?? 'Member'}!`,
+      description: 'You have been promoted to Member. Welcome to the guild!',
+      color: 'success',
+      icon: 'i-lucide-party-popper',
+      duration: 10_000,
+      ui: { root: 'bg-success/15', title: 'text-success', description: 'text-success/80', icon: 'text-success' },
+    });
+    router.replace({ query: {} });
+  }
 });
 
 interface DashboardStatusResponse {

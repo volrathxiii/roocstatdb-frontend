@@ -9,26 +9,7 @@ const isPrivileged = computed(() =>
   auth.value.role === "Officer" || auth.value.role === "Admin"
 );
 
-const applicantStatsCount = ref(0);
-const rosterMissingStatsCount = ref(0);
-
-async function fetchApplicantStatsCount() {
-  try {
-    const res = await api.get<{ count: number }>("/api/players/applicant-stats-count");
-    applicantStatsCount.value = res.count;
-  } catch {
-    // non-critical — badge simply stays at 0
-  }
-}
-
-async function fetchRosterMissingStatsCount() {
-  try {
-    const res = await api.get<{ count: number }>("/api/players/members-missing-stats-count");
-    rosterMissingStatsCount.value = res.count;
-  } catch {
-    // non-critical — badge simply stays at 0
-  }
-}
+const { applicantStatsCount, rosterMissingStatsCount, refreshAll } = useSidebarCounters();
 
 const navItems = computed(() => [
   { label: "Dashboard",  icon: "i-lucide-layout-dashboard",  to: "/dashboard",  badge: 0, badgeClass: "bg-sky-500", badgeTooltip: "" },
@@ -49,8 +30,7 @@ const navItems = computed(() => [
 // Redirect to login if not authenticated
 onMounted(() => {
   if (!auth.value.player) navigateTo("/login");
-  fetchApplicantStatsCount();
-  fetchRosterMissingStatsCount();
+  refreshAll();
 });
 </script>
 

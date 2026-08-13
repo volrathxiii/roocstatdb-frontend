@@ -1,6 +1,10 @@
 <script setup lang="ts">
 const toaster = { position: 'top-center' as const };
 useInactivityLogout();
+
+const { fetchMe } = useAuth();
+const router = useRouter();
+router.afterEach(() => { fetchMe(); });
 </script>
 
 <template>

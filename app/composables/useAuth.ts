@@ -98,5 +98,21 @@ export const useAuth = () => {
     return data;
   };
 
-  return { auth, isLoggedIn, login, logout, updateIgn };
+  const fetchMe = async (): Promise<void> => {
+    if (!auth.value.player) return;
+    try {
+      const data = await $fetch<{ player: LoginResponse['player']; role: LoginResponse['role']; isMember: boolean }>(
+        `${backendUrl}/api/auth/me`,
+        { credentials: 'include' },
+      );
+      if (data.role !== auth.value.role || data.isMember !== auth.value.isMember) {
+        auth.value = { player: data.player, isMember: data.isMember, role: data.role };
+        authCookie.value = auth.value;
+      }
+    } catch {
+      // non-critical — role stays as-is until next successful call
+    }
+  };
+
+  return { auth, isLoggedIn, login, logout, updateIgn, fetchMe };
 };

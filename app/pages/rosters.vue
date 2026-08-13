@@ -486,6 +486,8 @@ async function changePlayerRole(row: FlatRow, role: string) {
   try {
     await api.patch(`/api/players/${row.id}/role`, { role });
     await fetchPlayers();
+    const { refreshAll } = useSidebarCounters();
+    refreshAll();
   } catch {
     actionError.value = "Failed to update player role. Please try again.";
   }
