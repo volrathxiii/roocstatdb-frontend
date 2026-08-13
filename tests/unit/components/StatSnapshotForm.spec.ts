@@ -47,12 +47,12 @@ const EXISTING_SNAPSHOT = {
 };
 
 // Helper — uses mountSuspended for render tests (text/html assertions)
-async function mountForm(playerId = "test-player-001") {
+async function mountForm() {
   fetchMock
     .mockResolvedValueOnce(JOB_CLASSES)
     .mockResolvedValueOnce(CLASS_ROLES)
     .mockResolvedValueOnce(EMPTY_SNAPSHOT);
-  const wrapper = await mountSuspended(StatSnapshotForm, { props: { playerId } });
+  const wrapper = await mountSuspended(StatSnapshotForm);
   await flushPromises();
   return wrapper;
 }
@@ -63,7 +63,7 @@ async function mountFormDirect(snapshot = EMPTY_SNAPSHOT) {
     .mockResolvedValueOnce(JOB_CLASSES)
     .mockResolvedValueOnce(CLASS_ROLES)
     .mockResolvedValueOnce(snapshot);
-  const wrapper = mount(StatSnapshotForm, { props: { playerId: "test-001" } });
+  const wrapper = mount(StatSnapshotForm);
   await flushPromises();
   return wrapper;
 }
@@ -83,28 +83,23 @@ describe("StatSnapshotForm", () => {
 
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/ref-data/job-classes"), expect.anything());
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/ref-data/class-roles"), expect.anything());
-      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/stat-snapshots/latest?playerId=test-player-001"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/stat-snapshots/latest"), expect.anything());
     });
 
-    it("URL-encodes the playerId in the snapshot request", async () => {
-      fetchMock
-        .mockResolvedValueOnce(JOB_CLASSES)
-        .mockResolvedValueOnce(CLASS_ROLES)
-        .mockResolvedValueOnce(EMPTY_SNAPSHOT);
+    it("snapshot fetch does not include a playerId query param", async () => {
+      await mountForm();
 
-      await mountSuspended(StatSnapshotForm, {
-        props: { playerId: "player/with spaces" },
-      });
-
-      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("player%2Fwith%20spaces"), expect.anything());
+      const snapCall = fetchMock.mock.calls.find((c: unknown[]) =>
+        typeof c[0] === 'string' && c[0].includes('/api/stat-snapshots/latest')
+      );
+      expect(snapCall).toBeDefined();
+      expect(snapCall![0]).not.toContain('playerId');
     });
 
     it("shows an error message when the data fetch fails", async () => {
       fetchMock.mockRejectedValue(new Error("Network error"));
 
-      const wrapper = await mountSuspended(StatSnapshotForm, {
-        props: { playerId: "test-001" },
-      });
+      const wrapper = await mountSuspended(StatSnapshotForm);
       await flushPromises();
 
       expect(wrapper.text()).toContain("Failed to load data");
@@ -116,9 +111,7 @@ describe("StatSnapshotForm", () => {
         .mockResolvedValueOnce(CLASS_ROLES)
         .mockResolvedValueOnce(EXISTING_SNAPSHOT);
 
-      const wrapper = await mountSuspended(StatSnapshotForm, {
-        props: { playerId: "test-001" },
-      });
+      const wrapper = await mountSuspended(StatSnapshotForm);
       await flushPromises();
 
       expect(wrapper.text()).toContain("Week 32, 2026");
@@ -169,7 +162,6 @@ describe("StatSnapshotForm", () => {
         expect.objectContaining({
           method: "POST",
           body: expect.objectContaining({
-            playerId: "test-001",
             jobId: 1,
             classRoleId: 1,
             patk: 1500,
