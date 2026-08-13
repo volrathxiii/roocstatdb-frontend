@@ -62,7 +62,7 @@ export const useAuth = () => {
     return data;
   };
 
-  const logout = async () => {
+  const logout = async (reason?: 'inactivity' | 'expired') => {
     try {
       // Tell the backend to clear the HttpOnly cookie server-side
       await $fetch(`${backendUrl}/api/auth/logout`, {
@@ -74,7 +74,7 @@ export const useAuth = () => {
     }
     auth.value = { player: null, isMember: false, role: null };
     authCookie.value = null;
-    navigateTo("/login");
+    navigateTo(reason ? `/login?reason=${reason}` : '/login');
   };
 
   const updateIgn = async (id: number, ign: string): Promise<UpdateIgnResponse> => {

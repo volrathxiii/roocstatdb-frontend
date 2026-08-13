@@ -12,43 +12,36 @@ export const useApi = () => {
   const config = useRuntimeConfig();
   const base = config.public.backendUrl as string;
 
+  async function request<T>(path: string, opts: Parameters<typeof $fetch>[1]): Promise<T> {
+    try {
+      return await $fetch<T>(`${base}${path}`, { credentials: "include", ...opts });
+    } catch (err: unknown) {
+      if ((err as { status?: number })?.status === 401) {
+        const { logout } = useAuth();
+        await logout('expired');
+      }
+      throw err;
+    }
+  }
+
   async function get<T>(path: string, params?: Record<string, unknown>): Promise<T> {
-    return $fetch<T>(`${base}${path}`, {
-      credentials: "include",
-      params,
-    });
+    return request<T>(path, { params });
   }
 
-  async function post<T = unknown>(path: string, body?: unknown): Promise<T> {
-    return $fetch<T>(`${base}${path}`, {
-      method: "POST",
-      credentials: "include",
-      body,
-    });
+  async function post<T = unknown>(path: string, body?: Record<string, unknown> | unknown[]): Promise<T> {
+    return request<T>(path, { method: "POST", body: body as Record<string, unknown> });
   }
 
-  async function patch<T = unknown>(path: string, body?: unknown): Promise<T> {
-    return $fetch<T>(`${base}${path}`, {
-      method: "PATCH",
-      credentials: "include",
-      body,
-    });
+  async function patch<T = unknown>(path: string, body?: Record<string, unknown> | unknown[]): Promise<T> {
+    return request<T>(path, { method: "PATCH", body: body as Record<string, unknown> });
   }
 
-  async function put<T = unknown>(path: string, body?: unknown): Promise<T> {
-    return $fetch<T>(`${base}${path}`, {
-      method: "PUT",
-      credentials: "include",
-      body,
-    });
+  async function put<T = unknown>(path: string, body?: Record<string, unknown> | unknown[]): Promise<T> {
+    return request<T>(path, { method: "PUT", body: body as Record<string, unknown> });
   }
 
   async function del<T = unknown>(path: string, params?: Record<string, unknown>): Promise<T> {
-    return $fetch<T>(`${base}${path}`, {
-      method: "DELETE",
-      credentials: "include",
-      params,
-    });
+    return request<T>(path, { method: "DELETE", params });
   }
 
   return { get, post, patch, put, del };
