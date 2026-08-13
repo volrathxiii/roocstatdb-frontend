@@ -141,7 +141,8 @@ describe("useAuth", () => {
       const { useAuth } = await import("~/composables/useAuth");
       const { auth, logout } = useAuth();
 
-      logout();
+      fetchMock.mockResolvedValueOnce({ success: true }); // logout endpoint
+      await logout();
 
       expect(auth.value.player).toBeNull();
       expect(auth.value.isMember).toBe(false);
@@ -154,7 +155,8 @@ describe("useAuth", () => {
       const { useAuth } = await import("~/composables/useAuth");
       const { logout } = useAuth();
 
-      logout();
+      fetchMock.mockResolvedValueOnce({ success: true }); // logout endpoint
+      await logout();
 
       expect(cookieState.value).toBeNull();
     });
@@ -163,7 +165,8 @@ describe("useAuth", () => {
       const { useAuth } = await import("~/composables/useAuth");
       const { logout } = useAuth();
 
-      logout();
+      fetchMock.mockResolvedValueOnce({ success: true }); // logout endpoint
+      await logout();
 
       expect(navigateToMock).toHaveBeenCalledWith("/login");
     });

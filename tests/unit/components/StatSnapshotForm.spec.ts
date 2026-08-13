@@ -81,15 +81,9 @@ describe("StatSnapshotForm", () => {
     it("fetches job classes, class roles, and latest snapshot", async () => {
       await mountForm();
 
-      expect(fetchMock).toHaveBeenCalledWith(
-        "http://localhost:4001/api/ref-data/job-classes"
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        "http://localhost:4001/api/ref-data/class-roles"
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        "http://localhost:4001/api/stat-snapshots/latest?playerId=test-player-001"
-      );
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/ref-data/job-classes"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/ref-data/class-roles"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/stat-snapshots/latest?playerId=test-player-001"), expect.anything());
     });
 
     it("URL-encodes the playerId in the snapshot request", async () => {
@@ -102,9 +96,7 @@ describe("StatSnapshotForm", () => {
         props: { playerId: "player/with spaces" },
       });
 
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("player%2Fwith%20spaces")
-      );
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("player%2Fwith%20spaces"), expect.anything());
     });
 
     it("shows an error message when the data fetch fails", async () => {
@@ -113,6 +105,7 @@ describe("StatSnapshotForm", () => {
       const wrapper = await mountSuspended(StatSnapshotForm, {
         props: { playerId: "test-001" },
       });
+      await flushPromises();
 
       expect(wrapper.text()).toContain("Failed to load data");
     });
@@ -126,6 +119,7 @@ describe("StatSnapshotForm", () => {
       const wrapper = await mountSuspended(StatSnapshotForm, {
         props: { playerId: "test-001" },
       });
+      await flushPromises();
 
       expect(wrapper.text()).toContain("Week 32, 2026");
     });
@@ -171,7 +165,7 @@ describe("StatSnapshotForm", () => {
       await flushPromises();
 
       expect(fetchMock).toHaveBeenCalledWith(
-        "http://localhost:4001/api/stat-snapshots",
+        expect.stringContaining("/api/stat-snapshots"),
         expect.objectContaining({
           method: "POST",
           body: expect.objectContaining({

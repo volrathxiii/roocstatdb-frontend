@@ -1,8 +1,8 @@
 <script setup lang="ts">
 const { auth } = useAuth();
+const api = useApi();
 const { setSubtitle } = usePageSubtitle();
 const config = useRuntimeConfig();
-const backendUrl = config.public.backendUrl;
 
 definePageMeta({
   layout: "authenticated",
@@ -130,8 +130,8 @@ onMounted(() => {
     loadingAssignments.value = true;
     assignmentsError.value = null;
     try {
-      dashboardStatus.value = await $fetch<DashboardStatusResponse>(
-        `${backendUrl}/api/players/status?playerId=${encodeURIComponent(auth.value.player.playerId)}`,
+      dashboardStatus.value = await api.get<DashboardStatusResponse>(
+        `/api/players/status?playerId=${encodeURIComponent(auth.value.player.playerId)}`,
       );
     } catch {
       assignmentsError.value = "Failed to load party assignment details.";

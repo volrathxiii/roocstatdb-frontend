@@ -1,6 +1,6 @@
 <script setup lang="ts">
+const api = useApi();
 const config = useRuntimeConfig();
-const backendUrl = config.public.backendUrl;
 
 interface Snapshot {
   weekNumber: number;
@@ -60,8 +60,8 @@ onMounted(async () => {
   onUnmounted(() => document.removeEventListener("keydown", onKeydown));
 
   try {
-    data.value = await $fetch<CompareResponse>(
-      `${backendUrl}/api/stat-snapshots/compare?playerIdA=${encodeURIComponent(props.playerIdA)}&playerIdB=${encodeURIComponent(props.playerIdB)}`,
+    data.value = await api.get<CompareResponse>(
+      `/api/stat-snapshots/compare?playerIdA=${encodeURIComponent(props.playerIdA)}&playerIdB=${encodeURIComponent(props.playerIdB)}`,
     );
   } catch {
     error.value = "Failed to load comparison data.";

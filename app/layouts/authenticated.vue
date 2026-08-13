@@ -1,9 +1,9 @@
 <script setup lang="ts">
 const { auth, logout } = useAuth();
+const api = useApi();
 const config = useRuntimeConfig();
 const { subtitle } = usePageSubtitle();
 const siteName = computed(() => config.public.siteName || "OUROBOROS");
-const backendUrl = config.public.backendUrl;
 
 const isPrivileged = computed(() =>
   auth.value.role === "Officer" || auth.value.role === "Admin"
@@ -14,7 +14,7 @@ const rosterMissingStatsCount = ref(0);
 
 async function fetchApplicantStatsCount() {
   try {
-    const res = await $fetch<{ count: number }>(`${backendUrl}/api/players/applicant-stats-count`);
+    const res = await api.get<{ count: number }>("/api/players/applicant-stats-count");
     applicantStatsCount.value = res.count;
   } catch {
     // non-critical — badge simply stays at 0
@@ -23,7 +23,7 @@ async function fetchApplicantStatsCount() {
 
 async function fetchRosterMissingStatsCount() {
   try {
-    const res = await $fetch<{ count: number }>(`${backendUrl}/api/players/members-missing-stats-count`);
+    const res = await api.get<{ count: number }>("/api/players/members-missing-stats-count");
     rosterMissingStatsCount.value = res.count;
   } catch {
     // non-critical — badge simply stays at 0

@@ -5,9 +5,9 @@ definePageMeta({
 });
 
 const { auth } = useAuth();
+const api = useApi();
 const { setSubtitle } = usePageSubtitle();
 const config = useRuntimeConfig();
-const backendUrl = config.public.backendUrl;
 
 onMounted(() => {
   setSubtitle("Management");
@@ -93,14 +93,10 @@ const canAddPresetRecord = computed(() => presetModal.records.length < 5);
 // ── Fetch ────────────────────────────────────────────────────────────────────
 async function fetchAll() {
   const [j, c, p, s] = await Promise.all([
-    $fetch<RefItem[]>(`${backendUrl}/api/ref-data/job-classes`),
-    $fetch<RefItem[]>(`${backendUrl}/api/ref-data/class-roles`),
-    $fetch<{ presets: PartyPreset[] }>(`${backendUrl}/api/party-presets`, {
-      query: { playerId: actorPlayerId.value },
-    }),
-    $fetch<AppSetting[]>(`${backendUrl}/api/settings`, {
-      query: { playerId: actorPlayerId.value },
-    }),
+    api.get<RefItem[]>("/api/ref-data/job-classes"),
+    api.get<RefItem[]>("/api/ref-data/class-roles"),
+    api.get<{ presets: PartyPreset[] }>("/api/party-presets", { playerId: actorPlayerId.value }),
+    api.get<AppSetting[]>("/api/settings", { playerId: actorPlayerId.value }),
   ]);
   jobClasses.value   = j;
   classRoles.value   = c;
@@ -112,10 +108,7 @@ async function fetchAll() {
 async function saveSetting(key: string) {
   settingSaving.value[key] = true;
   try {
-    await $fetch(`${backendUrl}/api/settings/${encodeURIComponent(key)}`, {
-      method: "PUT",
-      body: { playerId: actorPlayerId.value, value: settingDrafts.value[key] ?? "" },
-    });
+    await api.put(`/api/settings/${encodeURIComponent(key)}`, { playerId: actorPlayerId.value, value: settingDrafts.value[key] ?? "" });
     const setting = appSettings.value.find((s) => s.key === key);
     if (setting) { setting.value = settingDrafts.value[key] ?? ""; setting.isOverridden = true; }
     settingSaved.value[key] = true;
@@ -126,10 +119,7 @@ async function saveSetting(key: string) {
 }
 
 async function resetSetting(key: string) {
-  await $fetch(`${backendUrl}/api/settings/${encodeURIComponent(key)}`, {
-    method: "DELETE",
-    query: { playerId: actorPlayerId.value },
-  });
+  await api.del(`/api/settings/${encodeURIComponent(key)}`, { playerId: actorPlayerId.value });
   const setting = appSettings.value.find((s) => s.key === key);
   if (setting) {
     setting.value = setting.defaultValue;
@@ -166,15 +156,9 @@ async function saveModal() {
   if (!name) return;
 
   if (modal.editing) {
-    await $fetch(`${backendUrl}/api/ref-data/${modal.type}/${modal.editing.id}`, {
-      method: "PATCH",
-      body: { name },
-    });
+    await api.patch(`/api/ref-data/${modal.type}/${modal.editing.id}`, { name });
   } else {
-    await $fetch(`${backendUrl}/api/ref-data/${modal.type}`, {
-      method: "POST",
-      body: { name },
-    });
+    await api.post(`/api/ref-data/${modal.type}`, { name });
   }
 
   modal.open = false;
@@ -253,15 +237,9 @@ async function savePresetModal() {
   };
 
   if (presetModal.editingId) {
-    await $fetch(`${backendUrl}/api/party-presets/${presetModal.editingId}`, {
-      method: "PATCH",
-      body: payload,
-    });
+    await api.patch(`/api/party-presets/${presetModal.editingId}`, payload);
   } else {
-    await $fetch(`${backendUrl}/api/party-presets`, {
-      method: "POST",
-      body: payload,
-    });
+    await api.post(`/api/party-presets`, payload);
   }
 
   presetModal.open = false;
@@ -282,10 +260,7 @@ function closeDeletePresetModal() {
 
 async function confirmDeletePreset() {
   if (!deletePresetModal.presetId) return;
-  await $fetch(`${backendUrl}/api/party-presets/${deletePresetModal.presetId}`, {
-    method: "DELETE",
-    query: { playerId: actorPlayerId.value },
-  });
+  await api.del(`/api/party-presets/${deletePresetModal.presetId}`, { playerId: actorPlayerId.value });
   closeDeletePresetModal();
   await fetchAll();
 }

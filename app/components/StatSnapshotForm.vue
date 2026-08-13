@@ -1,8 +1,8 @@
 <script setup lang="ts">
 const props = defineProps<{ playerId: string }>();
 
+const api = useApi();
 const config = useRuntimeConfig();
-const backendUrl = config.public.backendUrl;
 
 // ── Ref data ────────────────────────────────────────────────────────────────
 interface RefItem { id: number; name: string }
@@ -88,10 +88,10 @@ function applySnapshot(snapshot: Record<string, unknown>) {
 onMounted(async () => {
   try {
     const [jobRes, roleRes, snapRes] = await Promise.all([
-      $fetch<RefItem[]>(`${backendUrl}/api/ref-data/job-classes`),
-      $fetch<RefItem[]>(`${backendUrl}/api/ref-data/class-roles`),
-      $fetch<{ snapshot: Record<string, unknown> | null }>(
-        `${backendUrl}/api/stat-snapshots/latest?playerId=${encodeURIComponent(props.playerId)}`
+      api.get<RefItem[]>("/api/ref-data/job-classes"),
+      api.get<RefItem[]>("/api/ref-data/class-roles"),
+      api.get<{ snapshot: Record<string, unknown> | null }>(
+        `/api/stat-snapshots/latest?playerId=${encodeURIComponent(props.playerId)}`
       ),
     ]);
     jobClasses.value = jobRes;
@@ -120,33 +120,30 @@ async function handleSubmit() {
 
   saving.value = true;
   try {
-    await $fetch(`${backendUrl}/api/stat-snapshots`, {
-      method: "POST",
-      body: {
-        playerId: props.playerId,
-        jobId: form.jobId,
-        classRoleId: form.classRoleId,
-        patk: form.patk,
-        matk: form.matk,
-        ignorePdef: form.ignorePdef,
-        ignoreMdef: form.ignoreMdef,
-        eqPdef: form.eqPdef,
-        eqMdef: form.eqMdef,
-        eqPdefPct: form.eqPdefPct,
-        eqMdefPct: form.eqMdefPct,
-        pDmgPct: form.pDmgPct,
-        pDmgReductionPct: form.pDmgReductionPct,
-        mDmgPct: form.mDmgPct,
-        mDmgReductionPct: form.mDmgReductionPct,
-        dmgVsDemiHuman: form.dmgVsDemiHuman,
-        dmgReductionVsDemiHuman: form.dmgReductionVsDemiHuman,
-        dmgVsMedium: form.dmgVsMedium,
-        dmgReductionVsMedium: form.dmgReductionVsMedium,
-        pvpDmg: form.pvpDmg,
-        pvpDmgReduction: form.pvpDmgReduction,
-        healingDone: form.healingDone,
-        healingTaken: form.healingTaken,
-      },
+    await api.post(`/api/stat-snapshots`, {
+      playerId: props.playerId,
+      jobId: form.jobId,
+      classRoleId: form.classRoleId,
+      patk: form.patk,
+      matk: form.matk,
+      ignorePdef: form.ignorePdef,
+      ignoreMdef: form.ignoreMdef,
+      eqPdef: form.eqPdef,
+      eqMdef: form.eqMdef,
+      eqPdefPct: form.eqPdefPct,
+      eqMdefPct: form.eqMdefPct,
+      pDmgPct: form.pDmgPct,
+      pDmgReductionPct: form.pDmgReductionPct,
+      mDmgPct: form.mDmgPct,
+      mDmgReductionPct: form.mDmgReductionPct,
+      dmgVsDemiHuman: form.dmgVsDemiHuman,
+      dmgReductionVsDemiHuman: form.dmgReductionVsDemiHuman,
+      dmgVsMedium: form.dmgVsMedium,
+      dmgReductionVsMedium: form.dmgReductionVsMedium,
+      pvpDmg: form.pvpDmg,
+      pvpDmgReduction: form.pvpDmgReduction,
+      healingDone: form.healingDone,
+      healingTaken: form.healingTaken,
     });
       successMsg.value = "Stats saved for this week.";
   } catch {

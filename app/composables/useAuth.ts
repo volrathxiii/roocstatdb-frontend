@@ -48,6 +48,7 @@ export const useAuth = () => {
     const data = await $fetch<LoginResponse>(`${backendUrl}/api/auth/login`, {
       method: "POST",
       body: payload,
+      credentials: "include", // send/receive the HttpOnly JWT cookie
     });
 
     auth.value = {
@@ -61,7 +62,16 @@ export const useAuth = () => {
     return data;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      // Tell the backend to clear the HttpOnly cookie server-side
+      await $fetch(`${backendUrl}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // Proceed with client-side cleanup even if request fails
+    }
     auth.value = { player: null, isMember: false, role: null };
     authCookie.value = null;
     navigateTo("/login");
@@ -71,6 +81,7 @@ export const useAuth = () => {
     const data = await $fetch<UpdateIgnResponse>(`${backendUrl}/api/players/${id}/ign`, {
       method: "PATCH",
       body: { ign },
+      credentials: "include",
     });
 
     if (auth.value.player?.id === id) {
