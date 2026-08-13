@@ -1742,60 +1742,22 @@ onMounted(async () => {
         </div>
 
         <div class="max-h-[70vh] space-y-2 overflow-y-auto pr-1">
-          <article
+          <div
             v-for="player in filteredRosterPlayers"
             :key="player.id"
-            class="cursor-grab rounded-lg border p-3"
-            :class="player.id === actorId ? 'bg-emerald-900/40' : (assignedPlayers.has(player.id) ? 'border-slate-700 bg-slate-900/70 opacity-60' : 'border-slate-700 bg-slate-900/70')"
-            :style="player.id === actorId ? 'border-color: #10b981;' : ''"
-            :draggable="canEdit"
-            @dragstart="onDragStartPlayer($event, player.id)"
+            class="rounded-lg border border-slate-700 overflow-hidden"
+            :class="player.id === actorId ? '' : (assignedPlayers.has(player.id) ? 'opacity-60' : '')"
           >
-            <div class="flex items-center justify-between">
-              <button
-                type="button"
-                class="text-sm font-semibold text-slate-100 hover:text-white hover:underline"
-                title="View progression"
-                @click.stop="openProgressionForRosterPlayer(player)"
-              >{{ player.ign }}</button>
-              <span
-                :class="['rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide', roleBadgeClass(player.role)]"
-              >
-                {{ player.role ?? "Member" }}
-              </span>
-            </div>
-            <p class="text-xs">
-              <span :class="jobTextClass(player.snapshot?.job)">{{ player.snapshot?.job ?? "Unknown" }}</span>
-              <span class="text-slate-500"> - </span>
-              <span :class="classRoleTextClass(player.snapshot?.classRole)">{{ player.snapshot?.classRole ?? "Unknown" }}</span>
-            </p>
-            <div class="mt-2 flex flex-wrap gap-1.5">
-              <span
-                class="flex items-center gap-1 rounded border border-slate-600 px-2 py-1 text-xs text-slate-300"
-                :class="bestRankStat(player.id).includes('physical') ? 'border-emerald-400/70 bg-emerald-500/20 text-emerald-200' : ''"
-                title="Physical DMG rank"
-              >
-                <UIcon name="i-lucide-sword" class="h-3 w-3 shrink-0" />
-                {{ ordinal(classRanksByPlayerId.get(player.id)?.physical.rank) }}
-              </span>
-              <span
-                class="flex items-center gap-1 rounded border border-slate-600 px-2 py-1 text-xs text-slate-300"
-                :class="bestRankStat(player.id).includes('magic') ? 'border-emerald-400/70 bg-emerald-500/20 text-emerald-200' : ''"
-                title="Magic DMG rank"
-              >
-                <UIcon name="i-lucide-sparkles" class="h-3 w-3 shrink-0" />
-                {{ ordinal(classRanksByPlayerId.get(player.id)?.magic.rank) }}
-              </span>
-              <span
-                class="flex items-center gap-1 rounded border border-slate-600 px-2 py-1 text-xs text-slate-300"
-                :class="bestRankStat(player.id).includes('defensive') ? 'border-emerald-400/70 bg-emerald-500/20 text-emerald-200' : ''"
-                title="Defensive rank"
-              >
-                <UIcon name="i-lucide-shield" class="h-3 w-3 shrink-0" />
-                {{ ordinal(classRanksByPlayerId.get(player.id)?.defensive.rank) }}
-              </span>
-            </div>
-          </article>
+            <PlayerMiniCard
+              :player="player"
+              :actor-id="actorId"
+              :ranks="classRanksByPlayerId"
+              :draggable="canEdit && !assignedPlayers.has(player.id)"
+              :can-suggest="false"
+              @open-progression="openProgressionForRosterPlayer(player)"
+              @dragstart="onDragStartPlayer($event, player.id)"
+            />
+          </div>
         </div>
       </aside>
     </div>

@@ -80,41 +80,6 @@ const emit = defineEmits<{
   "update:hoveredDropZone": [v: string | null];
 }>();
 
-function jobTextClass(job?: string | null) {
-  if (!job) return "text-slate-500";
-  const colors = ["text-violet-300", "text-sky-300", "text-amber-300", "text-rose-300", "text-emerald-300", "text-orange-300"];
-  let hash = 0;
-  for (let i = 0; i < job.length; i++) { hash = (hash << 5) - hash + job.charCodeAt(i); hash |= 0; }
-  return colors[Math.abs(hash) % colors.length];
-}
-
-function classRoleTextClass(classRole?: string | null) {
-  if (!classRole) return "text-slate-500";
-  const colors = ["text-pink-300", "text-teal-300", "text-indigo-300", "text-lime-300", "text-cyan-300", "text-fuchsia-300"];
-  let hash = 0;
-  for (let i = 0; i < classRole.length; i++) { hash = (hash << 5) - hash + classRole.charCodeAt(i); hash |= 0; }
-  return colors[Math.abs(hash) % colors.length];
-}
-
-function ordinal(n: number | undefined) {
-  if (n === undefined) return "—";
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
-}
-
-function bestRankStat(playerId: number): StatKey[] {
-  const ranks = props.classRanksByPlayerId?.get(playerId);
-  if (!ranks) return [];
-  const entries: Array<[StatKey, number]> = [
-    ["physical", ranks.physical.rank],
-    ["magic", ranks.magic.rank],
-    ["defensive", ranks.defensive.rank],
-  ];
-  const minRank = Math.min(...entries.map((e) => e[1]));
-  return entries.filter((e) => e[1] === minRank).map((e) => e[0]);
-}
-
 function dropZoneStyle(key: string) {
   const active = props.hoveredDropZone === key;
   return {
@@ -247,105 +212,22 @@ function onPartyDragEnd() {
           <!-- Member row -->
           <div
             data-party-member-row
-            class="flex cursor-grab items-center justify-between border bg-slate-800/60 px-3 py-2 transition-colors"
-            :class="member.id === actorId ? 'bg-emerald-900/40' : 'border-slate-700'"
-            :style="member.id === actorId ? 'border-color: #10b981;' : ''"
-            :draggable="canEdit"
-            @dragstart="emit('drag-start-member', $event, party, member)"
-            @dragend="emit('drag-end-member')"
             @dragover="emit('drag-over-member-zone', $event)"
             @dragleave="emit('drag-leave-member-zone', $event)"
             @drop="emit('drop-member-reorder', $event, party, idx)"
           >
-            <div class="min-w-0 flex-1">
-              <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
-                <button
-                  type="button"
-                  class="text-sm font-medium text-slate-100 hover:text-white hover:underline"
-                  title="View progression"
-                  @click.stop="emit('open-progression', member)"
-                >{{ member.ign }}</button>
-                <!-- Current job class -->
-                <template v-if="!member.suggestion || member.suggestion.job === member.snapshot?.job">
-                  <span :class="['text-xs', jobTextClass(member.snapshot?.job)]">
-                    {{ member.snapshot?.job ?? "Unknown" }}
-                  </span>
-                </template>
-                <template v-else>
-                  <span :class="['text-xs', 'line-through', 'opacity-60', jobTextClass(member.snapshot?.job)]">
-                    {{ member.snapshot?.job ?? "Unknown" }}
-                  </span>
-                </template>
-                <!-- Current class role -->
-                <template v-if="!member.suggestion || (member.suggestion.job === member.snapshot?.job && member.suggestion.classRole === member.snapshot?.classRole)">
-                  <span class="text-xs text-slate-500">-</span>
-                  <span :class="['text-xs', classRoleTextClass(member.snapshot?.classRole)]">
-                    {{ member.snapshot?.classRole ?? "Unknown" }}
-                  </span>
-                </template>
-                <template v-else-if="member.suggestion.job === member.snapshot?.job">
-                  <!-- Same job, different role -->
-                  <span class="text-xs text-slate-500">-</span>
-                  <span :class="['text-xs', 'line-through', 'opacity-60', classRoleTextClass(member.snapshot?.classRole)]">
-                    {{ member.snapshot?.classRole ?? "Unknown" }}
-                  </span>
-                </template>
-                <!-- Suggested class -->
-                <template v-if="member.suggestion && (member.suggestion.job !== member.snapshot?.job || member.suggestion.classRole !== member.snapshot?.classRole)">
-                  <template v-if="member.suggestion.job === member.snapshot?.job">
-                    <!-- Same job, different role - show only role -->
-                    <span class="text-xs font-semibold text-amber-400">
-                      → {{ member.suggestion.classRole }}
-                    </span>
-                  </template>
-                  <template v-else>
-                    <!-- Different job - show job and role -->
-                    <span class="text-xs font-semibold text-amber-400">
-                      → {{ member.suggestion.job }} - {{ member.suggestion.classRole }}
-                    </span>
-                  </template>
-                </template>
-              </div>
-              <div v-if="classRanksByPlayerId" class="mt-1.5 flex flex-wrap gap-1">
-                <span
-                  class="flex items-center gap-0.5 rounded border border-slate-600 px-1.5 py-0.5 text-[10px] text-slate-300"
-                  :class="bestRankStat(member.id).includes('physical') ? 'border-emerald-400/70 bg-emerald-500/20 text-emerald-200' : ''"
-                  title="Physical DMG rank"
-                >
-                  <UIcon name="i-lucide-sword" class="h-2.5 w-2.5 shrink-0" />
-                  {{ ordinal(classRanksByPlayerId?.get(member.id)?.physical.rank) }}
-                </span>
-                <span
-                  class="flex items-center gap-0.5 rounded border border-slate-600 px-1.5 py-0.5 text-[10px] text-slate-300"
-                  :class="bestRankStat(member.id).includes('magic') ? 'border-emerald-400/70 bg-emerald-500/20 text-emerald-200' : ''"
-                  title="Magic DMG rank"
-                >
-                  <UIcon name="i-lucide-sparkles" class="h-2.5 w-2.5 shrink-0" />
-                  {{ ordinal(classRanksByPlayerId?.get(member.id)?.magic.rank) }}
-                </span>
-                <span
-                  class="flex items-center gap-0.5 rounded border border-slate-600 px-1.5 py-0.5 text-[10px] text-slate-300"
-                  :class="bestRankStat(member.id).includes('defensive') ? 'border-emerald-400/70 bg-emerald-500/20 text-emerald-200' : ''"
-                  title="Defensive rank"
-                >
-                  <UIcon name="i-lucide-shield" class="h-2.5 w-2.5 shrink-0" />
-                  {{ ordinal(classRanksByPlayerId?.get(member.id)?.defensive.rank) }}
-                </span>
-              </div>
-            </div>
-            <div class="flex shrink-0 gap-1">
-              <UButton
-                v-if="canEdit"
-                color="warning"
-                variant="ghost"
-                size="xs"
-                icon="i-lucide-lightbulb"
-                :class="member.suggestion ? 'opacity-100' : 'opacity-45'"
-                :disabled="busy"
-                title="Suggest Job Class"
-                @click="emit('suggest-class', party, member)"
-              />
-            </div>
+            <PlayerMiniCard
+              :player="member"
+              :actor-id="actorId"
+              :ranks="classRanksByPlayerId"
+              :draggable="canEdit"
+              :can-suggest="canEdit"
+              :busy="busy"
+              @open-progression="emit('open-progression', member)"
+              @suggest="emit('suggest-class', party, member)"
+              @dragstart="emit('drag-start-member', $event, party, member)"
+              @dragend="emit('drag-end-member')"
+            />
           </div>
         </div>
         <!-- Drop zone after last member -->
