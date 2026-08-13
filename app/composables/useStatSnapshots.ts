@@ -6,9 +6,10 @@ export const useStatSnapshots = () => {
   const config = useRuntimeConfig();
   const backendUrl = config.public.backendUrl;
 
-  const getLatestSnapshot = async (playerId: string): Promise<LatestStatSnapshotResponse> => {
+  const getLatestSnapshot = async (): Promise<LatestStatSnapshotResponse> => {
     return await $fetch<LatestStatSnapshotResponse>(
-      `${backendUrl}/api/stat-snapshots/latest?playerId=${encodeURIComponent(playerId)}`
+      `${backendUrl}/api/stat-snapshots/latest`,
+      { credentials: "include" }
     );
   };
 

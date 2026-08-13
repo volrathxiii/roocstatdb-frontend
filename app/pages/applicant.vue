@@ -10,7 +10,7 @@ const hasStatRecord = ref(false);
 
 onMounted(async () => {
   try {
-    const latest = await getLatestSnapshot(auth.value.player!.playerId);
+    const latest = await getLatestSnapshot();
     hasStatRecord.value = latest.snapshot !== null;
   } catch {
     hasStatRecord.value = false;
@@ -51,7 +51,7 @@ onMounted(async () => {
         </div>
       </UCard>
 
-      <StatSnapshotForm v-if="auth.player?.playerId" :player-id="auth.player.playerId" />
+      <StatSnapshotForm v-if="auth.player?.playerId" />
     </div>
   </div>
 </template>

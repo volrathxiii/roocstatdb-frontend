@@ -80,7 +80,6 @@ const classRankOptions = [
   { label: "DEF", value: "DEF" as ClassRank },
 ];
 
-const actorPlayerId = computed(() => auth.value.player?.playerId ?? "");
 const jobClassOptions = computed(() =>
   jobClasses.value.map((item) => ({ label: item.name, value: item.id })),
 );
@@ -95,8 +94,8 @@ async function fetchAll() {
   const [j, c, p, s] = await Promise.all([
     api.get<RefItem[]>("/api/ref-data/job-classes"),
     api.get<RefItem[]>("/api/ref-data/class-roles"),
-    api.get<{ presets: PartyPreset[] }>("/api/party-presets", { playerId: actorPlayerId.value }),
-    api.get<AppSetting[]>("/api/settings", { playerId: actorPlayerId.value }),
+    api.get<{ presets: PartyPreset[] }>("/api/party-presets"),
+    api.get<AppSetting[]>("/api/settings"),
   ]);
   jobClasses.value   = j;
   classRoles.value   = c;
@@ -108,7 +107,7 @@ async function fetchAll() {
 async function saveSetting(key: string) {
   settingSaving.value[key] = true;
   try {
-    await api.put(`/api/settings/${encodeURIComponent(key)}`, { playerId: actorPlayerId.value, value: settingDrafts.value[key] ?? "" });
+    await api.put(`/api/settings/${encodeURIComponent(key)}`, { value: settingDrafts.value[key] ?? "" });
     const setting = appSettings.value.find((s) => s.key === key);
     if (setting) { setting.value = settingDrafts.value[key] ?? ""; setting.isOverridden = true; }
     settingSaved.value[key] = true;
@@ -119,7 +118,7 @@ async function saveSetting(key: string) {
 }
 
 async function resetSetting(key: string) {
-  await api.del(`/api/settings/${encodeURIComponent(key)}`, { playerId: actorPlayerId.value });
+  await api.del(`/api/settings/${encodeURIComponent(key)}`);
   const setting = appSettings.value.find((s) => s.key === key);
   if (setting) {
     setting.value = setting.defaultValue;
@@ -226,7 +225,6 @@ async function savePresetModal() {
   if (!canSavePreset()) return;
 
   const payload = {
-    playerId: actorPlayerId.value,
     name: presetModal.name.trim(),
     records: presetModal.records.map((record, index) => ({
       position: index,
@@ -260,7 +258,7 @@ function closeDeletePresetModal() {
 
 async function confirmDeletePreset() {
   if (!deletePresetModal.presetId) return;
-  await api.del(`/api/party-presets/${deletePresetModal.presetId}`, { playerId: actorPlayerId.value });
+  await api.del(`/api/party-presets/${deletePresetModal.presetId}`);
   closeDeletePresetModal();
   await fetchAll();
 }

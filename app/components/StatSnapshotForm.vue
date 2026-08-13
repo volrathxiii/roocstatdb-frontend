@@ -1,6 +1,4 @@
 <script setup lang="ts">
-const props = defineProps<{ playerId: string }>();
-
 const api = useApi();
 const config = useRuntimeConfig();
 
@@ -91,7 +89,7 @@ onMounted(async () => {
       api.get<RefItem[]>("/api/ref-data/job-classes"),
       api.get<RefItem[]>("/api/ref-data/class-roles"),
       api.get<{ snapshot: Record<string, unknown> | null }>(
-        `/api/stat-snapshots/latest?playerId=${encodeURIComponent(props.playerId)}`
+        `/api/stat-snapshots/latest`
       ),
     ]);
     jobClasses.value = jobRes;
@@ -121,7 +119,6 @@ async function handleSubmit() {
   saving.value = true;
   try {
     await api.post(`/api/stat-snapshots`, {
-      playerId: props.playerId,
       jobId: form.jobId,
       classRoleId: form.classRoleId,
       patk: form.patk,

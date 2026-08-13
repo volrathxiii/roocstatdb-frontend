@@ -131,7 +131,7 @@ onMounted(() => {
     assignmentsError.value = null;
     try {
       dashboardStatus.value = await api.get<DashboardStatusResponse>(
-        `/api/players/status?playerId=${encodeURIComponent(auth.value.player.playerId)}`,
+        `/api/players/status`,
       );
     } catch {
       assignmentsError.value = "Failed to load party assignment details.";
@@ -160,7 +160,7 @@ onMounted(() => {
         </div>
       </UCard>
 
-      <StatSnapshotForm v-if="auth.player?.playerId" :player-id="auth.player.playerId" />
+      <StatSnapshotForm v-if="auth.player?.playerId" />
     </div>
 
     <div class="space-y-3 xl:col-span-1">
