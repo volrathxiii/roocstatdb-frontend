@@ -48,6 +48,7 @@ export const useAuth = () => {
     const data = await $fetch<LoginResponse>(`${backendUrl}/api/auth/login`, {
       method: "POST",
       body: payload,
+      credentials: "include", // send/receive the HttpOnly JWT cookie
     });
 
     auth.value = {
@@ -61,16 +62,26 @@ export const useAuth = () => {
     return data;
   };
 
-  const logout = () => {
+  const logout = async (reason?: 'inactivity' | 'expired') => {
+    try {
+      // Tell the backend to clear the HttpOnly cookie server-side
+      await $fetch(`${backendUrl}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // Proceed with client-side cleanup even if request fails
+    }
     auth.value = { player: null, isMember: false, role: null };
     authCookie.value = null;
-    navigateTo("/login");
+    navigateTo(reason ? `/login?reason=${reason}` : '/login');
   };
 
   const updateIgn = async (id: number, ign: string): Promise<UpdateIgnResponse> => {
     const data = await $fetch<UpdateIgnResponse>(`${backendUrl}/api/players/${id}/ign`, {
       method: "PATCH",
       body: { ign },
+      credentials: "include",
     });
 
     if (auth.value.player?.id === id) {
@@ -87,5 +98,21 @@ export const useAuth = () => {
     return data;
   };
 
-  return { auth, isLoggedIn, login, logout, updateIgn };
+  const fetchMe = async (): Promise<void> => {
+    if (!auth.value.player) return;
+    try {
+      const data = await $fetch<{ player: LoginResponse['player']; role: LoginResponse['role']; isMember: boolean }>(
+        `${backendUrl}/api/auth/me`,
+        { credentials: 'include' },
+      );
+      if (data.role !== auth.value.role || data.isMember !== auth.value.isMember) {
+        auth.value = { player: data.player, isMember: data.isMember, role: data.role };
+        authCookie.value = auth.value;
+      }
+    } catch {
+      // non-critical — role stays as-is until next successful call
+    }
+  };
+
+  return { auth, isLoggedIn, login, logout, updateIgn, fetchMe };
 };

@@ -108,15 +108,9 @@ describe("applicants.vue", () => {
   describe("data fetching", () => {
     it("fetches job classes, class roles, and non-members on mount", async () => {
       await mountPage();
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/api/ref-data/job-classes")
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/api/ref-data/class-roles")
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/api/players/non-members")
-      );
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/ref-data/job-classes"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/ref-data/class-roles"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/players/non-members"), expect.anything());
     });
 
     it("shows error when non-members fetch fails", async () => {

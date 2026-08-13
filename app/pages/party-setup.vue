@@ -2,9 +2,9 @@
 definePageMeta({ layout: "authenticated", middleware: "auth" });
 
 const { auth } = useAuth();
+const api = useApi();
 const { setSubtitle } = usePageSubtitle();
 const config = useRuntimeConfig();
-const backendUrl = config.public.backendUrl;
 
 const canEdit = computed(() => auth.value.role === "Officer" || auth.value.role === "Admin");
 
@@ -290,10 +290,7 @@ async function deleteCurrentEvent() {
   busy.value = true;
   errorMsg.value = null;
   try {
-    await $fetch(`${backendUrl}/api/party-setup/events/${selectedEventId.value}`, {
-      method: "DELETE",
-      query: { playerId: actorPlayerId.value },
-    });
+    await api.del(`/api/party-setup/events/${selectedEventId.value}`);
     confirmDeleteEventOpen.value = false;
     selectedEventId.value = null;
     selectedEvent.value = null;
@@ -351,10 +348,7 @@ async function commitEditNote(party: Party) {
   if (next === party.notes) return;
   party.notes = next;
   try {
-    await $fetch(`${backendUrl}/api/party-setup/parties/${party.id}`, {
-      method: "PATCH",
-      body: { playerId: actorPlayerId.value, notes: next },
-    });
+    await api.patch(`/api/party-setup/parties/${party.id}`, { notes: next });
   } catch {
     errorMsg.value = "Failed to save note.";
     await onEventChange();
@@ -377,7 +371,6 @@ const poolSearch = ref("");
 const poolJobFilter = ref<string | null>(null);
 const poolRoleFilter = ref<string | null>(null);
 
-const actorPlayerId = computed(() => auth.value.player?.playerId ?? "");
 const actorId = computed(() => auth.value.player?.id ?? null);
 
 const partyCategoryOptions = [
@@ -490,9 +483,7 @@ function ensureMemberAccess() {
 }
 
 async function fetchEvents() {
-  const res = await $fetch<{ events: EventItem[] }>(`${backendUrl}/api/party-setup/events`, {
-    query: { playerId: actorPlayerId.value },
-  });
+  const res = await api.get<{ events: EventItem[] }>(`/api/party-setup/events`);
   events.value = res.events;
   if (res.events.length === 0) {
     selectedEventId.value = null;
@@ -509,9 +500,7 @@ async function fetchEvents() {
 async function fetchSetup(eventId: number) {
   loadingSetup.value = true;
   try {
-    const res = await $fetch<SetupResponse>(`${backendUrl}/api/party-setup/events/${eventId}`, {
-      query: { playerId: actorPlayerId.value },
-    });
+    const res = await api.get<SetupResponse>(`/api/party-setup/events/${eventId}`);
     selectedEvent.value = res.event;
     parties.value = [...res.parties].sort((a, b) => a.position - b.position);
     groups.value = [...res.groups].sort((a, b) => a.position - b.position);
@@ -533,12 +522,7 @@ async function fetchRosterPlayers() {
   const all: RosterPlayer[] = [];
 
   do {
-    const res = await $fetch<{ players: RosterPlayer[]; total: number }>(`${backendUrl}/api/players/members`, {
-      query: {
-        page,
-        pageSize,
-      },
-    });
+    const res = await api.get<{ players: RosterPlayer[]; total: number }>(`/api/players/members`, { page, pageSize });
     all.push(...res.players);
     total = res.total;
     page += 1;
@@ -549,9 +533,7 @@ async function fetchRosterPlayers() {
 
 async function fetchPartyPresets() {
   try {
-    const res = await $fetch<{ presets: PartyPreset[] }>(`${backendUrl}/api/party-presets`, {
-      query: { playerId: actorPlayerId.value },
-    });
+    const res = await api.get<{ presets: PartyPreset[] }>(`/api/party-presets`);
     partyPresets.value = res.presets;
   } catch {
     partyPresets.value = [];
@@ -565,7 +547,7 @@ async function loadAll() {
   try {
     const fetches: Promise<unknown>[] = [fetchEvents(), fetchRosterPlayers(), fetchRefData()];
     if (auth.value.role === "Admin") fetches.push(fetchPartyPresets());
-    const webhookCheck = $fetch<{ available: boolean }>(`${backendUrl}/api/settings/discord-webhook-available`)
+    const webhookCheck = api.get<{ available: boolean }>(`/api/settings/discord-webhook-available`)
       .then((r) => { discordWebhookAvailable.value = r.available; })
       .catch(() => {});
     await Promise.all([...fetches, webhookCheck]);
@@ -593,10 +575,7 @@ async function postToDiscord() {
   if (!canEdit.value || !selectedEventId.value || discordPosting.value) return;
   discordPosting.value = true;
   try {
-    await $fetch(`${backendUrl}/api/party-setup/events/${selectedEventId.value}/notify-discord`, {
-      method: "POST",
-      body: { playerId: actorPlayerId.value, printBaseUrl: window.location.origin },
-    });
+    await api.post(`/api/party-setup/events/${selectedEventId.value}/notify-discord`, { printBaseUrl: window.location.origin });
     discordPosted.value = true;
     setTimeout(() => { discordPosted.value = false; }, 3000);
   } catch {
@@ -617,7 +596,6 @@ async function saveEvent() {
     if (eventModalMode.value === 'create') {
       // Create mode
       const payload: Record<string, string | null> = {
-        playerId: actorPlayerId.value,
         name,
       };
       if (eventForm.eventType.trim()) payload.eventType = eventForm.eventType.trim();
@@ -625,10 +603,7 @@ async function saveEvent() {
       if (eventForm.mainCommanderPlayerId) payload.mainCommanderPlayerId = eventForm.mainCommanderPlayerId;
       if (eventForm.subCommanderPlayerId) payload.subCommanderPlayerId = eventForm.subCommanderPlayerId;
 
-      const res = await $fetch<{ event: EventItem }>(`${backendUrl}/api/party-setup/events`, {
-        method: "POST",
-        body: payload,
-      });
+      const res = await api.post<{ event: EventItem }>(`/api/party-setup/events`, payload);
 
       await fetchEvents();
       selectedEventId.value = res.event.id;
@@ -637,7 +612,6 @@ async function saveEvent() {
       // Edit mode
       if (!selectedEventId.value) return;
       const body: Record<string, string | null> = {
-        playerId: actorPlayerId.value,
         name,
         eventType: eventForm.eventType.trim() || null,
         startsAt: eventForm.startsAt ? new Date(eventForm.startsAt).toISOString() : null,
@@ -645,10 +619,7 @@ async function saveEvent() {
         subCommanderPlayerId: eventForm.subCommanderPlayerId ?? null,
       };
 
-      const res = await $fetch<{ event: EventItem }>(`${backendUrl}/api/party-setup/events/${selectedEventId.value}`, {
-        method: "PATCH",
-        body,
-      });
+      const res = await api.patch<{ event: EventItem }>(`/api/party-setup/events/${selectedEventId.value}`, body);
 
       selectedEvent.value = res.event;
       await fetchEvents();
@@ -668,13 +639,10 @@ async function cloneCurrentEvent() {
   busy.value = true;
   errorMsg.value = null;
   try {
-    const payload: Record<string, string> = { playerId: actorPlayerId.value };
+    const payload: Record<string, string> = {};
     if (cloneEventName.value.trim()) payload.name = cloneEventName.value.trim();
 
-    const res = await $fetch<{ event: EventItem }>(`${backendUrl}/api/party-setup/events/${selectedEventId.value}/clone`, {
-      method: "POST",
-      body: payload,
-    });
+    const res = await api.post<{ event: EventItem }>(`/api/party-setup/events/${selectedEventId.value}/clone`, payload);
 
     showCloneEventModal.value = false;
     cloneEventName.value = "";
@@ -697,14 +665,11 @@ async function createParty() {
   busy.value = true;
   errorMsg.value = null;
   try {
-    await $fetch(`${backendUrl}/api/party-setup/events/${selectedEventId.value}/parties`, {
-      method: "POST",
-      body: {
-        playerId: actorPlayerId.value,
+    await api.post(`/api/party-setup/events/${selectedEventId.value}/parties`, {
         name,
         category: createPartyCategory.value,
       },
-    });
+    );
 
     showCreatePartyModal.value = false;
     createPartyName.value = "";
@@ -724,12 +689,8 @@ async function renameParty(party: Party) {
   if (!name) return;
 
   try {
-    await $fetch(`${backendUrl}/api/party-setup/parties/${party.id}`, {
-      method: "PATCH",
-      body: {
-        playerId: actorPlayerId.value,
-        name,
-      },
+    await api.patch(`/api/party-setup/parties/${party.id}`, {
+      name,
     });
   } catch {
     errorMsg.value = "Failed to rename party.";
@@ -740,12 +701,8 @@ async function renameParty(party: Party) {
 async function changePartyCategory(party: Party) {
   if (!canEdit.value) return;
   try {
-    await $fetch(`${backendUrl}/api/party-setup/parties/${party.id}`, {
-      method: "PATCH",
-      body: {
-        playerId: actorPlayerId.value,
-        category: party.category,
-      },
+    await api.patch(`/api/party-setup/parties/${party.id}`, {
+      category: party.category,
     });
   } catch {
     errorMsg.value = "Failed to update party category.";
@@ -758,12 +715,7 @@ async function deleteParty(party: Party) {
   busy.value = true;
   errorMsg.value = null;
   try {
-    const res = await $fetch<SetupResponse>(`${backendUrl}/api/party-setup/parties/${party.id}`, {
-      method: "DELETE",
-      query: {
-        playerId: actorPlayerId.value,
-      },
-    });
+    const res = await api.del<SetupResponse>(`/api/party-setup/parties/${party.id}`);
     applySetupResponse(res);
     await fetchEvents();
   } catch {
@@ -783,13 +735,7 @@ async function savePartyMembers(party: Party, memberIds: number[]) {
   busy.value = true;
   errorMsg.value = null;
   try {
-    const res = await $fetch<SetupResponse>(`${backendUrl}/api/party-setup/parties/${party.id}/members`, {
-      method: "PATCH",
-      body: {
-        playerId: actorPlayerId.value,
-        memberIds,
-      },
-    });
+    const res = await api.patch<SetupResponse>(`/api/party-setup/parties/${party.id}/members`, { memberIds });
     applySetupResponse(res);
     await fetchEvents();
   } catch {
@@ -843,10 +789,7 @@ async function onDropMemberReorder(event: DragEvent, targetParty: Party, targetI
     newMembers.splice(currentIndex, 1);
     newMembers.splice(targetIndex, 0, member);
     try {
-      await $fetch(`${backendUrl}/api/party-setup/parties/${targetParty.id}/members/reorder`, {
-        method: "PATCH",
-        body: { playerId: actorPlayerId.value, memberIds: newMembers.map((m) => m.id) },
-      });
+      await api.patch(`/api/party-setup/parties/${targetParty.id}/members/reorder`, { memberIds: newMembers.map((m) => m.id) });
       targetParty.members = newMembers;
     } catch (e: any) {
       errorMsg.value = e.data?.message || "Failed to reorder members.";
@@ -998,42 +941,28 @@ async function onDragEndParty() {
 
 async function createGroup(name?: string, notes?: string | null) {
   if (!selectedEventId.value) return null;
-  const playerId = actorPlayerId.value.trim();
   console.log("[PartyDrag][Page] create-group request", {
     eventId: selectedEventId.value,
-    playerId,
     name,
   });
-  const res = await $fetch<{ group: PartyGroup }>(`${backendUrl}/api/party-setup/events/${selectedEventId.value}/groups`, {
-    method: "POST",
-    body: {
-      playerId,
-      name,
-      notes,
-    },
+  const res = await api.post<{ group: PartyGroup }>(`/api/party-setup/events/${selectedEventId.value}/groups`, {
+    name,
+    notes,
   });
   console.log("[PartyDrag][Page] create-group response", { groupId: res.group.id });
   return res.group;
 }
 
 async function assignPartyToGroup(partyId: number, groupId: number | null) {
-  const playerId = actorPlayerId.value.trim();
-  console.log("[PartyDrag][Page] assign-party-group request", { partyId, groupId, playerId });
+  console.log("[PartyDrag][Page] assign-party-group request", { partyId, groupId });
   try {
-    const res = await $fetch<SetupResponse>(`${backendUrl}/api/party-setup/parties/${partyId}/group`, {
-      method: "PATCH",
-      body: {
-        playerId,
-        groupId,
-      },
-    });
+    const res = await api.patch<SetupResponse>(`/api/party-setup/parties/${partyId}/group`, { groupId });
     applySetupResponse(res);
   } catch (e: any) {
     const backendMessage = e?.data?.message;
     console.log("[PartyDrag][Page] assign-party-group error", {
       partyId,
       groupId,
-      playerId,
       status: e?.status,
       backendMessage,
       raw: e,
@@ -1101,10 +1030,7 @@ async function saveGroupName(group: PartyGroup) {
   busy.value = true;
   errorMsg.value = null;
   try {
-    await $fetch(`${backendUrl}/api/party-setup/groups/${group.id}`, {
-      method: "PATCH",
-      body: { playerId: actorPlayerId.value, name },
-    });
+    await api.patch(`/api/party-setup/groups/${group.id}`, { name });
     editingGroupId.value = null;
     await onEventChange();
   } catch {
@@ -1118,10 +1044,7 @@ async function saveGroupNotes(group: PartyGroup) {
   busy.value = true;
   errorMsg.value = null;
   try {
-    await $fetch(`${backendUrl}/api/party-setup/groups/${group.id}`, {
-      method: "PATCH",
-      body: { playerId: actorPlayerId.value, notes: editingGroupNotes.value.trim() || null },
-    });
+    await api.patch(`/api/party-setup/groups/${group.id}`, { notes: editingGroupNotes.value.trim() || null });
     editingGroupNotesId.value = null;
     await onEventChange();
   } catch {
@@ -1135,10 +1058,7 @@ async function removeGroup(group: PartyGroup) {
   busy.value = true;
   errorMsg.value = null;
   try {
-    const res = await $fetch<SetupResponse>(`${backendUrl}/api/party-setup/groups/${group.id}`, {
-      method: "DELETE",
-      query: { playerId: actorPlayerId.value },
-    });
+    const res = await api.del<SetupResponse>(`/api/party-setup/groups/${group.id}`);
     applySetupResponse(res);
   } catch {
     errorMsg.value = "Failed to delete group.";
@@ -1299,16 +1219,12 @@ async function applyPreset(preset: PartyPreset) {
   errorMsg.value = null;
   try {
     // Create the party using the preset name
-    const { party: newParty } = await $fetch<{ party: { id: number } }>(
-      `${backendUrl}/api/party-setup/events/${selectedEventId.value}/parties`,
+    const { party: newParty } = await api.post<{ party: { id: number } }>(
+      `/api/party-setup/events/${selectedEventId.value}/parties`,
       {
-        method: "POST",
-        body: {
-          playerId: actorPlayerId.value,
           name: preset.name,
           category: "Main",
         },
-      },
     );
 
     // Build set of already-assigned player ids (before this party)
@@ -1352,10 +1268,7 @@ async function applyPreset(preset: PartyPreset) {
     }
 
     if (memberIds.length > 0) {
-      await $fetch(`${backendUrl}/api/party-setup/parties/${newParty.id}/members`, {
-        method: "PATCH",
-        body: { playerId: actorPlayerId.value, memberIds },
-      });
+      await api.patch(`/api/party-setup/parties/${newParty.id}/members`, { memberIds });
     }
 
     await fetchEvents();
@@ -1386,8 +1299,8 @@ async function applyPreset(preset: PartyPreset) {
 async function fetchRefData() {
   try {
     const [jobsRes, rolesRes] = await Promise.all([
-      $fetch<RefJob[]>(`${backendUrl}/api/ref-data/job-classes`),
-      $fetch<RefClassRole[]>(`${backendUrl}/api/ref-data/class-roles`),
+      api.get<RefJob[]>(`/api/ref-data/job-classes`),
+      api.get<RefClassRole[]>(`/api/ref-data/class-roles`),
     ]);
     refJobs.value = jobsRes || [];
     refClassRoles.value = rolesRes || [];
@@ -1419,14 +1332,11 @@ async function createMemberSuggestion() {
   busy.value = true;
   errorMsg.value = null;
   try {
-    await $fetch(`${backendUrl}/api/party-setup/parties/${suggestionPartyId.value}/members/${suggestionMember.value.id}/suggestion`, {
-      method: "POST",
-      body: {
-        playerId: actorPlayerId.value,
+    await api.post(`/api/party-setup/parties/${suggestionPartyId.value}/members/${suggestionMember.value.id}/suggestion`, {
         jobId: suggestionForm.jobId,
         classRoleId: suggestionForm.classRoleId,
       },
-    });
+    );
 
     showSuggestionModal.value = false;
     await fetchSetup(selectedEventId.value);
@@ -1443,10 +1353,7 @@ async function deleteMemberSuggestion() {
   busy.value = true;
   errorMsg.value = null;
   try {
-    await $fetch(`${backendUrl}/api/party-setup/parties/${suggestionPartyId.value}/members/${suggestionMember.value.id}/suggestion`, {
-      method: "DELETE",
-      query: { playerId: actorPlayerId.value },
-    });
+    await api.del(`/api/party-setup/parties/${suggestionPartyId.value}/members/${suggestionMember.value.id}/suggestion`);
 
     showSuggestionModal.value = false;
     await fetchSetup(selectedEventId.value);

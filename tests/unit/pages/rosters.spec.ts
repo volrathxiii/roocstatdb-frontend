@@ -120,15 +120,9 @@ describe("rosters.vue", () => {
   describe("data fetching", () => {
     it("fetches job classes, class roles, and members on mount", async () => {
       await mountPage();
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/api/ref-data/job-classes")
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/api/ref-data/class-roles")
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/api/players/members")
-      );
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/ref-data/job-classes"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/ref-data/class-roles"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/players/members"), expect.anything());
     });
 
     it("shows an error when the members fetch fails", async () => {

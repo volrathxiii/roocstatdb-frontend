@@ -2,8 +2,8 @@
 definePageMeta({ layout: false });
 
 const route = useRoute();
+const api = useApi();
 const config = useRuntimeConfig();
-const backendUrl = config.public.backendUrl;
 const shareToken = String(route.params.eventId ?? "");
 
 interface PartyMember {
@@ -121,8 +121,8 @@ onMounted(async () => {
     return;
   }
   try {
-    const res = await $fetch<SetupResponse>(
-      `${backendUrl}/api/party-setup/public/events/${encodeURIComponent(shareToken)}`,
+    const res = await api.get<SetupResponse>(
+      `/api/party-setup/public/events/${encodeURIComponent(shareToken)}`,
     );
     event.value = res.event;
     parties.value = [...res.parties].sort((a, b) => a.position - b.position);

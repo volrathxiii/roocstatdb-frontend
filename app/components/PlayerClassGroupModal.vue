@@ -1,6 +1,6 @@
 <script setup lang="ts">
+const api = useApi();
 const config = useRuntimeConfig();
-const backendUrl = config.public.backendUrl;
 
 interface PlayerRow {
   id: number;
@@ -58,8 +58,8 @@ onMounted(async () => {
   onUnmounted(() => document.removeEventListener("keydown", onKeydown));
 
   try {
-    data.value = await $fetch<ClassGroupResponse>(
-      `${backendUrl}/api/stat-snapshots/class-group?jobId=${props.jobId}&classRoleId=${props.classRoleId}&includePlayerId=${encodeURIComponent(props.includePlayerId)}`,
+    data.value = await api.get<ClassGroupResponse>(
+      `/api/stat-snapshots/class-group?jobId=${props.jobId}&classRoleId=${props.classRoleId}&includePlayerId=${encodeURIComponent(props.includePlayerId)}`,
     );
   } catch {
     error.value = "Failed to load class group data.";

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: false, middleware: "auth-required" });
 
-const { auth, logout } = useAuth();
+const { auth, logout, fetchMe } = useAuth();
 const { getLatestSnapshot } = useStatSnapshots();
 const config = useRuntimeConfig();
 const siteName = computed(() => config.public.siteName || "ROOC StatDB");
@@ -10,11 +10,31 @@ const hasStatRecord = ref(false);
 
 onMounted(async () => {
   try {
-    const latest = await getLatestSnapshot(auth.value.player!.playerId);
+    const latest = await getLatestSnapshot();
     hasStatRecord.value = latest.snapshot !== null;
   } catch {
     hasStatRecord.value = false;
   }
+});
+
+// Poll role-check (Public — does NOT reset the inactivity session window)
+async function checkRole() {
+  try {
+    const res = await $fetch<{ role: string; isMember: boolean } | null>(
+      `${config.public.backendUrl}/api/auth/role-check`,
+      { credentials: 'include' },
+    );
+    if (res && (res.role !== auth.value.role || res.isMember !== auth.value.isMember)) {
+      await fetchMe(); // full sync only when role actually changed
+    }
+  } catch { /* non-critical */ }
+}
+
+const pollTimer = setInterval(checkRole, 10_000);
+onUnmounted(() => clearInterval(pollTimer));
+
+watch(() => auth.value.isMember, (isMember) => {
+  if (isMember) navigateTo('/dashboard?welcome=1');
 });
 </script>
 
@@ -51,7 +71,7 @@ onMounted(async () => {
         </div>
       </UCard>
 
-      <StatSnapshotForm v-if="auth.player?.playerId" :player-id="auth.player.playerId" />
+      <StatSnapshotForm v-if="auth.player?.playerId" />
     </div>
   </div>
 </template>

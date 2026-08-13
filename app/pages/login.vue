@@ -19,6 +19,21 @@ const form = reactive({ ign: "", playerId: "" });
 const error = ref<string | null>(null);
 const loading = ref(false);
 
+const toast = useToast();
+const route = useRoute();
+
+onMounted(() => {
+  const reason = route.query.reason;
+  if (reason === 'inactivity') {
+    toast.add({ id: 'session-warning', title: 'Logged out due to inactivity', description: 'Please sign in again.', color: 'warning', icon: 'i-lucide-triangle-alert', duration: 0, ui: { root: 'bg-warning/15', title: 'text-warning', description: 'text-warning/80', icon: 'text-warning' } });
+  } else if (reason === 'expired') {
+    toast.add({ id: 'session-warning', title: 'Session expired', description: 'Please sign in again.', color: 'warning', icon: 'i-lucide-triangle-alert', duration: 0, ui: { root: 'bg-warning/15', title: 'text-warning', description: 'text-warning/80', icon: 'text-warning' } });
+  }
+  if (reason) {
+    router.replace({ query: {} });
+  }
+});
+
 onMounted(() => {
   if (auth.value.player) {
     navigateTo(auth.value.isMember ? "/dashboard" : "/applicant");
@@ -36,6 +51,7 @@ const handleLogin = async () => {
   loading.value = true;
   try {
     const result = await login({ ign: form.ign.trim(), playerId: form.playerId.trim() });
+    toast.remove('session-warning');
     // Redirect based on membership status
     if (result.isMember) {
       router.push("/dashboard");

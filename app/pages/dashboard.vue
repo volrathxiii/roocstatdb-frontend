@@ -1,12 +1,29 @@
 <script setup lang="ts">
 const { auth } = useAuth();
+const api = useApi();
 const { setSubtitle } = usePageSubtitle();
 const config = useRuntimeConfig();
-const backendUrl = config.public.backendUrl;
+const toast = useToast();
+const route = useRoute();
+const router = useRouter();
 
 definePageMeta({
   layout: "authenticated",
   middleware: "auth",
+});
+
+onMounted(() => {
+  if (route.query.welcome === '1') {
+    toast.add({
+      title: `Welcome, ${auth.value.player?.ign ?? 'Member'}!`,
+      description: 'You have been promoted to Member. Welcome to the guild!',
+      color: 'success',
+      icon: 'i-lucide-party-popper',
+      duration: 10_000,
+      ui: { root: 'bg-success/15', title: 'text-success', description: 'text-success/80', icon: 'text-success' },
+    });
+    router.replace({ query: {} });
+  }
 });
 
 interface DashboardStatusResponse {
@@ -130,8 +147,8 @@ onMounted(() => {
     loadingAssignments.value = true;
     assignmentsError.value = null;
     try {
-      dashboardStatus.value = await $fetch<DashboardStatusResponse>(
-        `${backendUrl}/api/players/status?playerId=${encodeURIComponent(auth.value.player.playerId)}`,
+      dashboardStatus.value = await api.get<DashboardStatusResponse>(
+        `/api/players/status`,
       );
     } catch {
       assignmentsError.value = "Failed to load party assignment details.";
@@ -160,7 +177,7 @@ onMounted(() => {
         </div>
       </UCard>
 
-      <StatSnapshotForm v-if="auth.player?.playerId" :player-id="auth.player.playerId" />
+      <StatSnapshotForm v-if="auth.player?.playerId" />
     </div>
 
     <div class="space-y-3 xl:col-span-1">

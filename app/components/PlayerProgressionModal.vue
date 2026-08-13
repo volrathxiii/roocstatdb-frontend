@@ -1,6 +1,6 @@
 <script setup lang="ts">
+const api = useApi();
 const config = useRuntimeConfig();
-const backendUrl = config.public.backendUrl;
 
 interface Snapshot {
   weekNumber: number;
@@ -96,9 +96,9 @@ async function loadClassGroups() {
   if (classGroupsLoaded.value) return;
   try {
     const [jobs, roles, counts] = await Promise.all([
-      $fetch<JobClass[]>(`${backendUrl}/api/ref-data/job-classes`),
-      $fetch<ClassRole[]>(`${backendUrl}/api/ref-data/class-roles`),
-      $fetch<{ jobId: number; classRoleId: number; count: number }[]>(`${backendUrl}/api/stat-snapshots/class-group-counts`),
+      api.get<JobClass[]>("/api/ref-data/job-classes"),
+      api.get<ClassRole[]>("/api/ref-data/class-roles"),
+      api.get<{ jobId: number; classRoleId: number; count: number }[]>("/api/stat-snapshots/class-group-counts"),
     ]);
     allJobClasses.value = jobs;
     allClassRoles.value = roles;
@@ -137,8 +137,8 @@ function onCompareInput() {
   searchTimer = setTimeout(async () => {
     compareSearching.value = true;
     try {
-      const res = await $fetch<{ players: SearchPlayer[] }>(
-        `${backendUrl}/api/players/search?q=${encodeURIComponent(compareQuery.value.trim())}`,
+      const res = await api.get<{ players: SearchPlayer[] }>(
+        `/api/players/search?q=${encodeURIComponent(compareQuery.value.trim())}`,
       );
       compareResults.value = res.players.filter((p) => p.id !== props.playerId);
     } catch {
@@ -175,9 +175,9 @@ onMounted(async () => {
 
   try {
     [snapshots.value, scores.value, playerRank.value] = await Promise.all([
-      $fetch<Snapshot[]>(`${backendUrl}/api/players/${props.playerId}/snapshots`),
-      $fetch<ScoresResponse>(`${backendUrl}/api/players/${props.playerId}/scores`),
-      $fetch<RankResponse>(`${backendUrl}/api/players/${props.playerId}/rank`),
+      api.get<Snapshot[]>(`/api/players/${props.playerId}/snapshots`),
+      api.get<ScoresResponse>(`/api/players/${props.playerId}/scores`),
+      api.get<RankResponse>(`/api/players/${props.playerId}/rank`),
     ]);
   } catch {
     error.value = "Failed to load progression data.";

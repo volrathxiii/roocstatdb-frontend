@@ -54,18 +54,10 @@ describe("PlayerClassGroupModal", () => {
       await mountSuspended(PlayerClassGroupModal, { props: DEFAULT_PROPS });
       await flushPromises();
 
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/api/stat-snapshots/class-group")
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("jobId=1")
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("classRoleId=1")
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("includePlayerId=abc-001")
-      );
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/stat-snapshots/class-group"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("jobId=1"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("classRoleId=1"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("includePlayerId=abc-001"), expect.anything());
     });
 
     it("URL-encodes includePlayerId", async () => {
@@ -75,9 +67,7 @@ describe("PlayerClassGroupModal", () => {
       });
       await flushPromises();
 
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("includePlayerId=id%2Fwith%20spaces")
-      );
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("includePlayerId=id%2Fwith%20spaces"), expect.anything());
     });
 
     it("shows error when fetch fails", async () => {

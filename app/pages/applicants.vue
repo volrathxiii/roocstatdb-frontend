@@ -7,9 +7,9 @@ import { upperFirst } from "scule";
 definePageMeta({ layout: "authenticated", middleware: "auth-officer" });
 
 const { auth } = useAuth();
+const api = useApi();
 const { setSubtitle } = usePageSubtitle();
 const config = useRuntimeConfig();
-const backendUrl = config.public.backendUrl;
 
 onMounted(() => {
   setSubtitle("Applicants");
@@ -86,7 +86,7 @@ async function fetchPlayers() {
       params.sortDir = sorting.value[0].desc ? "desc" : "asc";
     }
     const qs = new URLSearchParams(params).toString();
-    const res = await $fetch<{ players: PlayerRow[]; total: number }>(`${backendUrl}/api/players/non-members?${qs}`);
+    const res = await api.get<{ players: PlayerRow[]; total: number }>(`/api/players/non-members?${qs}`);
     players.value = res.players;
     total.value = res.total;
   } catch {
@@ -110,8 +110,8 @@ onMounted(async () => {
     columnVisibility.value = { ...DESKTOP_COLUMN_VISIBILITY };
   }
   const [jobs, classRoles] = await Promise.all([
-    $fetch<RefItem[]>(`${backendUrl}/api/ref-data/job-classes`).catch(() => []),
-    $fetch<RefItem[]>(`${backendUrl}/api/ref-data/class-roles`).catch(() => []),
+    api.get<RefItem[]>("/api/ref-data/job-classes").catch(() => []),
+    api.get<RefItem[]>("/api/ref-data/class-roles").catch(() => []),
   ]);
   allJobs.value = jobs;
   allClassRoles.value = classRoles;
@@ -412,12 +412,11 @@ async function changePlayerRole(row: FlatRow, role: string) {
   actionError.value = null;
   closeMenu();
   try {
-    await $fetch(`${backendUrl}/api/players/${row.id}/role`, {
-      method: "PATCH",
-      body: { role },
-    });
-    const res = await $fetch<{ players: PlayerRow[] }>(`${backendUrl}/api/players/non-members`);
+    await api.patch(`/api/players/${row.id}/role`, { role });
+    const res = await api.get<{ players: PlayerRow[] }>(`/api/players/non-members`);
     players.value = res.players;
+    const { refreshAll } = useSidebarCounters();
+    refreshAll();
   } catch {
     actionError.value = "Failed to update player role. Please try again.";
   }
@@ -427,8 +426,8 @@ async function deletePlayer(row: FlatRow) {
   actionError.value = null;
   closeMenu();
   try {
-    await $fetch(`${backendUrl}/api/players/${row.id}`, { method: "DELETE" });
-    const res = await $fetch<{ players: PlayerRow[] }>(`${backendUrl}/api/players/non-members`);
+    await api.del(`/api/players/${row.id}`);
+    const res = await api.get<{ players: PlayerRow[] }>(`/api/players/non-members`);
     players.value = res.players;
   } catch {
     actionError.value = "Failed to delete player. Please try again.";

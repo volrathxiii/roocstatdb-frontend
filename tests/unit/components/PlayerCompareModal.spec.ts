@@ -58,15 +58,9 @@ describe("PlayerCompareModal", () => {
       const wrapper = await mountSuspended(PlayerCompareModal, { props: COMPARE_PROPS });
       await flushPromises();
 
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/api/stat-snapshots/compare")
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("playerIdA=abc-001")
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("playerIdB=def-002")
-      );
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/stat-snapshots/compare"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("playerIdA=abc-001"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("playerIdB=def-002"), expect.anything());
     });
 
     it("URL-encodes playerIds in the request", async () => {
@@ -76,9 +70,7 @@ describe("PlayerCompareModal", () => {
       });
       await flushPromises();
 
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("playerIdA=id%2Fwith%20spaces")
-      );
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("playerIdA=id%2Fwith%20spaces"), expect.anything());
     });
 
     it("shows error when fetch fails", async () => {

@@ -66,15 +66,9 @@ describe("PlayerProgressionModal", () => {
   describe("on mount", () => {
     it("fetches snapshots, scores, and rank for the player", async () => {
       await mountModal();
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/api/players/1/snapshots")
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/api/players/1/scores")
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/api/players/1/rank")
-      );
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/players/1/snapshots"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/players/1/scores"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/players/1/rank"), expect.anything());
     });
 
     it("shows error message when fetch fails", async () => {
