@@ -1194,7 +1194,6 @@ async function applyPreset(preset: PartyPreset) {
       await api.patch(`/api/party-setup/parties/${newParty.id}/members`, { memberIds });
     }
 
-    await fetchEvents();
     await fetchSetup(selectedEventId.value);
 
     if (unfilledLabels.length > 0) {
