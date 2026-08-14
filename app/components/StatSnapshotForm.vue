@@ -405,36 +405,13 @@ const classRoleOptions = computed(() =>
         </UFormField>
       </div>
 
-      <!-- Core Attack -->
+      <!-- General Stats -->
       <div>
-        <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Core Attack</p>
+        <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">General Stats</p>
         <div class="grid grid-cols-2 gap-4">
           <UFormField label="PATK" class="w-full">
             <UInput v-model.number="form.patk" type="number" :min="0" class="w-full" :color="fieldError('patk') ? 'error' : undefined" />
           </UFormField>
-          <UFormField label="MATK" class="w-full">
-            <UInput v-model.number="form.matk" type="number" :min="0" class="w-full" :color="fieldError('matk') ? 'error' : undefined" />
-          </UFormField>
-        </div>
-      </div>
-
-      <!-- Ignore DEF -->
-      <div>
-        <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Ignore DEF</p>
-        <div class="grid grid-cols-2 gap-4">
-            <UFormField label="Ignore PDEF" class="w-full">
-            <UInput v-model.number="form.ignorePdef" type="number" :min="0" step="0.01" class="w-full" :color="fieldError('ignorePdef') ? 'error' : undefined" />
-          </UFormField>
-            <UFormField label="Ignore MDEF" class="w-full">
-            <UInput v-model.number="form.ignoreMdef" type="number" :min="0" step="0.01" class="w-full" :color="fieldError('ignoreMdef') ? 'error' : undefined" />
-          </UFormField>
-        </div>
-      </div>
-
-      <!-- Equipment DEF -->
-      <div>
-        <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Equipment DEF</p>
-        <div class="grid grid-cols-2 gap-4">
           <UFormField class="w-full">
             <template #label>
               <span class="flex items-center gap-1">
@@ -455,6 +432,9 @@ const classRoleOptions = computed(() =>
               </span>
             </template>
             <UInput v-model.number="form.eqPdef" type="number" :min="0" class="w-full" :color="fieldError('eqPdef') ? 'error' : undefined" />
+          </UFormField>
+          <UFormField label="MATK" class="w-full">
+            <UInput v-model.number="form.matk" type="number" :min="0" class="w-full" :color="fieldError('matk') ? 'error' : undefined" />
           </UFormField>
           <UFormField class="w-full">
             <template #label>
@@ -477,89 +457,67 @@ const classRoleOptions = computed(() =>
             </template>
             <UInput v-model.number="form.eqMdef" type="number" :min="0" class="w-full" :color="fieldError('eqMdef') ? 'error' : undefined" />
           </UFormField>
-          <UFormField label="EQ PDEF %" class="w-full">
-            <UInput v-model.number="form.eqPdefPct" type="number" :min="0" step="0.01" class="w-full" :color="fieldError('eqPdefPct') ? 'error' : undefined" />
-          </UFormField>
-          <UFormField label="EQ MDEF %" class="w-full">
-            <UInput v-model.number="form.eqMdefPct" type="number" :min="0" step="0.01" class="w-full" :color="fieldError('eqMdefPct') ? 'error' : undefined" />
-          </UFormField>
         </div>
       </div>
 
-      <!-- Physical Damage -->
+      <!-- Quasi-Stats -->
       <div>
-        <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Physical Damage (%)</p>
+        <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Quasi-Stats</p>
         <div class="grid grid-cols-2 gap-4">
+          <UFormField label="Healing Done %" class="w-full">
+            <UInput v-model.number="form.healingDone" type="number" step="0.01" class="w-full" :color="fieldError('healingDone') ? 'error' : undefined" />
+          </UFormField>
+          <UFormField label="Healing Taken %" class="w-full">
+            <UInput v-model.number="form.healingTaken" type="number" step="0.01" class="w-full" :color="fieldError('healingTaken') ? 'error' : undefined" />
+          </UFormField>
           <UFormField label="P DMG %" class="w-full">
             <UInput v-model.number="form.pDmgPct" type="number" step="0.01" class="w-full" :color="fieldError('pDmgPct') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="P DMG Reduction %" class="w-full">
             <UInput v-model.number="form.pDmgReductionPct" type="number" step="0.01" class="w-full" :color="fieldError('pDmgReductionPct') ? 'error' : undefined" />
           </UFormField>
-        </div>
-      </div>
-
-      <!-- Magic Damage -->
-      <div>
-        <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Magic Damage (%)</p>
-        <div class="grid grid-cols-2 gap-4">
           <UFormField label="M DMG %" class="w-full">
             <UInput v-model.number="form.mDmgPct" type="number" step="0.01" class="w-full" :color="fieldError('mDmgPct') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="M DMG Reduction %" class="w-full">
             <UInput v-model.number="form.mDmgReductionPct" type="number" step="0.01" class="w-full" :color="fieldError('mDmgReductionPct') ? 'error' : undefined" />
           </UFormField>
+          <UFormField label="Ignore PDEF" class="w-full">
+            <UInput v-model.number="form.ignorePdef" type="number" :min="0" class="w-full" :color="fieldError('ignorePdef') ? 'error' : undefined" />
+          </UFormField>
+          <UFormField label="Ignore MDEF" class="w-full">
+            <UInput v-model.number="form.ignoreMdef" type="number" :min="0" class="w-full" :color="fieldError('ignoreMdef') ? 'error' : undefined" />
+          </UFormField>
+          <UFormField label="PVP DMG Reduction" class="w-full">
+            <UInput v-model.number="form.pvpDmgReduction" type="number" :min="0" class="w-full" :color="fieldError('pvpDmgReduction') ? 'error' : undefined" />
+          </UFormField>
+          <UFormField label="PVP DMG" class="w-full">
+            <UInput v-model.number="form.pvpDmg" type="number" :min="0" class="w-full" :color="fieldError('pvpDmg') ? 'error' : undefined" />
+          </UFormField>
         </div>
       </div>
 
-      <!-- Demi-Human -->
+      <!-- Special -->
       <div>
-        <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Demi-Human (%)</p>
+        <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Special</p>
         <div class="grid grid-cols-2 gap-4">
-          <UFormField label="DMG vs Demi-Human %" class="w-full">
-            <UInput v-model.number="form.dmgVsDemiHuman" type="number" step="0.01" class="w-full" :color="fieldError('dmgVsDemiHuman') ? 'error' : undefined" />
+          <UFormField label="EQ PDEF %" class="w-full">
+            <UInput v-model.number="form.eqPdefPct" type="number" :min="0" step="0.01" class="w-full" :color="fieldError('eqPdefPct') ? 'error' : undefined" />
           </UFormField>
-          <UFormField label="DMG Reduction vs Demi-Human %" class="w-full">
-            <UInput v-model.number="form.dmgReductionVsDemiHuman" type="number" step="0.01" class="w-full" :color="fieldError('dmgReductionVsDemiHuman') ? 'error' : undefined" />
+          <UFormField label="EQ MDEF %" class="w-full">
+            <UInput v-model.number="form.eqMdefPct" type="number" :min="0" step="0.01" class="w-full" :color="fieldError('eqMdefPct') ? 'error' : undefined" />
           </UFormField>
-        </div>
-      </div>
-
-      <!-- Medium Size -->
-      <div>
-        <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Medium Size (%)</p>
-        <div class="grid grid-cols-2 gap-4">
           <UFormField label="DMG vs Medium %" class="w-full">
             <UInput v-model.number="form.dmgVsMedium" type="number" step="0.01" class="w-full" :color="fieldError('dmgVsMedium') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="DMG Reduction vs Medium %" class="w-full">
             <UInput v-model.number="form.dmgReductionVsMedium" type="number" step="0.01" class="w-full" :color="fieldError('dmgReductionVsMedium') ? 'error' : undefined" />
           </UFormField>
-        </div>
-      </div>
-
-      <!-- PVP -->
-      <div>
-        <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">PVP</p>
-        <div class="grid grid-cols-2 gap-4">
-          <UFormField label="PVP DMG" class="w-full">
-            <UInput v-model.number="form.pvpDmg" type="number" step="0.01" class="w-full" :color="fieldError('pvpDmg') ? 'error' : undefined" />
+          <UFormField label="DMG vs Demi-Human %" class="w-full">
+            <UInput v-model.number="form.dmgVsDemiHuman" type="number" step="0.01" class="w-full" :color="fieldError('dmgVsDemiHuman') ? 'error' : undefined" />
           </UFormField>
-          <UFormField label="PVP DMG Reduction" class="w-full">
-            <UInput v-model.number="form.pvpDmgReduction" type="number" step="0.01" class="w-full" :color="fieldError('pvpDmgReduction') ? 'error' : undefined" />
-          </UFormField>
-        </div>
-      </div>
-
-      <!-- Healing -->
-      <div>
-        <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Healing (%)</p>
-        <div class="grid grid-cols-2 gap-4">
-          <UFormField label="Healing Done" class="w-full">
-            <UInput v-model.number="form.healingDone" type="number" step="0.01" class="w-full" :color="fieldError('healingDone') ? 'error' : undefined" />
-          </UFormField>
-          <UFormField label="Healing Taken" class="w-full">
-            <UInput v-model.number="form.healingTaken" type="number" step="0.01" class="w-full" :color="fieldError('healingTaken') ? 'error' : undefined" />
+          <UFormField label="DMG Reduction vs Demi-Human %" class="w-full">
+            <UInput v-model.number="form.dmgReductionVsDemiHuman" type="number" step="0.01" class="w-full" :color="fieldError('dmgReductionVsDemiHuman') ? 'error' : undefined" />
           </UFormField>
         </div>
       </div>
