@@ -6,7 +6,7 @@ const api = useApi();
 const { setSubtitle } = usePageSubtitle();
 const config = useRuntimeConfig();
 
-const canEdit = computed(() => auth.value.role === "Officer" || auth.value.role === "Admin");
+const canEdit = useCanEdit();
 
 interface EventItem {
   id: number;
@@ -308,63 +308,28 @@ const showCreatePartyModal = ref(false);
 const createPartyName = ref("");
 const createPartyCategory = ref<"Main" | "Sub">("Main");
 
-const editingNamePartyId = ref<number | null>(null);
-const editingNameValue = ref("");
-
-function startEditName(party: Party) {
-  if (!canEdit.value) return;
-  editingNamePartyId.value = party.id;
-  editingNameValue.value = party.name;
-}
-
-async function commitEditName(party: Party) {
-  const trimmed = editingNameValue.value.trim();
-  editingNamePartyId.value = null;
-  if (!trimmed || trimmed === party.name) return;
-  party.name = trimmed;
+// ── PartyCard simplified emit handlers ───────────────────────────────────────
+async function onPartyRename(party: Party, name: string) {
+  if (name === party.name) return;
+  party.name = name;
   await renameParty(party);
 }
 
-function cancelEditName() {
-  editingNamePartyId.value = null;
-  editingNameValue.value = "";
+async function onPartyChangeCategory(party: Party, category: "Main" | "Sub") {
+  if (category === party.category) return;
+  party.category = category;
+  await changePartyCategory(party);
 }
 
-const editingCategoryPartyId = ref<number | null>(null);
-
-const editingNotePartyId = ref<number | null>(null);
-const editingNoteValue = ref("");
-
-function startEditNote(party: Party) {
-  if (!canEdit.value) return;
-  editingNotePartyId.value = party.id;
-  editingNoteValue.value = party.notes ?? "";
-}
-
-async function commitEditNote(party: Party) {
-  const trimmed = editingNoteValue.value.trim();
-  editingNotePartyId.value = null;
-  const next = trimmed || null;
-  if (next === party.notes) return;
-  party.notes = next;
+async function onPartyChangeNote(party: Party, note: string | null) {
+  if (note === party.notes) return;
+  party.notes = note;
   try {
-    await api.patch(`/api/party-setup/parties/${party.id}`, { notes: next });
+    await api.patch(`/api/party-setup/parties/${party.id}`, { notes: note });
   } catch {
     errorMsg.value = "Failed to save note.";
     await onEventChange();
   }
-}
-
-function startEditCategory(party: Party) {
-  if (!canEdit.value) return;
-  editingCategoryPartyId.value = party.id;
-}
-
-async function commitEditCategory(party: Party, value: "Main" | "Sub") {
-  editingCategoryPartyId.value = null;
-  if (value === party.category) return;
-  party.category = value;
-  await changePartyCategory(party);
 }
 
 const poolSearch = ref("");
@@ -842,25 +807,14 @@ function onDragOverParty(event: DragEvent) {
 function parseDraggedPartyId(event: DragEvent) {
   const customPayload = event.dataTransfer?.getData("text/party-id") ?? "";
   const customPartyId = Number.parseInt(customPayload, 10);
-  console.log("[PartyDrag][Page] parse custom", {
-    customPayload,
-    customPartyId,
-    isCustomInteger: Number.isInteger(customPartyId),
-  });
   if (Number.isInteger(customPartyId)) return customPartyId;
 
   const plainPayload = event.dataTransfer?.getData("text/plain") || event.dataTransfer?.getData("text") || "";
-  console.log("[PartyDrag][Page] parse plain", { plainPayload });
   const match = plainPayload.match(/^party:(\d+)$/);
   if (!match) return null;
   const partyIdRaw = match[1];
   if (!partyIdRaw) return null;
   const plainPartyId = Number.parseInt(partyIdRaw, 10);
-  console.log("[PartyDrag][Page] parse resolved", {
-    partyIdRaw,
-    plainPartyId,
-    isPlainInteger: Number.isInteger(plainPartyId),
-  });
   return Number.isInteger(plainPartyId) ? plainPartyId : null;
 }
 
@@ -868,18 +822,9 @@ async function onDropToParty(event: DragEvent, party: Party) {
   if (!canEdit.value) return;
   event.preventDefault();
 
-  console.log("[PartyDrag][Page] drop-to-party", {
-    targetPartyId: party.id,
-    hasDataTransfer: Boolean(event.dataTransfer),
-  });
-
   const draggedPartyId = parseDraggedPartyId(event);
   if (draggedPartyId !== null) {
     partyDragWasHandled.value = true;
-    console.log("[PartyDrag][Page] treating as party drag", {
-      sourcePartyId: draggedPartyId,
-      targetPartyId: party.id,
-    });
     if (draggedPartyId === party.id) return;
     await groupPartyToTarget(draggedPartyId, party);
     return;
@@ -911,17 +856,9 @@ function onDragStartParty(event: DragEvent, party: Party) {
   event.dataTransfer?.setData("text/party-id", String(party.id));
   event.dataTransfer?.setData("text/plain", `party:${party.id}`);
   if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
-  console.log("[PartyDrag][Page] drag-start-party emit", {
-    partyId: party.id,
-    partyGroupId: party.groupId,
-    hasDataTransfer: Boolean(event.dataTransfer),
-    custom: event.dataTransfer?.getData("text/party-id") ?? "",
-    plain: event.dataTransfer?.getData("text/plain") ?? "",
-  });
 }
 
 async function onDragEndParty() {
-  console.log("[PartyDrag][Page] drag-end-party");
   const sourcePartyId = partyDragSourcePartyId.value;
   const sourceGroupId = partyDragSourceGroupId.value;
   const wasHandled = partyDragWasHandled.value;
@@ -941,32 +878,19 @@ async function onDragEndParty() {
 
 async function createGroup(name?: string, notes?: string | null) {
   if (!selectedEventId.value) return null;
-  console.log("[PartyDrag][Page] create-group request", {
-    eventId: selectedEventId.value,
-    name,
-  });
   const res = await api.post<{ group: PartyGroup }>(`/api/party-setup/events/${selectedEventId.value}/groups`, {
     name,
     notes,
   });
-  console.log("[PartyDrag][Page] create-group response", { groupId: res.group.id });
   return res.group;
 }
 
 async function assignPartyToGroup(partyId: number, groupId: number | null) {
-  console.log("[PartyDrag][Page] assign-party-group request", { partyId, groupId });
   try {
     const res = await api.patch<SetupResponse>(`/api/party-setup/parties/${partyId}/group`, { groupId });
     applySetupResponse(res);
   } catch (e: any) {
     const backendMessage = e?.data?.message;
-    console.log("[PartyDrag][Page] assign-party-group error", {
-      partyId,
-      groupId,
-      status: e?.status,
-      backendMessage,
-      raw: e,
-    });
     errorMsg.value = Array.isArray(backendMessage)
       ? backendMessage.join(", ")
       : (backendMessage || "Failed to assign party group.");
@@ -1007,7 +931,6 @@ async function groupPartyToTarget(sourcePartyId: number, targetParty: Party) {
 async function onDropToGroup(event: DragEvent, groupId: number) {
   if (!canEdit.value) return;
   event.preventDefault();
-  console.log("[PartyDrag][Page] drop-to-group", { groupId, hasDataTransfer: Boolean(event.dataTransfer) });
   const draggedPartyId = parseDraggedPartyId(event);
   if (draggedPartyId === null) return;
   partyDragWasHandled.value = true;
@@ -1271,7 +1194,6 @@ async function applyPreset(preset: PartyPreset) {
       await api.patch(`/api/party-setup/parties/${newParty.id}/members`, { memberIds });
     }
 
-    await fetchEvents();
     await fetchSetup(selectedEventId.value);
 
     if (unfilledLabels.length > 0) {
@@ -1619,26 +1541,14 @@ onMounted(async () => {
                       :can-edit="canEdit"
                       :busy="busy"
                       :actor-id="actorId"
-                      :editing-name-party-id="editingNamePartyId"
-                      :editing-name-value="editingNameValue"
-                      :editing-category-party-id="editingCategoryPartyId"
-                      :editing-note-party-id="editingNotePartyId"
-                      :editing-note-value="editingNoteValue"
                       :is-dragging-member="isDraggingMember"
                       :hovered-drop-zone="hoveredDropZone"
                       :party-category-options="partyCategoryOptions"
                       :class-ranks-by-player-id="classRanksByPlayerId"
-                      @update:editing-name-value="editingNameValue = $event"
-                      @update:editing-note-value="editingNoteValue = $event"
                       @update:hovered-drop-zone="hoveredDropZone = $event"
-                      @start-edit-name="startEditName"
-                      @commit-edit-name="commitEditName"
-                      @cancel-edit-name="cancelEditName"
-                      @start-edit-category="startEditCategory"
-                      @commit-edit-category="commitEditCategory"
-                      @cancel-edit-category="editingCategoryPartyId = null"
-                      @start-edit-note="startEditNote"
-                      @commit-edit-note="commitEditNote"
+                      @rename="onPartyRename"
+                      @change-category="onPartyChangeCategory"
+                      @change-note="onPartyChangeNote"
                       @delete-party="requestDeleteParty"
                       @remove-from-party="removeFromParty"
                       @suggest-class="openSuggestionModal"
@@ -1664,26 +1574,14 @@ onMounted(async () => {
                     :can-edit="canEdit"
                     :busy="busy"
                     :actor-id="actorId"
-                    :editing-name-party-id="editingNamePartyId"
-                    :editing-name-value="editingNameValue"
-                    :editing-category-party-id="editingCategoryPartyId"
-                    :editing-note-party-id="editingNotePartyId"
-                    :editing-note-value="editingNoteValue"
                     :is-dragging-member="isDraggingMember"
                     :hovered-drop-zone="hoveredDropZone"
                     :party-category-options="partyCategoryOptions"
                     :class-ranks-by-player-id="classRanksByPlayerId"
-                    @update:editing-name-value="editingNameValue = $event"
-                    @update:editing-note-value="editingNoteValue = $event"
                     @update:hovered-drop-zone="hoveredDropZone = $event"
-                    @start-edit-name="startEditName"
-                    @commit-edit-name="commitEditName"
-                    @cancel-edit-name="cancelEditName"
-                    @start-edit-category="startEditCategory"
-                    @commit-edit-category="commitEditCategory"
-                    @cancel-edit-category="editingCategoryPartyId = null"
-                    @start-edit-note="startEditNote"
-                    @commit-edit-note="commitEditNote"
+                    @rename="onPartyRename"
+                    @change-category="onPartyChangeCategory"
+                    @change-note="onPartyChangeNote"
                     @delete-party="requestDeleteParty"
                     @remove-from-party="removeFromParty"
                     @suggest-class="openSuggestionModal"

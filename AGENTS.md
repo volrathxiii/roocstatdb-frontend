@@ -3,7 +3,7 @@
 ## Stack
 
 - **Nuxt 4** (Vue 3, TypeScript, Composition API)
-- **No UI library** — plain scoped CSS, dark theme (`#0f172a` bg, `#1e293b` card, `#6366f1` accent)
+- **@nuxt/ui v4** — Tailwind CSS-based component library. Use `UButton`, `UCard`, `UInput`, `USelect`, `UModal`, `UAlert`, etc. Do **not** add a second UI framework.
 - Backend URL configured via `NUXT_PUBLIC_BACKEND_URL` env var (default `http://localhost:3001`)
 
 ---
@@ -49,10 +49,15 @@ Common candidates:
 
 | Composable | Responsibility |
 |---|---|
-| `useAuth` | Auth state, `login()`, `logout()`, `isLoggedIn` |
-| `useApi` *(add when needed)* | Typed `$fetch` wrapper for backend endpoints |
+| `useAuth` | Auth state, `login()`, `logout()`, `fetchMe()`, `isLoggedIn` |
+| `useApi` | Typed `$fetch` wrapper — all backend calls go through this |
+| `useCanEdit` | `computed` — true when role is Officer or Admin |
+| `useSidebarCounters` | Shared badge counts for sidebar nav |
+| `useInactivityLogout` | Auto-logout after 1h of DOM inactivity |
+| `useStatSnapshots` | Snapshot fetch helpers |
+| `usePageSubtitle` | Page subtitle for the authenticated layout header |
 
-Never put fetch logic directly in a page — put it in a composable or the `useApi` wrapper.
+Never put fetch logic directly in a page — put it in a composable or `useApi`.
 
 ### 3. Props over slots for simple variation; slots for structural variation
 
@@ -69,37 +74,23 @@ definePageMeta({ layout: false }); // or a named layout once layouts/ exists
 
 ### 5. Guard authenticated pages consistently
 
-```ts
-onMounted(() => {
-  if (!auth.value.player) navigateTo("/login");
-});
-```
-
-Do not duplicate this — put it in a route middleware (`app/middleware/auth.ts`) once there are 2+ guarded pages.
+Use `definePageMeta({ middleware: 'auth' })` (or `auth-officer`, `auth-admin`, `auth-required`).
+Do **not** use `onMounted` guards — route middleware runs before render.
 
 ### 6. Typed API responses
 
 All backend response shapes must be typed interfaces in `app/composables/useAuth.ts` or a dedicated `app/types/` file if they grow beyond auth. Never use `any` or untyped `$fetch`.
 
-### 7. Scoped CSS only
+### 7. Scoped CSS only — when needed
 
-All `<style>` blocks must be `<style scoped>`. Never use global styles except in `app.vue` for resets.
+Since `@nuxt/ui` handles most styling via Tailwind, custom `<style>` blocks should be rare. When used, they must be `<style scoped>`. Never use global styles except in `app.vue`.
 
-### 8. Color / spacing tokens
+### 8. Styling with @nuxt/ui
 
-Use these CSS custom properties instead of hard-coded values (add to `app.vue` `:root` when you first need them):
-
-```css
---color-bg:       #0f172a;
---color-surface:  #1e293b;
---color-border:   #334155;
---color-muted:    #94a3b8;
---color-text:     #f1f5f9;
---color-accent:   #6366f1;
---color-accent-h: #4f46e5;
---color-warn:     #f59e0b;
---color-error:    #f87171;
-```
+Use `@nuxt/ui` components and Tailwind utilities. The app uses a dark theme — slate/cyan palette.
+- Primary colour: `cyan` (set in `app.config.ts`)
+- Neutral: `slate`
+- Do **not** add raw CSS custom properties for colours — use Tailwind classes instead.
 
 ---
 
@@ -118,8 +109,25 @@ Use `auth.value.role` (string) for role-based UI decisions. Check `auth.value.is
 1. `login.vue` → calls `useAuth().login({ ign, playerId })`
 2. `useAuth.login()` → `POST /api/auth/login` on backend
 3. Backend auto-registers unknown players (first ever → Admin, rest → Applicant)
-4. Frontend redirects: `isMember` → `/dashboard`, else → `/applicant`
-5. `logout()` clears state and navigates to `/login`
+4. Backend sets an **HttpOnly JWT cookie** (`access_token`, 1h sliding window)
+5. Frontend redirects: `isMember` → `/dashboard`, else → `/applicant`
+6. `logout()` calls `POST /api/auth/logout` (clears cookie server-side), clears state, navigates to `/login`
+
+### Session management
+
+- All API calls go through `useApi` which sends `credentials: 'include'` on every request
+- The backend `SlidingSessionInterceptor` re-signs the JWT on every authenticated request, resetting the 1h expiry
+- `useInactivityLogout` (registered in `app.vue`) fires after **1h of no DOM activity** and calls `logout('inactivity')`
+- `useApi` catches **401 responses** and calls `logout('expired')` automatically
+- Both redirect to `/login?reason=inactivity` or `/login?reason=expired`, showing a persistent warning toast
+- `fetchMe()` on `useAuth` calls `GET /api/auth/me` to refresh role in state after a role change
+- `router.afterEach` in `app.vue` calls `fetchMe()` on every navigation so the sidebar updates without re-login
+
+### Role promotion (Applicant → Member)
+
+- `applicant.vue` polls `GET /api/auth/role-check` every 10s (public endpoint, does **not** reset session)
+- When `isMember` flips to `true`, the watcher redirects to `/dashboard?welcome=1`
+- Dashboard shows a success toast on `?welcome=1`
 
 ---
 
@@ -159,7 +167,9 @@ Both use the same 3 categories:
 - **Magic**: MATK, Ignore MDEF, M DMG %, DMG vs Demi-Human, DMG vs Medium, PVP DMG  
 - **Defensive**: Raw PDEF, Raw MDEF, P/M DMG Reduction %, Reduction vs Demi-Human/Medium, PVP Reduction
 
-Each stat is normalized as `stat_value / max_stat_in_pool`, then averaged across all stats (fixed denominator, even if max=0). Result is converted to 0–100%.
+Each stat is normalized as `stat_value / max_stat_in_pool`, then **averaged only over stats where at least one player has a non-zero value** (active denominator). Result is converted to 0–100%.
+
+> **Note:** A player who is the only one in their class group will always score 100 on every stat, since they are both the value and the max.
 
 ### Rankings
 
@@ -268,11 +278,11 @@ This ensures players who changed class don't show up when filtering for their ol
 
 ### Implementation
 
-Counters fetched on mount via separate endpoints:
+Counters fetched on mount via `useSidebarCounters` composable:
 - `GET /api/players/members-missing-stats-count`
 - `GET /api/players/applicant-stats-count`
 
-Each nav item includes `badgeClass` (color class: `bg-red-500` or `bg-sky-500`).
+Counters are refreshed automatically after role changes (applicants.vue and rosters.vue call `refreshAll()`).
 
 ---
 
@@ -291,6 +301,30 @@ Supported params:
 - `sortDir` (`"asc"` or `"desc"`)
 
 When `job` or `classRole` is set, filtering uses latest snapshot only (server-side in-memory after DB fetch).
+
+---
+
+## Stat Builds (`StatSnapshotForm.vue`)
+
+Members can have **multiple stat build profiles** (e.g. Main, PVP, Support).
+
+- Each build is a `PlayerStatBuild` record on the backend
+- Every player gets a **"Main" default build** automatically on registration
+- The build selector appears in the `StatSnapshotForm` card header (split button + popover)
+- Switching builds loads that build's latest snapshot; saving writes to the selected build
+- Applicants do **not** have build management (`showBuilds: false` prop on `StatSnapshotForm`)
+- For all guild-wide features (rosters, rankings, party setup, comparison), only the **default build** snapshot is used
+
+### API endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/stat-snapshots/builds` | List my builds |
+| `POST` | `/api/stat-snapshots/builds` | Create a build |
+| `PATCH` | `/api/stat-snapshots/builds/:id/rename` | Rename |
+| `PATCH` | `/api/stat-snapshots/builds/:id/set-default` | Change default |
+| `DELETE` | `/api/stat-snapshots/builds/:id` | Delete (non-default only) |
+| `GET` | `/api/stat-snapshots/latest?buildId=X` | Latest snapshot for a specific build |
 
 ---
 
