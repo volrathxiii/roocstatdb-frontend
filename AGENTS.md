@@ -79,7 +79,19 @@ Do **not** use `onMounted` guards — route middleware runs before render.
 
 ### 6. Typed API responses
 
-All backend response shapes must be typed interfaces in `app/composables/useAuth.ts` or a dedicated `app/types/` file if they grow beyond auth. Never use `any` or untyped `$fetch`.
+All backend response shapes must be typed interfaces in `app/types/` (centralized).
+
+**Import patterns:**
+```typescript
+import type { LoginResponse, PlayerRole } from '~/app/types';
+import { PLAYER_ROLES, isNonMemberRole } from '~/app/types/roles';
+```
+
+**BEFORE COMMITTING — if backend types changed:**
+1. **Role enum** → Check `backend/lib/roles.ts` — sync with `frontend/app/types/roles.ts`
+2. **DTO fields or response shapes** → Update the corresponding type file in `frontend/app/types/`
+
+Never use `any` or `Record<string, unknown>` for API responses.
 
 ### 7. Scoped CSS only — when needed
 

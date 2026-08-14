@@ -1,28 +1,8 @@
+import type { LoginResponse, AuthState, UpdateIgnResponse } from "~/app/types/auth";
+
 export interface LoginPayload {
   ign: string;
   playerId: string;
-}
-
-export interface LoginResponse {
-  success: boolean;
-  player: {
-    id: number;
-    ign: string;
-    playerId: string;
-  };
-  isMember: boolean;
-  role: "Applicant" | "Member" | "Officer" | "Admin" | "Waitlisted";
-}
-
-export interface AuthState {
-  player: LoginResponse["player"] | null;
-  isMember: boolean;
-  role: LoginResponse["role"] | null;
-}
-
-export interface UpdateIgnResponse {
-  id: number;
-  ign: string;
 }
 
 export const useAuth = () => {
