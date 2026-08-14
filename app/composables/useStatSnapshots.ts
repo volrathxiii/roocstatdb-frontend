@@ -1,6 +1,4 @@
-export interface LatestStatSnapshotResponse {
-  snapshot: Record<string, unknown> | null;
-}
+import type { LatestStatSnapshotResponse } from "~/app/types/stat-snapshots";
 
 export const useStatSnapshots = () => {
   const config = useRuntimeConfig();
