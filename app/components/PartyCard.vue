@@ -42,11 +42,6 @@ const props = defineProps<{
   canEdit: boolean;
   busy: boolean;
   actorId: number | null;
-  editingNamePartyId: number | null;
-  editingNameValue: string;
-  editingCategoryPartyId: number | null;
-  editingNotePartyId: number | null;
-  editingNoteValue: string;
   isDraggingMember: boolean;
   hoveredDropZone: string | null;
   partyCategoryOptions: { label: string; value: string }[];
@@ -54,16 +49,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  "update:editingNameValue": [v: string];
-  "update:editingNoteValue": [v: string];
-  "start-edit-name": [party: Party];
-  "commit-edit-name": [party: Party];
-  "cancel-edit-name": [];
-  "start-edit-category": [party: Party];
-  "commit-edit-category": [party: Party, v: "Main" | "Sub"];
-  "cancel-edit-category": [];
-  "start-edit-note": [party: Party];
-  "commit-edit-note": [party: Party];
+  "rename": [party: Party, name: string];
+  "change-category": [party: Party, category: "Main" | "Sub"];
+  "change-note": [party: Party, note: string | null];
   "delete-party": [party: Party];
   "remove-from-party": [party: Party, memberId: number];
   "suggest-class": [party: Party, member: PartyMember];
@@ -80,6 +68,51 @@ const emit = defineEmits<{
   "update:hoveredDropZone": [v: string | null];
 }>();
 
+// ── Local edit state ──────────────────────────────────────────────────────────
+const editingName = ref(false);
+const editingNameValue = ref('');
+
+const editingCategory = ref(false);
+
+const editingNote = ref(false);
+const editingNoteValue = ref('');
+
+function startEditName() {
+  if (!props.canEdit) return;
+  editingNameValue.value = props.party.name;
+  editingName.value = true;
+}
+
+function commitEditName() {
+  editingName.value = false;
+  const trimmed = editingNameValue.value.trim();
+  if (trimmed && trimmed !== props.party.name) {
+    emit('rename', props.party, trimmed);
+  }
+}
+
+function startEditNote() {
+  if (!props.canEdit) return;
+  editingNoteValue.value = props.party.notes ?? '';
+  editingNote.value = true;
+}
+
+function commitEditNote() {
+  editingNote.value = false;
+  const next = editingNoteValue.value.trim() || null;
+  if (next !== props.party.notes) {
+    emit('change-note', props.party, next);
+  }
+}
+
+function commitEditCategory(v: string) {
+  editingCategory.value = false;
+  const cat = v as "Main" | "Sub";
+  if (cat !== props.party.category) {
+    emit('change-category', props.party, cat);
+  }
+}
+
 function dropZoneStyle(key: string) {
   const active = props.hoveredDropZone === key;
   return {
@@ -93,33 +126,18 @@ function dropZoneStyle(key: string) {
 
 function onPartyDragStart(event: DragEvent) {
   if (!props.canEdit) return;
-  console.log("[PartyDrag][Card] dragstart", {
-    partyId: props.party.id,
-    canEdit: props.canEdit,
-    hasDataTransfer: Boolean(event.dataTransfer),
-    eventType: event.type,
-  });
   if (event.dataTransfer) {
     const payload = String(props.party.id);
     event.dataTransfer.setData("text/party-id", payload);
     event.dataTransfer.setData("text/plain", `party:${payload}`);
     event.dataTransfer.setData("text", `party:${payload}`);
     event.dataTransfer.effectAllowed = "move";
-    console.log("[PartyDrag][Card] payload set", {
-      partyId: props.party.id,
-      custom: event.dataTransfer.getData("text/party-id"),
-      plain: event.dataTransfer.getData("text/plain"),
-      text: event.dataTransfer.getData("text"),
-    });
-  } else {
-    console.log("[PartyDrag][Card] no dataTransfer available");
   }
   event.stopPropagation();
   emit("drag-start-party", event, props.party);
 }
 
 function onPartyDragEnd() {
-  console.log("[PartyDrag][Card] dragend", { partyId: props.party.id });
   emit("drag-end-party");
 }
 </script>
@@ -132,28 +150,27 @@ function onPartyDragEnd() {
   >
     <!-- Header -->
     <div class="mb-2 flex items-center gap-2 px-3">
-      <template v-if="canEdit && editingNamePartyId === party.id">
+      <template v-if="canEdit && editingName">
         <UInput
-          :model-value="editingNameValue"
+          v-model="editingNameValue"
           class="flex-1 text-sm"
           autofocus
-          @update:model-value="emit('update:editingNameValue', $event as string)"
-          @keyup.enter="emit('commit-edit-name', party)"
-          @keyup.escape="emit('cancel-edit-name')"
-          @blur="emit('commit-edit-name', party)"
+          @keyup.enter="commitEditName"
+          @keyup.escape="editingName = false"
+          @blur="commitEditName"
         />
-        <UButton color="primary" variant="ghost" size="xs" icon="i-lucide-check" square @click="emit('commit-edit-name', party)" />
+        <UButton color="primary" variant="ghost" size="xs" icon="i-lucide-check" square @click="commitEditName" />
       </template>
       <template v-else>
         <p
           class="flex-1 truncate text-sm font-semibold"
           :class="canEdit ? 'cursor-pointer text-slate-100 hover:text-white' : 'text-slate-100'"
           :title="canEdit ? 'Click to rename' : undefined"
-          @click="canEdit && emit('start-edit-name', party)"
+          @click="canEdit && startEditName()"
         >{{ party.name }}</p>
       </template>
 
-      <template v-if="canEdit && editingCategoryPartyId === party.id">
+      <template v-if="canEdit && editingCategory">
         <USelect
           :model-value="party.category"
           :items="partyCategoryOptions"
@@ -161,8 +178,8 @@ function onPartyDragEnd() {
           label-key="label"
           class="w-24"
           autofocus
-          @update:model-value="(v: string) => emit('commit-edit-category', party, v as 'Main' | 'Sub')"
-          @blur="emit('cancel-edit-category')"
+          @update:model-value="(v: string) => commitEditCategory(v)"
+          @blur="editingCategory = false"
         />
       </template>
       <template v-else>
@@ -170,7 +187,7 @@ function onPartyDragEnd() {
           class="shrink-0 text-xs font-semibold"
           :class="[canEdit ? 'cursor-pointer' : '', party.category === 'Main' ? 'text-amber-300' : 'text-slate-400']"
           :title="canEdit ? 'Click to change category' : undefined"
-          @click="canEdit && emit('start-edit-category', party)"
+          @click="canEdit && (editingCategory = true)"
         >{{ party.category }}</span>
       </template>
 
@@ -245,17 +262,16 @@ function onPartyDragEnd() {
 
     <!-- Notes footer -->
     <div class="border-t border-slate-800 bg-slate-950/60">
-      <template v-if="canEdit && editingNotePartyId === party.id">
+      <template v-if="canEdit && editingNote">
         <div class="flex items-start gap-2 px-3 py-2">
           <UTextarea
-            :model-value="editingNoteValue"
+            v-model="editingNoteValue"
             placeholder="Add a note…"
             :rows="2"
             class="flex-1 text-xs"
             autofocus
-            @update:model-value="emit('update:editingNoteValue', $event as string)"
           />
-          <UButton color="primary" variant="ghost" size="xs" icon="i-lucide-check" square @click="emit('commit-edit-note', party)" />
+          <UButton color="primary" variant="ghost" size="xs" icon="i-lucide-check" square @click="commitEditNote" />
         </div>
       </template>
       <template v-else>
@@ -263,7 +279,7 @@ function onPartyDragEnd() {
           v-if="party.notes"
           class="flex items-start gap-1.5 px-3 py-2"
           :class="canEdit ? 'cursor-pointer hover:bg-slate-800/40' : ''"
-          @click="canEdit ? emit('start-edit-note', party) : undefined"
+          @click="canEdit ? startEditNote() : undefined"
         >
           <UIcon name="i-lucide-notebook" class="mt-0.5 h-3 w-3 shrink-0 text-amber-400" />
           <p class="text-[11px] leading-snug text-amber-400">{{ party.notes }}</p>
@@ -272,7 +288,7 @@ function onPartyDragEnd() {
           v-else-if="canEdit"
           type="button"
           class="flex w-full items-center gap-1 px-3 py-2 text-[11px] text-slate-600 hover:text-slate-400"
-          @click="emit('start-edit-note', party)"
+          @click="startEditNote()"
         >
           <UIcon name="i-lucide-notebook" class="h-3 w-3" />
           Add note

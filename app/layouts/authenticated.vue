@@ -5,18 +5,16 @@ const config = useRuntimeConfig();
 const { subtitle } = usePageSubtitle();
 const siteName = computed(() => config.public.siteName || "OUROBOROS");
 
-const isPrivileged = computed(() =>
-  auth.value.role === "Officer" || auth.value.role === "Admin"
-);
+const isPrivileged = useCanEdit();
 
 const { applicantStatsCount, rosterMissingStatsCount, refreshAll } = useSidebarCounters();
 
 const navItems = computed(() => [
   { label: "Dashboard",  icon: "i-lucide-layout-dashboard",  to: "/dashboard",  badge: 0, badgeClass: "bg-sky-500", badgeTooltip: "" },
-  ...(auth.value.role !== "Applicant" && auth.value.role !== "Waitlisted"
+  ...(auth.value.isMember
     ? [{ label: "Rosters", icon: "i-lucide-users", to: "/rosters", badge: rosterMissingStatsCount.value, badgeClass: "bg-red-500", badgeTooltip: "Members missing this week's stats" }]
     : []),
-  ...(auth.value.role !== "Applicant" && auth.value.role !== "Waitlisted"
+  ...(auth.value.isMember
     ? [{ label: "Party Setup", icon: "i-lucide-swords", to: "/party-setup", badge: 0, badgeClass: "bg-sky-500", badgeTooltip: "" }]
     : []),
   ...(isPrivileged.value
