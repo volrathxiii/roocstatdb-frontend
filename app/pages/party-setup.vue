@@ -17,6 +17,7 @@ interface EventItem {
   startsAt: string | null;
   endsAt: string | null;
   updatedAt: string;
+  publishedAt: string | null;
   partyCount: number;
   mainCommander: { ign: string; playerId: string } | null;
   subCommander: { ign: string; playerId: string } | null;
@@ -70,6 +71,7 @@ interface SetupResponse {
     startsAt: string | null;
     endsAt: string | null;
     mainCommander: { ign: string; playerId: string } | null;
+    publishedAt: string | null;
     subCommander: { ign: string; playerId: string } | null;
   };
   parties: Party[];
@@ -130,8 +132,8 @@ const showSuggestionModal = ref(false);
 const suggestionMember = ref<PartyMember | null>(null);
 const suggestionPartyId = ref<number | null>(null);
 const suggestionForm = reactive({
-  jobId: null as number | null,
-  classRoleId: null as number | null,
+  jobId: undefined as number | undefined,
+  classRoleId: undefined as number | undefined,
 });
 const refJobs = ref<RefJob[]>([]);
 const refClassRoles = ref<RefClassRole[]>([]);
@@ -225,8 +227,8 @@ const eventForm = reactive({
   name: "",
   eventType: "",
   startsAt: "",
-  mainCommanderPlayerId: null as string | null,
-  subCommanderPlayerId: null as string | null,
+  mainCommanderPlayerId: undefined as string | undefined,
+  subCommanderPlayerId: undefined as string | undefined,
 });
 
 function openNewEventModal() {
@@ -234,8 +236,8 @@ function openNewEventModal() {
   eventForm.name = "";
   eventForm.eventType = "";
   eventForm.startsAt = "";
-  eventForm.mainCommanderPlayerId = null;
-  eventForm.subCommanderPlayerId = null;
+  eventForm.mainCommanderPlayerId = undefined;
+  eventForm.subCommanderPlayerId = undefined;
   showEventModal.value = true;
 }
 
@@ -247,8 +249,8 @@ function openEditEventModal() {
   eventForm.startsAt = selectedEvent.value.startsAt
     ? new Date(selectedEvent.value.startsAt).toISOString().slice(0, 10)
     : "";
-  eventForm.mainCommanderPlayerId = selectedEvent.value.mainCommander?.playerId ?? null;
-  eventForm.subCommanderPlayerId = selectedEvent.value.subCommander?.playerId ?? null;
+  eventForm.mainCommanderPlayerId = selectedEvent.value.mainCommander != null ? selectedEvent.value.mainCommander.playerId : undefined;
+  eventForm.subCommanderPlayerId = selectedEvent.value.subCommander != null ? selectedEvent.value.subCommander.playerId : undefined;
   showEventModal.value = true;
 }
 
@@ -343,19 +345,65 @@ const partyCategoryOptions = [
   { label: "Sub", value: "Sub" },
 ];
 
-const eventOptions = computed(() =>
-  events.value.map((event) => ({
-    label: `${event.name} (${event.partyCount})`,
-    value: event.id,
-  })),
+const eventPickerOpen = ref(false);
+const includeExpired = ref(false);
+
+function isEventExpired(event: EventItem): boolean {
+  if (!event.startsAt) return false;
+  return new Date(event.startsAt) < new Date();
+}
+
+function formatEventDate(event: EventItem): string {
+  if (!event.startsAt) return "No date";
+  return new Date(event.startsAt).toLocaleDateString(undefined, {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+}
+
+const visibleEvents = computed(() => {
+  const filtered = events.value.filter((event) => includeExpired.value || !isEventExpired(event));
+  return filtered.sort((a, b) => {
+    const aExp = isEventExpired(a);
+    const bExp = isEventExpired(b);
+    if (aExp === bExp) return 0;
+    return aExp ? 1 : -1;
+  });
+});
+
+const unexpiredVisibleEvents = computed(() =>
+  visibleEvents.value.filter((event) => !isEventExpired(event)),
 );
 
-const selectedEventIdModel = computed<number | undefined>({
-  get: () => selectedEventId.value ?? undefined,
-  set: (value) => {
-    selectedEventId.value = value ?? null;
-  },
-});
+const expiredVisibleEvents = computed(() =>
+  visibleEvents.value.filter((event) => isEventExpired(event)),
+);
+
+const selectedEventForPicker = computed(() =>
+  events.value.find((event) => event.id === selectedEventId.value) ?? null,
+);
+
+const selectedEventLabel = computed(() =>
+  selectedEventForPicker.value
+    ? `${selectedEventForPicker.value.name} (${selectedEventForPicker.value.partyCount})`
+    : "Select event",
+);
+
+function selectEventFromPicker(eventId: number) {
+  selectedEventId.value = eventId;
+  eventPickerOpen.value = false;
+}
+
+function showExpiredEvents() {
+  includeExpired.value = true;
+  nextTick(() => { eventPickerOpen.value = true; });
+}
+
+function hideExpiredEvents() {
+  includeExpired.value = false;
+  nextTick(() => { eventPickerOpen.value = true; });
+}
 
 const assignedPlayers = computed(() => {
   const ids = new Set<number>();
@@ -502,6 +550,38 @@ async function fetchPartyPresets() {
     partyPresets.value = res.presets;
   } catch {
     partyPresets.value = [];
+  }
+}
+
+async function publishCurrentEvent() {
+  if (!canEdit.value || !selectedEventId.value) return;
+  busy.value = true;
+  errorMsg.value = null;
+  try {
+    const res = await api.post<{ event: EventItem }>(`/api/party-setup/events/${selectedEventId.value}/publish`);
+    const idx = events.value.findIndex((e) => e.id === selectedEventId.value);
+    if (idx !== -1) events.value[idx] = res.event;
+    if (selectedEvent.value) selectedEvent.value = { ...selectedEvent.value, publishedAt: res.event.publishedAt };
+  } catch {
+    errorMsg.value = "Failed to publish event.";
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function unpublishCurrentEvent() {
+  if (!canEdit.value || !selectedEventId.value) return;
+  busy.value = true;
+  errorMsg.value = null;
+  try {
+    const res = await api.post<{ event: EventItem }>(`/api/party-setup/events/${selectedEventId.value}/unpublish`);
+    const idx = events.value.findIndex((e) => e.id === selectedEventId.value);
+    if (idx !== -1) events.value[idx] = res.event;
+    if (selectedEvent.value) selectedEvent.value = { ...selectedEvent.value, publishedAt: res.event.publishedAt };
+  } catch {
+    errorMsg.value = "Failed to unpublish event.";
+  } finally {
+    busy.value = false;
   }
 }
 
@@ -1241,8 +1321,8 @@ function openSuggestionModal(party: Party, member: PartyMember) {
     suggestionForm.jobId = member.suggestion.jobId;
     suggestionForm.classRoleId = member.suggestion.classRoleId;
   } else {
-    suggestionForm.jobId = null;
-    suggestionForm.classRoleId = null;
+    suggestionForm.jobId = undefined;
+    suggestionForm.classRoleId = undefined;
   }
   
   showSuggestionModal.value = true;
@@ -1300,14 +1380,84 @@ onMounted(async () => {
 <template>
   <div class="space-y-4">
     <div class="flex flex-wrap items-center gap-2">
-      <USelect
-        v-model="selectedEventIdModel"
-        :items="eventOptions"
-        value-key="value"
-        label-key="label"
-        placeholder="Select event"
-        class="w-full sm:w-72"
-      />
+      <UPopover v-model:open="eventPickerOpen" :content="{ align: 'start' }">
+        <UButton
+          color="neutral"
+          variant="outline"
+          class="w-full sm:w-72 justify-between"
+        >
+          <div class="min-w-0 text-left">
+            <div class="truncate text-sm">{{ selectedEventLabel }}</div>
+          </div>
+          <UIcon name="i-lucide-chevron-down" class="h-4 w-4 text-slate-400" />
+        </UButton>
+
+        <template #content>
+          <div class="w-[22rem] max-h-80 overflow-y-auto p-1">
+            <button
+              v-for="event in unexpiredVisibleEvents"
+              :key="event.id"
+              type="button"
+              class="w-full rounded-md px-3 py-2 text-left transition-colors"
+              :class="[
+                selectedEventId === event.id ? 'bg-cyan-500/20' : 'hover:bg-slate-800',
+                isEventExpired(event) ? 'text-rose-300' : 'text-slate-200',
+              ]"
+              @click="selectEventFromPicker(event.id)"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <span class="truncate text-sm font-medium">{{ event.name }} ({{ event.partyCount }})</span>
+                <span v-if="!event.publishedAt" class="shrink-0 text-[10px] uppercase tracking-wide text-amber-300">Draft</span>
+              </div>
+              <div class="mt-0.5 text-xs" :class="isEventExpired(event) ? 'text-rose-300/90' : 'text-slate-400'">
+                {{ formatEventDate(event) }}
+                <span v-if="isEventExpired(event)"> • Expired</span>
+              </div>
+            </button>
+
+            <div v-if="canEdit" class="my-1 border-t border-slate-700"></div>
+
+            <button
+              v-if="canEdit && !includeExpired"
+              type="button"
+              class="w-full rounded-md px-3 py-2 text-left text-sm text-cyan-300 hover:bg-slate-800"
+              @click="showExpiredEvents"
+            >
+              Show expired events
+            </button>
+
+            <button
+              v-else-if="canEdit && includeExpired"
+              type="button"
+              class="w-full rounded-md px-3 py-2 text-left text-sm text-cyan-300 hover:bg-slate-800"
+              @click="hideExpiredEvents"
+            >
+              Hide expired events
+            </button>
+
+            <button
+              v-for="event in expiredVisibleEvents"
+              :key="event.id"
+              type="button"
+              class="w-full rounded-md px-3 py-2 text-left transition-colors"
+              :class="[
+                selectedEventId === event.id ? 'bg-cyan-500/20' : 'hover:bg-slate-800',
+                'text-rose-300',
+              ]"
+              @click="selectEventFromPicker(event.id)"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <span class="truncate text-sm font-medium">{{ event.name }} ({{ event.partyCount }})</span>
+                <span v-if="!event.publishedAt" class="shrink-0 text-[10px] uppercase tracking-wide text-amber-300">Draft</span>
+              </div>
+              <div class="mt-0.5 text-xs text-rose-300/90">
+                {{ formatEventDate(event) }}
+                <span> • Expired</span>
+              </div>
+            </button>
+          </div>
+        </template>
+      </UPopover>
 
       <UButton
         v-if="canEdit"
@@ -1317,36 +1467,6 @@ onMounted(async () => {
         @click="openNewEventModal()"
       >
         New Event
-      </UButton>
-
-      <UButton
-        v-if="canEdit && selectedEventId"
-        color="neutral"
-        variant="outline"
-        icon="i-lucide-pencil"
-        @click="openEditEventModal"
-      >
-        Edit Event
-      </UButton>
-
-      <UButton
-        v-if="canEdit && selectedEventId"
-        color="neutral"
-        variant="outline"
-        icon="i-lucide-copy"
-        @click="showCloneEventModal = true"
-      >
-        Clone Event
-      </UButton>
-
-      <UButton
-        v-if="canEdit && selectedEventId"
-        color="error"
-        variant="outline"
-        icon="i-lucide-trash-2"
-        @click="confirmDeleteEventOpen = true"
-      >
-        Delete Event
       </UButton>
 
     </div>
@@ -1363,6 +1483,18 @@ onMounted(async () => {
       <span v-if="selectedEvent.subCommander" class="flex items-center gap-1 text-slate-400">
         <UIcon name="i-lucide-shield" class="h-3.5 w-3.5" />
         Sub: <span class="font-medium text-slate-300">{{ selectedEvent.subCommander.ign }}</span>
+
+          <div v-if="selectedEvent" class="flex flex-wrap items-center gap-2">
+            <UBadge v-if="!selectedEvent.publishedAt" color="warning" variant="soft" size="sm">
+              Draft
+            </UBadge>
+            <UBadge v-else color="success" variant="soft" size="sm">
+              Published
+            </UBadge>
+            <UBadge v-if="selectedEvent.startsAt && new Date(selectedEvent.startsAt) < new Date()" color="error" variant="soft" size="sm">
+              Expired
+            </UBadge>
+          </div>
       </span>
     </div>
 
@@ -1372,7 +1504,11 @@ onMounted(async () => {
       <UIcon name="i-lucide-loader-circle" class="h-6 w-6 animate-spin text-slate-400" />
     </div>
 
-    <div v-else class="grid gap-4 lg:grid-cols-[1fr_320px]">
+    <div
+      v-else
+      class="grid gap-4"
+      :class="canEdit ? 'lg:grid-cols-[1fr_320px]' : 'grid-cols-1'"
+    >
       <section class="space-y-4">
         <div class="flex items-center justify-between">
           <h2 class="text-lg font-semibold text-white">Parties</h2>
@@ -1385,6 +1521,59 @@ onMounted(async () => {
               @click="showPreviewModal = true"
             >
               Preview
+            </UButton>
+
+            <template v-if="canEdit && selectedEventId && selectedEvent">
+              <UButton
+                v-if="!selectedEvent.publishedAt"
+                color="success"
+                variant="soft"
+                icon="i-lucide-eye"
+                :loading="busy"
+                @click="publishCurrentEvent"
+              >
+                Publish
+              </UButton>
+              <UButton
+                v-else
+                color="warning"
+                variant="soft"
+                icon="i-lucide-eye-off"
+                :loading="busy"
+                @click="unpublishCurrentEvent"
+              >
+                Unpublish
+              </UButton>
+            </template>
+
+            <UButton
+              v-if="canEdit && selectedEventId"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-pencil"
+              @click="openEditEventModal"
+            >
+              Edit Event
+            </UButton>
+
+            <UButton
+              v-if="canEdit && selectedEventId"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-copy"
+              @click="showCloneEventModal = true"
+            >
+              Clone Event
+            </UButton>
+
+            <UButton
+              v-if="canEdit && selectedEventId"
+              color="error"
+              variant="outline"
+              icon="i-lucide-trash-2"
+              @click="confirmDeleteEventOpen = true"
+            >
+              Delete Event
             </UButton>
 
             <UButton
@@ -1438,7 +1627,9 @@ onMounted(async () => {
         </div>
 
         <div v-else-if="!selectedEventId" class="rounded-lg border border-slate-800 bg-slate-950/40 p-8 text-center text-slate-400">
-          No event yet. Create one to start.
+          <template v-if="canEdit">No event yet. Create one to start.</template>
+          <template v-else-if="events.length === 0">No published events yet.</template>
+          <template v-else>Select an event above to view its party setup.</template>
         </div>
 
         <div v-else-if="parties.length === 0" class="rounded-lg border border-slate-800 bg-slate-950/40 p-8 text-center text-slate-400">

@@ -180,20 +180,14 @@ onMounted(() => {
       <StatSnapshotForm v-if="auth.player?.playerId" />
     </div>
 
-    <div class="space-y-3 xl:col-span-1">
-      <div class="flex items-center justify-between">
-        <h3 class="text-xl font-semibold text-white">Party Assignments</h3>
-        <UBadge color="neutral" variant="soft">{{ sortedAssignments.length }}</UBadge>
-      </div>
-
-      <p v-if="loadingAssignments" class="text-sm text-slate-400">Loading party details...</p>
-      <p v-else-if="assignmentsError" class="text-sm text-rose-300">{{ assignmentsError }}</p>
-      <p v-else-if="sortedAssignments.length === 0" class="text-sm text-slate-400">
-        You are not assigned to any party yet.
-      </p>
-
-      <div v-else class="space-y-3">
-        <article
+  <div v-if="!loadingAssignments && sortedAssignments.length > 0" class="space-y-3 xl:col-span-1">
+    <div class="flex items-center justify-between">
+      <h3 class="text-xl font-semibold text-white">Party Assignments</h3>
+      <UBadge color="neutral" variant="soft">{{ sortedAssignments.length }}</UBadge>
+    </div>
+ 
+    <div class="space-y-3">
+      <article
           v-for="assignment in sortedAssignments"
           :key="assignment.id"
           class="overflow-hidden rounded-lg border border-slate-800 bg-slate-900/60"
