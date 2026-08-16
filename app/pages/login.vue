@@ -2,6 +2,7 @@
 definePageMeta({ layout: false });
 
 const { auth, login } = useAuth();
+const api = useApi();
 const router = useRouter();
 const config = useRuntimeConfig();
 
@@ -15,7 +16,14 @@ const logoSrc = computed(() => {
   return `/logos/${value}.png`;
 });
 
+// ── Step 1 form ──────────────────────────────────────────────────────────────
 const form = reactive({ ign: "", playerId: "" });
+
+// ── Step 2 confirmation ──────────────────────────────────────────────────────
+type Step = "credentials" | "confirm-new";
+const step = ref<Step>("credentials");
+const confirmPlayerId = ref("");
+
 const error = ref<string | null>(null);
 const loading = ref(false);
 
@@ -40,24 +48,18 @@ onMounted(() => {
   }
 });
 
-const handleLogin = async () => {
+function resetToStep1() {
+  step.value = "credentials";
+  confirmPlayerId.value = "";
   error.value = null;
+}
 
-  if (!form.ign.trim() || !form.playerId.trim()) {
-    error.value = "Both IGN and Player ID are required.";
-    return;
-  }
-
+async function doLogin() {
   loading.value = true;
   try {
     const result = await login({ ign: form.ign.trim(), playerId: form.playerId.trim() });
     toast.remove('session-warning');
-    // Redirect based on membership status
-    if (result.isMember) {
-      router.push("/dashboard");
-    } else {
-      router.push("/applicant");
-    }
+    router.push(result.isMember ? "/dashboard" : "/applicant");
   } catch (err: unknown) {
     if (err && typeof err === "object" && "data" in err) {
       const fetchErr = err as { data?: { error?: string } };
@@ -68,6 +70,49 @@ const handleLogin = async () => {
   } finally {
     loading.value = false;
   }
+}
+
+// Step 1 submit: check if player exists first
+const handleLogin = async () => {
+  error.value = null;
+
+  if (!form.ign.trim() || !form.playerId.trim()) {
+    error.value = "Both IGN and Player ID are required.";
+    return;
+  }
+
+  loading.value = true;
+  try {
+    const { exists } = await api.get<{ exists: boolean }>("/api/auth/check", { playerId: form.playerId.trim() });
+    if (exists) {
+      // Known player — log in directly
+      await doLogin();
+    } else {
+      // New player — ask for confirmation
+      loading.value = false;
+      step.value = "confirm-new";
+    }
+  } catch {
+    loading.value = false;
+    error.value = "Unable to connect to server. Please try again later.";
+  }
+};
+
+// Step 2 submit: confirm Player ID matches, then register + login
+const handleConfirm = async () => {
+  error.value = null;
+
+  if (!confirmPlayerId.value.trim()) {
+    error.value = "Please enter your Player ID to confirm.";
+    return;
+  }
+
+  if (confirmPlayerId.value.trim() !== form.playerId.trim()) {
+    error.value = "Player ID does not match. Please check and try again.";
+    return;
+  }
+
+  await doLogin();
 };
 </script>
 
@@ -85,11 +130,14 @@ const handleLogin = async () => {
             />
           </div>
           <h1 class="text-2xl font-semibold tracking-tight text-white">{{ siteName }}</h1>
-          <p class="text-sm text-slate-400">Sign in with your in-game credentials</p>
+          <p class="text-sm text-slate-400">
+            {{ step === "credentials" ? "Sign in with your in-game credentials" : "Confirm your new account" }}
+          </p>
         </div>
       </template>
 
-      <form class="space-y-4" @submit.prevent="handleLogin" novalidate>
+      <!-- Step 1: credentials -->
+      <form v-if="step === 'credentials'" class="space-y-4" @submit.prevent="handleLogin" novalidate>
         <UFormField label="IGN (In-Game Name)">
           <UInput
             v-model="form.ign"
@@ -131,6 +179,61 @@ const handleLogin = async () => {
           icon="i-lucide-log-in"
         >
           {{ loading ? "Signing in..." : "Sign In" }}
+        </UButton>
+      </form>
+
+      <!-- Step 2: confirm new account -->
+      <form v-else class="space-y-4" @submit.prevent="handleConfirm" novalidate>
+        <UAlert
+          color="info"
+          variant="soft"
+          icon="i-lucide-user-plus"
+          title="New account"
+          description="No account was found for that Player ID. Re-enter your Player ID below to create a new account."
+        />
+
+        <UFormField label="Confirm Player ID">
+          <UInput
+            v-model="confirmPlayerId"
+            placeholder="Re-enter your Player ID"
+            autocomplete="off"
+            :disabled="loading"
+            icon="i-lucide-fingerprint"
+            size="xl"
+            class="w-full"
+            autofocus
+          />
+        </UFormField>
+
+        <UAlert
+          v-if="error"
+          color="error"
+          variant="soft"
+          icon="i-lucide-circle-alert"
+          :title="error"
+        />
+
+        <UButton
+          type="submit"
+          :loading="loading"
+          :disabled="loading"
+          block
+          size="xl"
+          icon="i-lucide-user-plus"
+        >
+          {{ loading ? "Creating account..." : "Create Account" }}
+        </UButton>
+
+        <UButton
+          type="button"
+          variant="ghost"
+          block
+          size="xl"
+          icon="i-lucide-arrow-left"
+          :disabled="loading"
+          @click="resetToStep1"
+        >
+          Use a different account
         </UButton>
       </form>
     </UCard>
