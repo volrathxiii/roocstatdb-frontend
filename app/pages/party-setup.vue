@@ -1328,6 +1328,35 @@ function openSuggestionModal(party: Party, member: PartyMember) {
   showSuggestionModal.value = true;
 }
 
+function openSuggestionModalWithRecommendation(party: Party, jobName: string, classRoleName: string) {
+  if (!canEdit.value) return;
+
+  // Find the job and classRole IDs
+  const job = refJobs.value.find((j) => j.name.toLowerCase() === jobName.toLowerCase());
+  const classRole = refClassRoles.value.find((r) => r.name.toLowerCase() === classRoleName.toLowerCase());
+
+  if (!job || !classRole) {
+    console.warn(`Could not find job "${jobName}" or classRole "${classRoleName}"`);
+    return;
+  }
+
+  // Find the first member without a suggestion in this party
+  const memberWithoutSuggestion = party.members.find((m) => !m.suggestion);
+
+  if (!memberWithoutSuggestion) {
+    errorMsg.value = "All party members already have suggestions.";
+    return;
+  }
+
+  // Open the suggestion modal with the recommendation pre-filled
+  suggestionMember.value = memberWithoutSuggestion;
+  suggestionPartyId.value = party.id;
+  suggestionForm.jobId = job.id;
+  suggestionForm.classRoleId = classRole.id;
+  
+  showSuggestionModal.value = true;
+}
+
 async function createMemberSuggestion() {
   if (!canEdit.value || !suggestionPartyId.value || !suggestionMember.value || !suggestionForm.jobId || !suggestionForm.classRoleId || !selectedEventId.value) return;
 
@@ -1743,6 +1772,7 @@ onMounted(async () => {
                       @delete-party="requestDeleteParty"
                       @remove-from-party="removeFromParty"
                       @suggest-class="openSuggestionModal"
+                      @suggest-class-recommendation="openSuggestionModalWithRecommendation"
                       @open-progression="openProgressionForMember"
                       @drag-over-party="onDragOverParty"
                       @drop-to-party="onDropToParty"
@@ -1776,6 +1806,7 @@ onMounted(async () => {
                     @delete-party="requestDeleteParty"
                     @remove-from-party="removeFromParty"
                     @suggest-class="openSuggestionModal"
+                    @suggest-class-recommendation="openSuggestionModalWithRecommendation"
                     @open-progression="openProgressionForMember"
                     @drag-over-party="onDragOverParty"
                     @drop-to-party="onDropToParty"

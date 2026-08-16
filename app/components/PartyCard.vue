@@ -23,6 +23,11 @@ interface PartyMember {
   suggestion: Suggestion | null;
 }
 
+interface MissingCapability {
+  capability: string;
+  recommendedClasses: Array<{ job: string; classRole: string }>;
+}
+
 type StatKey = "physical" | "magic" | "defensive";
 interface RankEntry { rank: number; total: number }
 type RankMap = Map<number, Record<StatKey, RankEntry>>;
@@ -35,6 +40,7 @@ interface Party {
   groupId: number | null;
   position: number;
   members: PartyMember[];
+  missingCapabilities?: MissingCapability[];
 }
 
 const props = defineProps<{
@@ -55,6 +61,7 @@ const emit = defineEmits<{
   "delete-party": [party: Party];
   "remove-from-party": [party: Party, memberId: number];
   "suggest-class": [party: Party, member: PartyMember];
+  "suggest-class-recommendation": [party: Party, job: string, classRole: string];
   "open-progression": [member: PartyMember];
   "drag-over-party": [event: DragEvent];
   "drop-to-party": [event: DragEvent, party: Party];
@@ -258,6 +265,29 @@ function onPartyDragEnd() {
         />
       </template>
       <p v-if="party.members.length === 0" class="py-6 text-center text-xs text-slate-500">Drag and drop players here</p>
+    </div>
+
+    <!-- Missing capabilities section -->
+    <div v-if="party.missingCapabilities && party.missingCapabilities.length > 0" class="border-t border-slate-800 bg-slate-950/80">
+      <div class="px-3 py-2">
+        <h4 class="mb-2 text-xs font-semibold text-amber-300">Missing in this party:</h4>
+        <div class="space-y-1.5">
+          <div v-for="gap in party.missingCapabilities" :key="gap.capability" class="flex flex-col gap-1">
+            <p class="text-xs text-amber-200">{{ gap.capability }}</p>
+            <div class="flex flex-wrap gap-1">
+              <button
+                v-for="rec in gap.recommendedClasses"
+                :key="`${rec.job}:${rec.classRole}`"
+                type="button"
+                class="rounded bg-cyan-900/50 px-2 py-1 text-[11px] text-cyan-200 hover:bg-cyan-800/70 transition-colors"
+                @click="emit('suggest-class-recommendation', party, rec.job, rec.classRole)"
+              >
+                {{ rec.job }} ({{ rec.classRole }})
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Notes footer -->
