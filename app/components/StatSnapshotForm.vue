@@ -92,6 +92,7 @@ function resetForm() {
 const form = reactive({
   jobId: null as number | null,
   classRoleId: null as number | null,
+  hp: 0,
   patk: 0,
   matk: 0,
   ignorePdef: 0,
@@ -122,7 +123,7 @@ const errorMsg = ref<string | null>(null);
 const successMsg = ref<string | null>(null);
 
 const numericKeys = [
-  'patk', 'matk', 'ignorePdef', 'ignoreMdef',
+  'hp', 'patk', 'matk', 'ignorePdef', 'ignoreMdef',
   'eqPdef', 'eqMdef', 'eqPdefPct', 'eqMdefPct',
   'pDmgPct', 'pDmgReductionPct', 'mDmgPct', 'mDmgReductionPct',
   'dmgVsDemiHuman', 'dmgReductionVsDemiHuman',
@@ -140,6 +141,7 @@ function fieldError(key: keyof typeof form): boolean {
 function applySnapshot(snapshot: Record<string, unknown>) {
   form.jobId = (snapshot.job as RefItem).id;
   form.classRoleId = (snapshot.classRole as RefItem).id;
+  form.hp = snapshot.hp as number;
   form.patk = snapshot.patk as number;
   form.matk = snapshot.matk as number;
   form.ignorePdef = Number(snapshot.ignorePdef);
@@ -213,6 +215,7 @@ async function handleSubmit() {
       ...(selectedBuildId.value ? { buildId: selectedBuildId.value } : {}),
       jobId: form.jobId,
       classRoleId: form.classRoleId,
+      hp: form.hp,
       patk: form.patk,
       matk: form.matk,
       ignorePdef: form.ignorePdef,
@@ -409,6 +412,11 @@ const classRoleOptions = computed(() =>
       <div>
         <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">General Stats</p>
         <div class="grid grid-cols-2 gap-4">
+          <UFormField label="HP" class="w-full">
+            <UInput v-model.number="form.hp" type="number" :min="0" class="w-full" :color="fieldError('hp') ? 'error' : undefined" />
+          </UFormField>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
           <UFormField label="PATK" class="w-full">
             <UInput v-model.number="form.patk" type="number" :min="0" class="w-full" :color="fieldError('patk') ? 'error' : undefined" />
           </UFormField>

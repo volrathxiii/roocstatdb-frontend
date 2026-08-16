@@ -8,6 +8,7 @@ interface PlayerRow {
   playerId: string;
   weekNumber: number;
   year: number;
+  hp: number;
   patk: number;
   matk: number;
   ignorePdef: number;
@@ -77,7 +78,7 @@ const sortedPlayers = computed<PlayerRow[]>(() => {
 });
 
 type StatKey =
-  | "patk" | "matk" | "ignorePdef" | "ignoreMdef"
+  | "hp" | "patk" | "matk" | "ignorePdef" | "ignoreMdef"
   | "eqPdef" | "eqMdef" | "eqPdefPct" | "eqMdefPct"
   | "rawPdef" | "rawMdef"
   | "pDmgPct" | "pDmgReductionPct" | "mDmgPct" | "mDmgReductionPct"
@@ -96,39 +97,30 @@ const STAT_GROUPS: { heading: string; stats: StatDef[] }[] = [
   {
     heading: "Offense",
     stats: [
-      { key: "patk",       label: "PATK",        format: String },
-      { key: "matk",       label: "MATK",        format: String },
-      { key: "ignorePdef", label: "Ignore PDEF", format: String },
-      { key: "ignoreMdef", label: "Ignore MDEF", format: String },
-      { key: "pDmgPct",    label: "P DMG %",     format: fmtPct },
-      { key: "mDmgPct",    label: "M DMG %",     format: fmtPct },
+      { key: "patk",           label: "PATK",                format: String },
+      { key: "matk",           label: "MATK",                format: String },
+      { key: "ignorePdef",     label: "Ignore PDEF",         format: String },
+      { key: "ignoreMdef",     label: "Ignore MDEF",         format: String },
+      { key: "dmgVsDemiHuman", label: "DMG vs Demi-human %", format: fmtPct },
+      { key: "dmgVsMedium",    label: "DMG vs Medium %",     format: fmtPct },
+      { key: "pDmgPct",        label: "Physical DMG %",      format: fmtPct },
+      { key: "mDmgPct",        label: "Magic DMG %",         format: fmtPct },
+      { key: "pvpDmg",         label: "PVP DMG",             format: String },
     ],
   },
   {
     heading: "Defense",
     stats: [
-      { key: "rawPdef",                 label: "Raw PDEF",            format: fmtFp  },
-      { key: "rawMdef",                 label: "Raw MDEF",            format: fmtFp  },
-      { key: "pDmgReductionPct",        label: "P DMG Red %",         format: fmtPct },
-      { key: "mDmgReductionPct",        label: "M DMG Red %",         format: fmtPct },
-      { key: "dmgReductionVsDemiHuman", label: "vs Demi-Human Red %", format: fmtPct },
-      { key: "dmgReductionVsMedium",    label: "vs Medium Red %",     format: fmtPct },
-      { key: "healingDone",             label: "Healing Done %",      format: fmtPct },
-      { key: "healingTaken",            label: "Healing Taken %",     format: fmtPct },
-    ],
-  },
-  {
-    heading: "vs Targets",
-    stats: [
-      { key: "dmgVsDemiHuman", label: "vs Demi-Human %", format: fmtPct },
-      { key: "dmgVsMedium",    label: "vs Medium %",     format: fmtPct },
-    ],
-  },
-  {
-    heading: "PVP",
-    stats: [
-      { key: "pvpDmg",          label: "PVP DMG", format: String },
-      { key: "pvpDmgReduction", label: "PVP Red", format: String },
+      { key: "hp",                      label: "HP",                            format: String },
+      { key: "rawPdef",                 label: "Raw PDEF",                      format: fmtFp  },
+      { key: "rawMdef",                 label: "Raw MDEF",                      format: fmtFp  },
+      { key: "pDmgReductionPct",        label: "Physical DMG Reduction %",      format: fmtPct },
+      { key: "mDmgReductionPct",        label: "Magic DMG Reduction %",         format: fmtPct },
+      { key: "dmgReductionVsDemiHuman", label: "DMG Reduction vs Demi-human %", format: fmtPct },
+      { key: "dmgReductionVsMedium",    label: "DMG Reduction vs Medium %",     format: fmtPct },
+      { key: "healingDone",             label: "Healing Done %",                 format: fmtPct },
+      { key: "healingTaken",            label: "Healing Taken %",                format: fmtPct },
+      { key: "pvpDmgReduction",         label: "PVP Reduction",                  format: String },
     ],
   },
 ];
@@ -163,7 +155,7 @@ function deltaVsHighest(key: StatKey, player: PlayerRow): number | null {
       <div class="flex items-center justify-between border-b border-slate-700 px-4 py-3 shrink-0">
         <div>
           <h2 class="text-xl font-semibold text-white">{{ label }}</h2>
-          <p class="text-sm text-slate-400">Class group comparison — latest snapshots</p>
+          <p class="text-sm text-slate-400">Week progression comparison by class group</p>
         </div>
         <button
           type="button"

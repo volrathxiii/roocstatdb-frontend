@@ -7,6 +7,7 @@ interface Snapshot {
   year: number;
   job: string;
   classRole: string;
+  hp: number;
   patk: number;
   matk: number;
   ignorePdef: number;
@@ -208,37 +209,26 @@ const STAT_GROUPS: { heading: string; stats: StatDef[] }[] = [
       { key: "matk",          label: "MATK",       format: String },
       { key: "ignorePdef",    label: "Ignore PDEF", format: String },
       { key: "ignoreMdef",    label: "Ignore MDEF", format: String },
-      { key: "pDmgPct",       label: "P DMG %",    format: fmtPct },
-      { key: "mDmgPct",       label: "M DMG %",    format: fmtPct },
+      { key: "dmgVsDemiHuman", label: "DMG vs Demi-human %", format: fmtPct },
+      { key: "dmgVsMedium",    label: "DMG vs Medium %",    format: fmtPct },
+      { key: "pDmgPct",       label: "Physical DMG %",    format: fmtPct },
+      { key: "mDmgPct",       label: "Magic DMG %",    format: fmtPct },
+      { key: "pvpDmg",         label: "PVP DMG",        format: String },
     ],
   },
   {
     heading: "Defense",
     stats: [
+      { key: "hp",                  label: "HP",             format: String },
       { key: "rawPdef",             label: "Raw PDEF",       format: fmtFp   },
       { key: "rawMdef",             label: "Raw MDEF",       format: fmtFp   },
-      { key: "pDmgReductionPct",    label: "P DMG Red %",   format: fmtPct  },
-      { key: "mDmgReductionPct",    label: "M DMG Red %",   format: fmtPct  },
-      { key: "dmgReductionVsDemiHuman", label: "vs Demi-Human Red %", format: fmtPct },
-      { key: "dmgReductionVsMedium",    label: "vs Medium Red %",    format: fmtPct },
+      { key: "pDmgReductionPct",    label: "Physical DMG Reduction %",   format: fmtPct  },
+      { key: "mDmgReductionPct",    label: "Magic DMG Reduction %",   format: fmtPct  },
+      { key: "dmgReductionVsDemiHuman", label: "DMG Reduction vs Demi-human %", format: fmtPct },
+      { key: "dmgReductionVsMedium",    label: "DMG Reduction vs Medium %",    format: fmtPct },
       { key: "healingDone",         label: "Healing Done %", format: fmtPct },
       { key: "healingTaken",        label: "Healing Taken %", format: fmtPct },
-    ],
-  },
-  {
-    heading: "vs Targets",
-    stats: [
-      { key: "dmgVsDemiHuman",            label: "vs Demi-Human %",      format: fmtPct },
-      { key: "dmgReductionVsDemiHuman",   label: "vs Demi-Human Red %",  format: fmtPct },
-      { key: "dmgVsMedium",               label: "vs Medium %",          format: fmtPct },
-      { key: "dmgReductionVsMedium",      label: "vs Medium Red %",      format: fmtPct },
-    ],
-  },
-  {
-    heading: "PVP",
-    stats: [
-      { key: "pvpDmg",          label: "PVP DMG",     format: String },
-      { key: "pvpDmgReduction", label: "PVP Red",     format: String },
+      { key: "pvpDmgReduction",     label: "PVP Reduction",        format: String },
     ],
   },
 ];
@@ -449,30 +439,30 @@ const classRoleChanged = computed(
               {{ group.heading }}
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
-              <div
-                v-for="stat in group.stats"
-                :key="stat.key"
-                class="flex items-center justify-between gap-2"
-              >
-                <span class="text-sm text-slate-400 shrink-0">{{ stat.label }}</span>
-                <span class="flex items-center gap-1 text-sm font-medium">
-                  <span class="text-white">{{ stat.format(current[stat.key] as number) }}</span>
+              <template v-for="stat in group.stats" :key="stat.key">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-sm text-slate-400 shrink-0">{{ stat.label }}</span>
+                  <span class="flex items-center gap-1 text-sm font-medium">
+                    <span class="text-white">{{ stat.format(current[stat.key] as number) }}</span>
 
-                  <!-- Delta indicator -->
-                  <template v-if="diff(stat.key) !== null && diff(stat.key) !== 0">
-                    <span
-                      :class="diff(stat.key)! > 0 ? 'text-green-400' : 'text-red-400'"
-                      class="flex items-center gap-0.5 text-xs"
-                    >
-                      <UIcon
-                        :name="diff(stat.key)! > 0 ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down'"
-                        class="h-3 w-3"
-                      />
-                      {{ stat.format(Math.abs(diff(stat.key)!)) }}
-                    </span>
-                  </template>
-                </span>
-              </div>
+                    <!-- Delta indicator -->
+                    <template v-if="diff(stat.key) !== null && diff(stat.key) !== 0">
+                      <span
+                        :class="diff(stat.key)! > 0 ? 'text-green-400' : 'text-red-400'"
+                        class="flex items-center gap-0.5 text-xs"
+                      >
+                        <UIcon
+                          :name="diff(stat.key)! > 0 ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down'"
+                          class="h-3 w-3"
+                        />
+                        {{ stat.format(Math.abs(diff(stat.key)!)) }}
+                      </span>
+                    </template>
+                  </span>
+                </div>
+                <!-- Keep HP on its own row while still half width on sm+ -->
+                <div v-if="stat.key === 'hp'" class="hidden sm:block" aria-hidden="true" />
+              </template>
             </div>
           </div>
         </template>

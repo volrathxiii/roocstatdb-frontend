@@ -30,8 +30,9 @@ async function checkRole() {
   } catch { /* non-critical */ }
 }
 
-const pollTimer = setInterval(checkRole, 10_000);
-onUnmounted(() => clearInterval(pollTimer));
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+onMounted(() => { pollTimer = setInterval(checkRole, 10_000); });
+onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
 watch(() => auth.value.isMember, (isMember) => {
   if (isMember) navigateTo('/dashboard?welcome=1');

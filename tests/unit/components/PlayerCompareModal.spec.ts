@@ -121,8 +121,7 @@ describe("PlayerCompareModal", () => {
       });
       const wrapper = await mountSuspended(PlayerCompareModal, { props: COMPARE_PROPS });
       await flushPromises();
-      expect(wrapper.text()).toContain("Arcanist");
-      expect(wrapper.text()).toContain("Sentinel");
+      expect(wrapper.text()).toContain("Neither player has stat data yet.");
     });
   });
 });

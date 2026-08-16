@@ -33,6 +33,7 @@ function roleCell(row: FlatRow) {
 // ── Raw API types ─────────────────────────────────────────────────────────────
 interface Snapshot {
   weekNumber: number; year: number; job: string; classRole: string;
+  hp: number;
   patk: number; matk: number; ignorePdef: number; ignoreMdef: number;
   eqPdef: number; eqMdef: number; eqPdefPct: number; eqMdefPct: number;
   rawPdef: number; rawMdef: number;
@@ -47,6 +48,7 @@ interface PlayerRow { id: number; ign: string; playerId: string; role: string | 
 // ── Flat row for UTable ───────────────────────────────────────────────────────
 interface FlatRow {
   id: number; ign: string; playerId: string; role: string; isFirstPlayer: boolean; week: string; weekNumber: number | null; weekYear: number | null; jobClass: string; job: string; classRole: string;
+  hp: number;
   patk: number; matk: number; ignorePdef: number; ignoreMdef: number;
   eqPdef: number; eqMdef: number; eqPdefPct: number; eqMdefPct: number;
   rawPdef: number; rawMdef: number;
@@ -188,6 +190,7 @@ const tableData = computed<FlatRow[]>(() =>
         job: s?.job ?? "—",
         classRole: s?.classRole ?? "—",
         patk: s?.patk ?? 0, matk: s?.matk ?? 0,
+        hp: s?.hp ?? 0,
         ignorePdef: s?.ignorePdef ?? 0, ignoreMdef: s?.ignoreMdef ?? 0,
         eqPdef: s?.eqPdef ?? 0, eqMdef: s?.eqMdef ?? 0,
         eqPdefPct: s?.eqPdefPct ?? 0, eqMdefPct: s?.eqMdefPct ?? 0,
@@ -262,6 +265,7 @@ function rightHeader(col: Column<FlatRow>, label: string) {
 type NumColDef = [string, string, (v: number) => string, boolean?];
 
 const numCols: NumColDef[] = [
+  ["hp",                      "HP",            fmtFlat],
   ["patk",                    "PATK",          fmtFlat],
   ["matk",                    "MATK",          fmtFlat],
   ["ignorePdef",              "Ignore PDEF",   fmtFlat],
