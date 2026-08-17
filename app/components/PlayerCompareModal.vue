@@ -87,7 +87,7 @@ interface StatDef {
   format: (v: number) => string;
 }
 
-function fmtPct(v: number) { return `${v}%`; }
+function fmtPct(v: number) { return `${v.toFixed(2)}%`; }
 function fmtFp(v: number)  { return v.toFixed(2); }
 
 const STAT_GROUPS: { heading: string; stats: StatDef[] }[] = [

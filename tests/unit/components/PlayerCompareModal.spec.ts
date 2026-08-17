@@ -99,7 +99,7 @@ describe("PlayerCompareModal", () => {
       vm = wrapper.vm;
     });
 
-    it("fmtPct formats value with %", () => expect(vm.fmtPct(25)).toBe("25%"));
+    it("fmtPct formats value with %", () => expect(vm.fmtPct(25)).toBe("25.00%"));
     it("fmtFp formats to 2 decimal places", () => expect(vm.fmtFp(10.567)).toBe("10.57"));
   });
 

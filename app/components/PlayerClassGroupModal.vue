@@ -89,7 +89,7 @@ type StatKey =
 
 interface StatDef { key: StatKey; label: string; format: (v: number) => string; }
 
-function fmtPct(v: number) { return `${v}%`; }
+function fmtPct(v: number) { return `${v.toFixed(2)}%`; }
 function fmtFp(v: number) { return v.toFixed(2); }
 function fmtDelta(v: number) { return v.toFixed(2); }
 
