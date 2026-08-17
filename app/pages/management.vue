@@ -479,7 +479,10 @@ async function confirmDeletePreset() {
 
   <UModal v-model:open="sectionModal.open">
     <template #content>
-      <UCard class="w-full border border-cyan-900/40 bg-slate-950 max-h-[60vh] flex flex-col">
+      <UCard
+        class="w-full border border-cyan-900/40 bg-slate-950 max-h-[60vh] flex flex-col overflow-hidden"
+        :ui="{ header: 'shrink-0', body: 'flex-1 min-h-0 overflow-y-auto', footer: 'shrink-0' }"
+      >
         <template #header>
           <div class="flex items-center justify-between gap-3">
             <span class="font-semibold text-white">{{ sectionTitle(sectionModal.type) }}</span>
@@ -512,7 +515,6 @@ async function confirmDeletePreset() {
           </div>
         </template>
 
-        <div class="min-h-0 flex-1 overflow-y-auto pr-1">
         <div v-if="sectionModal.type === 'job-classes'">
           <ul class="divide-y divide-slate-800">
             <li
@@ -701,7 +703,6 @@ async function confirmDeletePreset() {
               No party presets yet.
             </li>
           </ul>
-        </div>
         </div>
 
         <template #footer>
