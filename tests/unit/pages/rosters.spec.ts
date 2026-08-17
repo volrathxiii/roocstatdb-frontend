@@ -170,37 +170,6 @@ describe("rosters.vue", () => {
     });
   });
 
-  // ── ISO week utilities ───────────────────────────────────────────────────────
-
-  describe("ISO week utilities", () => {
-    it("getIsoWeekParts returns correct week and year", async () => {
-      const { vm } = await mountPageWithVm();
-      // 2026-08-13 is week 33 of 2026
-      const result = vm.getIsoWeekParts(new Date("2026-08-13"));
-      expect(result.year).toBe(2026);
-      expect(result.week).toBe(33);
-    });
-
-    it("isWeekOlderThanTwoWeeks returns true when null", async () => {
-      const { vm } = await mountPageWithVm();
-      expect(vm.isWeekOlderThanTwoWeeks(null, null)).toBe(true);
-    });
-
-    it("isWeekOlderThanTwoWeeks returns false for current week", async () => {
-      const { vm } = await mountPageWithVm();
-      const { year, week } = vm.getIsoWeekParts(new Date());
-      expect(vm.isWeekOlderThanTwoWeeks(year, week)).toBe(false);
-    });
-
-    it("isWeekOlderThanTwoWeeks returns true for a snapshot from 3 weeks ago", async () => {
-      const { vm } = await mountPageWithVm();
-      const threeWeeksAgo = new Date();
-      threeWeeksAgo.setUTCDate(threeWeeksAgo.getUTCDate() - 21);
-      const { year, week } = vm.getIsoWeekParts(threeWeeksAgo);
-      expect(vm.isWeekOlderThanTwoWeeks(year, week)).toBe(true);
-    });
-  });
-
   // ── Formatting helpers ────────────────────────────────────────────────────────
 
   describe("format helpers", () => {
@@ -210,15 +179,6 @@ describe("rosters.vue", () => {
       const result = await mountPageWithVm();
       vm = result.vm;
     });
-
-    it("fmtPct returns '—' for 0", () => expect(vm.fmtPct(0)).toBe("—"));
-    it("fmtPct formats a value with %", () => expect(vm.fmtPct(25)).toBe("25%"));
-
-    it("fmtFlat returns '—' for 0", () => expect(vm.fmtFlat(0)).toBe("—"));
-    it("fmtFlat returns string for non-zero", () => expect(vm.fmtFlat(500)).toBe("500"));
-
-    it("fmtFp returns '—' for 0", () => expect(vm.fmtFp(0)).toBe("—"));
-    it("fmtFp formats to 2 decimal places", () => expect(vm.fmtFp(10.567)).toBe("10.57"));
 
     it("fmtScore returns '—' for 0", () => expect(vm.fmtScore(0)).toBe("—"));
     it("fmtScore formats to 1 decimal place with %", () => expect(vm.fmtScore(8500)).toBe("8500.0%"));

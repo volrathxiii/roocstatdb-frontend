@@ -154,36 +154,6 @@ describe("applicants.vue", () => {
     });
   });
 
-  // ── ISO week utilities ───────────────────────────────────────────────────────
-
-  describe("ISO week utilities", () => {
-    it("getIsoWeekParts: 2026-08-13 is week 33 of 2026", async () => {
-      const { vm } = await mountPageWithVm();
-      const result = vm.getIsoWeekParts(new Date("2026-08-13"));
-      expect(result.year).toBe(2026);
-      expect(result.week).toBe(33);
-    });
-
-    it("isWeekOlderThanTwoWeeks: null returns true", async () => {
-      const { vm } = await mountPageWithVm();
-      expect(vm.isWeekOlderThanTwoWeeks(null, null)).toBe(true);
-    });
-
-    it("isWeekOlderThanTwoWeeks: current week returns false", async () => {
-      const { vm } = await mountPageWithVm();
-      const { year, week } = vm.getIsoWeekParts(new Date());
-      expect(vm.isWeekOlderThanTwoWeeks(year, week)).toBe(false);
-    });
-
-    it("isWeekOlderThanTwoWeeks: 3 weeks ago returns true", async () => {
-      const { vm } = await mountPageWithVm();
-      const old = new Date();
-      old.setUTCDate(old.getUTCDate() - 21);
-      const { year, week } = vm.getIsoWeekParts(old);
-      expect(vm.isWeekOlderThanTwoWeeks(year, week)).toBe(true);
-    });
-  });
-
   // ── Pagination ────────────────────────────────────────────────────────────────
 
   describe("pagination", () => {

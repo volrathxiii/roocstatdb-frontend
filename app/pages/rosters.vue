@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { h, resolveComponent } from "vue";
 import type { TableColumn } from "@nuxt/ui";
-import type { Column } from "@tanstack/vue-table";
 import { upperFirst } from "scule";
+import {
+  type Snapshot,
+  type BasePlayerFlatRow,
+  rowTextClass as _rowTextClass,
+  fmtPct, fmtFlat, fmtFp,
+  numCols, type NumColDef,
+  usePlayerTableHeaders,
+  mapSnapshotBase,
+} from "~/composables/usePlayerTable";
 
 definePageMeta({ layout: "authenticated", middleware: "auth" });
 
@@ -18,6 +26,9 @@ onMounted(() => {
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
 const UBadge = resolveComponent("UBadge");
+const UIcon = resolveComponent("UIcon");
+
+const { sortableHeader, rightHeader } = usePlayerTableHeaders(UIcon);
 
 const ROLE_PILL: Record<string, { color: string; variant: string }> = {
   Waitlisted: { color: "warning",  variant: "soft" },
@@ -25,25 +36,15 @@ const ROLE_PILL: Record<string, { color: string; variant: string }> = {
   Admin:      { color: "error",    variant: "soft" },
 };
 
+function rowTextClass(row: FlatRow) {
+  return _rowTextClass(row.weekYear, row.weekNumber);
+}
+
 function roleCell(row: FlatRow) {
   const role = row.role;
   const pill = ROLE_PILL[role];
   if (pill) return h(UBadge, { color: pill.color, variant: pill.variant, size: "sm" }, () => role);
   return h("span", { class: `font-medium ${rowTextClass(row)}` }, role);
-}
-
-// ── Raw API types ─────────────────────────────────────────────────────────────
-interface Snapshot {
-  weekNumber: number; year: number; job: string; classRole: string;
-  hp: number;
-  patk: number; matk: number; ignorePdef: number; ignoreMdef: number;
-  eqPdef: number; eqMdef: number; eqPdefPct: number; eqMdefPct: number;
-  rawPdef: number; rawMdef: number;
-  pDmgPct: number; pDmgReductionPct: number; mDmgPct: number; mDmgReductionPct: number;
-  dmgVsDemiHuman: number; dmgReductionVsDemiHuman: number;
-  dmgVsMedium: number; dmgReductionVsMedium: number;
-  pvpDmg: number; pvpDmgReduction: number;
-  healingDone: number; healingTaken: number;
 }
 interface PlayerRow {
   id: number;
@@ -57,19 +58,13 @@ interface PlayerRow {
 }
 
 // ── Flat row for UTable ───────────────────────────────────────────────────────
-interface FlatRow {
-  id: number; ign: string; playerId: string; role: string; isFirstPlayer: boolean; week: string; weekNumber: number | null; weekYear: number | null; jobClass: string; job: string; classRole: string;
-  hp: number;
-  patk: number; matk: number; ignorePdef: number; ignoreMdef: number;
-  eqPdef: number; eqMdef: number; eqPdefPct: number; eqMdefPct: number;
-  rawPdef: number; rawMdef: number;
-  pDmgPct: number; pDmgReductionPct: number; mDmgPct: number; mDmgReductionPct: number;
-  dmgVsDemiHuman: number; dmgReductionVsDemiHuman: number;
-  dmgVsMedium: number; dmgReductionVsMedium: number;
-  pvpDmg: number; pvpDmgReduction: number;
-  healingDone: number; healingTaken: number;
-  physicalScore: number; magicScore: number; defensiveScore: number;
-  classPhysicalScore: number; classMagicScore: number; classDefensiveScore: number;
+interface FlatRow extends BasePlayerFlatRow {
+  physicalScore: number;
+  magicScore: number;
+  defensiveScore: number;
+  classPhysicalScore: number;
+  classMagicScore: number;
+  classDefensiveScore: number;
 }
 
 // ── Data ─────────────────────────────────────────────────────────────────────
@@ -154,75 +149,18 @@ watch(search, () => {
   }, 300);
 });
 
-const ACTIVE_ROW_TEXT_CLASS = "text-sky-300";
-const STALE_ROW_TEXT_CLASS = "text-muted";
 
-function getIsoWeekParts(date: Date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const day = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const week = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  return { year: d.getUTCFullYear(), week };
-}
-
-function isoWeekStartDate(year: number, week: number) {
-  const jan4 = new Date(Date.UTC(year, 0, 4));
-  const jan4Day = (jan4.getUTCDay() + 6) % 7;
-  const week1Monday = new Date(jan4);
-  week1Monday.setUTCDate(jan4.getUTCDate() - jan4Day);
-  const weekStart = new Date(week1Monday);
-  weekStart.setUTCDate(week1Monday.getUTCDate() + (week - 1) * 7);
-  return weekStart;
-}
-
-const nowIso = getIsoWeekParts(new Date());
-const currentWeekStart = isoWeekStartDate(nowIso.year, nowIso.week);
-
-function isWeekOlderThanTwoWeeks(weekYear: number | null, weekNumber: number | null) {
-  if (weekYear === null || weekNumber === null) return true;
-  const snapshotWeekStart = isoWeekStartDate(weekYear, weekNumber);
-  const diffMs = currentWeekStart.getTime() - snapshotWeekStart.getTime();
-  return diffMs >= 14 * 24 * 60 * 60 * 1000;
-}
-
-function rowTextClass(row: FlatRow) {
-  return isWeekOlderThanTwoWeeks(row.weekYear, row.weekNumber)
-    ? STALE_ROW_TEXT_CLASS
-    : ACTIVE_ROW_TEXT_CLASS;
-}
 
 const tableData = computed<FlatRow[]>(() =>
-  players.value.map((p) => {
-    const s = p.snapshot;
-      return {
-        id: p.id, ign: p.ign, playerId: p.playerId, role: p.role ?? "—", isFirstPlayer: p.isFirstPlayer,
-        week: s ? `W${s.weekNumber} ${s.year}` : "—",
-        weekNumber: s?.weekNumber ?? null,
-        weekYear: s?.year ?? null,
-        jobClass: s ? `${s.job} — ${s.classRole}` : "—",
-        job: s?.job ?? "—",
-        classRole: s?.classRole ?? "—",
-        patk: s?.patk ?? 0, matk: s?.matk ?? 0,
-        hp: s?.hp ?? 0,
-        ignorePdef: s?.ignorePdef ?? 0, ignoreMdef: s?.ignoreMdef ?? 0,
-        eqPdef: s?.eqPdef ?? 0, eqMdef: s?.eqMdef ?? 0,
-        eqPdefPct: s?.eqPdefPct ?? 0, eqMdefPct: s?.eqMdefPct ?? 0,
-        rawPdef: s?.rawPdef ?? 0, rawMdef: s?.rawMdef ?? 0,
-        pDmgPct: s?.pDmgPct ?? 0, pDmgReductionPct: s?.pDmgReductionPct ?? 0,
-        mDmgPct: s?.mDmgPct ?? 0, mDmgReductionPct: s?.mDmgReductionPct ?? 0,
-        dmgVsDemiHuman: s?.dmgVsDemiHuman ?? 0, dmgReductionVsDemiHuman: s?.dmgReductionVsDemiHuman ?? 0,
-        dmgVsMedium: s?.dmgVsMedium ?? 0, dmgReductionVsMedium: s?.dmgReductionVsMedium ?? 0,
-        pvpDmg: s?.pvpDmg ?? 0, pvpDmgReduction: s?.pvpDmgReduction ?? 0,
-        healingDone: s?.healingDone ?? 0, healingTaken: s?.healingTaken ?? 0,
-        physicalScore: p.scores?.physical ?? 0,
-        magicScore: p.scores?.magic ?? 0,
-        defensiveScore: p.scores?.defensive ?? 0,
-        classPhysicalScore: p.classScores?.physical ?? 0,
-        classMagicScore: p.classScores?.magic ?? 0,
-        classDefensiveScore: p.classScores?.defensive ?? 0,
-      };
-    })
+  players.value.map((p) => ({
+    ...mapSnapshotBase(p, p.snapshot),
+    physicalScore: p.scores?.physical ?? 0,
+    magicScore: p.scores?.magic ?? 0,
+    defensiveScore: p.scores?.defensive ?? 0,
+    classPhysicalScore: p.classScores?.physical ?? 0,
+    classMagicScore: p.classScores?.magic ?? 0,
+    classDefensiveScore: p.classScores?.defensive ?? 0,
+  }))
 );
 
 const jobOptions = computed(() => [
@@ -246,72 +184,18 @@ const pageLabel = computed(() => {
 
 watch([search, filterJob, filterClassRole, filterOutdatedOnly], () => { pageIndex.value = 0; });
 
-function fmtPct(v: number) { return v === 0 ? "—" : `${v}%`; }
-function fmtFlat(v: number) { return v === 0 ? "—" : String(v); }
-function fmtFp(v: number)   { return v === 0 ? "—" : v.toFixed(2); }
 function fmtScore(v: number) { return v === 0 ? "—" : `${v.toFixed(1)}%`; }
 
-const UIcon = resolveComponent("UIcon");
-
-function sortIcon(col: Column<FlatRow>) {
-  const s = col.getIsSorted();
-  if (s === "asc") return "i-lucide-arrow-up-narrow-wide";
-  if (s === "desc") return "i-lucide-arrow-down-wide-narrow";
-  return "i-lucide-arrow-up-down";
-}
-
-function sortableHeader(col: Column<FlatRow>, label: string) {
-  return h("div", {
-    class: "flex flex-col items-start gap-0.5 cursor-pointer select-none hover:text-slate-200",
-    onClick: () => col.toggleSorting(col.getIsSorted() === "asc"),
-  }, [
-    h("span", { class: "leading-tight" }, label),
-    h(UIcon, { name: sortIcon(col), class: "h-3 w-3 opacity-60" }),
-  ]);
-}
-function rightHeader(col: Column<FlatRow>, label: string) {
-  return h("div", {
-    class: "flex flex-col items-end gap-0.5 cursor-pointer select-none hover:text-slate-200",
-    onClick: () => col.toggleSorting(col.getIsSorted() === "asc"),
-  }, [
-    h("span", { class: "leading-tight text-right" }, label),
-    h(UIcon, { name: sortIcon(col), class: "h-3 w-3 opacity-60" }),
-  ]);
-}
-
-type NumColDef = [string, string, (v: number) => string, boolean?];
-
-const numCols: NumColDef[] = [
-  ["hp",                      "HP",            fmtFlat],
-  ["patk",                    "PATK",          fmtFlat],
-  ["matk",                    "MATK",          fmtFlat],
-  ["ignorePdef",              "Ignore PDEF",   fmtFlat],
-  ["ignoreMdef",              "Ignore MDEF",   fmtFlat],
-  ["eqPdef",                  "EQ PDEF",       fmtFlat],
-  ["eqMdef",                  "EQ MDEF",       fmtFlat],
-  ["eqPdefPct",               "EQ PDEF %",     fmtPct],
-  ["eqMdefPct",               "EQ MDEF %",     fmtPct],
-  ["rawPdef",                 "Raw PDEF",      fmtFp, true],
-  ["rawMdef",                 "Raw MDEF",      fmtFp, true],
-  ["pDmgPct",                 "P DMG %",       fmtPct],
-  ["pDmgReductionPct",        "P DMG Red %",   fmtPct],
-  ["mDmgPct",                 "M DMG %",       fmtPct],
-  ["mDmgReductionPct",        "M DMG Red %",   fmtPct],
-  ["dmgVsDemiHuman",          "vs DH %",       fmtPct],
-  ["dmgReductionVsDemiHuman", "vs DH Red %",   fmtPct],
-  ["dmgVsMedium",             "vs Med %",      fmtPct],
-  ["dmgReductionVsMedium",    "vs Med Red %",  fmtPct],
-  ["pvpDmg",                  "PVP DMG",       fmtFlat],
-  ["pvpDmgReduction",         "PVP Red",       fmtFlat],
-  ["healingDone",             "Healing Done %", fmtPct],
-  ["healingTaken",            "Healing Taken %", fmtPct],
-  ["physicalScore",           "Guild Physical Score", fmtScore, true],
-  ["magicScore",              "Guild Magic Score",    fmtScore, true],
-  ["defensiveScore",          "Guild Defense Score",  fmtScore, true],
-  ["classPhysicalScore",      "Class Physical Score", fmtScore, true],
-  ["classMagicScore",         "Class Magic Score",    fmtScore, true],
-  ["classDefensiveScore",     "Class Defense Score",  fmtScore, true],
+const scoreNumCols: NumColDef[] = [
+  ["physicalScore",      "Guild Physical Score", fmtScore, true],
+  ["magicScore",         "Guild Magic Score",    fmtScore, true],
+  ["defensiveScore",     "Guild Defense Score",  fmtScore, true],
+  ["classPhysicalScore", "Class Physical Score", fmtScore, true],
+  ["classMagicScore",    "Class Magic Score",    fmtScore, true],
+  ["classDefensiveScore","Class Defense Score",  fmtScore, true],
 ];
+
+const allNumCols: NumColDef[] = [...numCols, ...scoreNumCols];
 
 const columns: TableColumn<FlatRow>[] = [
   {
@@ -339,7 +223,7 @@ const columns: TableColumn<FlatRow>[] = [
     header: ({ column }) => sortableHeader(column, "Job Class"),
     cell: ({ row }) => h("span", { class: rowTextClass(row.original as FlatRow) }, row.getValue("jobClass") as string),
   },
-  ...numCols.map(([key, label, fmt, highlight]) => ({
+  ...allNumCols.map(([key, label, fmt, highlight]) => ({
     accessorKey: key,
     header: ({ column }: { column: Column<FlatRow> }) => rightHeader(column, label),
     cell: ({ row }: { row: { getValue: (k: string) => number; original: FlatRow } }) => {
