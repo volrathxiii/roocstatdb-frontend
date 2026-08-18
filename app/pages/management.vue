@@ -54,6 +54,15 @@ interface SectionCard {
   count: string;
 }
 
+const BOOLEAN_SETTING_KEYS = new Set([
+  "PARTY_SUGGESTIONS_ENABLED",
+]);
+
+const booleanSettingOptions = [
+  { label: "Enabled", value: "true" },
+  { label: "Disabled", value: "false" },
+];
+
 const PHYSICAL_WEIGHT_DEFAULTS: Record<string, number> = {
   ignorePdef: 25,
   dmgVsDemiHuman: 23,
@@ -170,6 +179,10 @@ const classRoleOptions = computed(() => [
 const canAddPresetRecord = computed(() => presetModal.records.length < 5);
 
 const visibleAppSettings = computed(() => appSettings.value);
+
+function isBooleanSetting(setting: AppSetting) {
+  return BOOLEAN_SETTING_KEYS.has(setting.key);
+}
 
 const cards = computed<SectionCard[]>(() => {
   const overriddenSettings = visibleAppSettings.value.filter((setting) => setting.isOverridden).length;
@@ -582,7 +595,17 @@ async function confirmDeletePreset() {
                 />
               </div>
               <div class="flex gap-2">
+                <USelect
+                  v-if="isBooleanSetting(setting)"
+                  v-model:model-value="settingDrafts[setting.key]"
+                  :items="booleanSettingOptions"
+                  value-key="value"
+                  label-key="label"
+                  class="flex-1"
+                  size="sm"
+                />
                 <UInput
+                  v-else
                   v-model="settingDrafts[setting.key]"
                   :placeholder="setting.defaultValue || 'Not set'"
                   class="flex-1 font-mono text-xs"

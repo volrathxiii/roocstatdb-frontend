@@ -104,6 +104,46 @@ interface RefClassRole {
   name: string;
 }
 
+interface PartyIntent {
+  id: number;
+  name: string;
+  description: string | null;
+}
+
+interface WizardSuggestedPlayer {
+  id: number;
+  ign: string;
+  playerId: string;
+  job: string | null;
+  classRole: string | null;
+  score: number;
+  note: string;
+  capabilitySource: "selected" | "potential";
+  topCapabilities: string[];
+}
+
+interface WizardCapabilityBreakdown {
+  capabilityKey: string;
+  weight: number;
+  fillPercent: number;
+  selectedFillPercent: number;
+  potentialFillPercent: number;
+  filledBy: string | null;
+  filledBySource: "selected" | "potential" | null;
+  effectiveness: number;
+}
+
+interface WizardCompositionResponse {
+  objective: {
+    id: number;
+    name: string;
+    description: string | null;
+  };
+  suggestedPlayers: WizardSuggestedPlayer[];
+  capabilityBreakdown: WizardCapabilityBreakdown[];
+  explanation: string;
+}
+
 interface PartyPresetRecord {
   id: number;
   position: number;
@@ -159,6 +199,15 @@ const editingGroupNotesId = ref<number | null>(null);
 const editingGroupNotes = ref("");
 const showPreviewModal = ref(false);
 const previewLinkCopied = ref(false);
+const automaticPartySuggestionsEnabled = ref(false);
+const partyIntents = ref<PartyIntent[]>([]);
+const showCompositionWizardModal = ref(false);
+const wizardParty = ref<Party | null>(null);
+const wizardObjectiveId = ref<number | undefined>(undefined);
+const wizardSuggestedPlayers = ref<WizardSuggestedPlayer[]>([]);
+const wizardCapabilityBreakdown = ref<WizardCapabilityBreakdown[]>([]);
+const wizardExplanation = ref("Select an objective to generate a suggested composition.");
+const wizardLoading = ref(false);
 
 function copyPreviewLink() {
   if (!previewUrl.value) return;
@@ -217,6 +266,16 @@ function openProgressionForRosterPlayer(player: RosterPlayer) {
     playerStringId: player.playerId,
     ign: player.ign,
   };
+}
+
+function openCompositionWizard(party: Party) {
+  if (!canEdit.value || !automaticPartySuggestionsEnabled.value) return;
+  wizardParty.value = party;
+  wizardObjectiveId.value = undefined;
+  wizardSuggestedPlayers.value = [];
+  wizardCapabilityBreakdown.value = [];
+  wizardExplanation.value = "Select an objective to generate a suggested composition.";
+  showCompositionWizardModal.value = true;
 }
 
 type EventModalMode = 'create' | 'edit';
@@ -595,7 +654,10 @@ async function loadAll() {
     const webhookCheck = api.get<{ available: boolean }>(`/api/settings/discord-webhook-available`)
       .then((r) => { discordWebhookAvailable.value = r.available; })
       .catch(() => {});
-    await Promise.all([...fetches, webhookCheck]);
+    const suggestionToggleCheck = api.get<{ enabled: boolean }>(`/api/settings/party-suggestions-enabled`)
+      .then((r) => { automaticPartySuggestionsEnabled.value = r.enabled; })
+      .catch(() => { automaticPartySuggestionsEnabled.value = false; });
+    await Promise.all([...fetches, webhookCheck, suggestionToggleCheck]);
     if (selectedEventId.value) {
       await fetchSetup(selectedEventId.value);
     }
@@ -1300,14 +1362,56 @@ async function applyPreset(preset: PartyPreset) {
 
 async function fetchRefData() {
   try {
-    const [jobsRes, rolesRes] = await Promise.all([
+    const [jobsRes, rolesRes, intentsRes] = await Promise.all([
       api.get<RefJob[]>(`/api/ref-data/job-classes`),
       api.get<RefClassRole[]>(`/api/ref-data/class-roles`),
+      api.get<PartyIntent[]>(`/api/ref-data/party-intents`).catch(() => [] as PartyIntent[]),
     ]);
     refJobs.value = jobsRes || [];
     refClassRoles.value = rolesRes || [];
+    partyIntents.value = intentsRes || [];
   } catch {
     console.error("Failed to fetch ref data");
+  }
+}
+
+const wizardObjectiveOptions = computed(() =>
+  partyIntents.value.map((intent) => ({
+    label: intent.name,
+    value: intent.id,
+  })),
+);
+
+const wizardSelectedObjective = computed(() =>
+  partyIntents.value.find((intent) => intent.id === wizardObjectiveId.value) ?? null,
+);
+
+const wizardCurrentMemberIds = computed(() =>
+  wizardParty.value?.members.map((member) => member.id) ?? [],
+);
+
+async function regenerateWizardSuggestion() {
+  if (!wizardParty.value || !wizardSelectedObjective.value) {
+    wizardSuggestedPlayers.value = [];
+    wizardCapabilityBreakdown.value = [];
+    wizardExplanation.value = "Select an objective to generate a suggested composition.";
+    return;
+  }
+
+  wizardLoading.value = true;
+  try {
+    const res = await api.get<WizardCompositionResponse>(
+      `/api/party-setup/parties/${wizardParty.value.id}/composition-wizard?objectiveId=${wizardSelectedObjective.value.id}`,
+    );
+    wizardSuggestedPlayers.value = res.suggestedPlayers;
+    wizardCapabilityBreakdown.value = res.capabilityBreakdown;
+    wizardExplanation.value = res.explanation;
+  } catch {
+    wizardSuggestedPlayers.value = [];
+    wizardCapabilityBreakdown.value = [];
+    wizardExplanation.value = "Failed to generate a capability-based suggestion. Please try again.";
+  } finally {
+    wizardLoading.value = false;
   }
 }
 
@@ -1324,35 +1428,6 @@ function openSuggestionModal(party: Party, member: PartyMember) {
     suggestionForm.jobId = undefined;
     suggestionForm.classRoleId = undefined;
   }
-  
-  showSuggestionModal.value = true;
-}
-
-function openSuggestionModalWithRecommendation(party: Party, jobName: string, classRoleName: string) {
-  if (!canEdit.value) return;
-
-  // Find the job and classRole IDs
-  const job = refJobs.value.find((j) => j.name.toLowerCase() === jobName.toLowerCase());
-  const classRole = refClassRoles.value.find((r) => r.name.toLowerCase() === classRoleName.toLowerCase());
-
-  if (!job || !classRole) {
-    console.warn(`Could not find job "${jobName}" or classRole "${classRoleName}"`);
-    return;
-  }
-
-  // Find the first member without a suggestion in this party
-  const memberWithoutSuggestion = party.members.find((m) => !m.suggestion);
-
-  if (!memberWithoutSuggestion) {
-    errorMsg.value = "All party members already have suggestions.";
-    return;
-  }
-
-  // Open the suggestion modal with the recommendation pre-filled
-  suggestionMember.value = memberWithoutSuggestion;
-  suggestionPartyId.value = party.id;
-  suggestionForm.jobId = job.id;
-  suggestionForm.classRoleId = classRole.id;
   
   showSuggestionModal.value = true;
 }
@@ -1397,6 +1472,10 @@ async function deleteMemberSuggestion() {
 
 watch(selectedEventId, async () => {
   if (selectedEventId.value) await onEventChange();
+});
+
+watch(wizardObjectiveId, async () => {
+  await regenerateWizardSuggestion();
 });
 
 onMounted(async () => {
@@ -1760,6 +1839,7 @@ onMounted(async () => {
                       :party="party"
                       :can-edit="canEdit"
                       :busy="busy"
+                      :automatic-suggestions-enabled="automaticPartySuggestionsEnabled"
                       :actor-id="actorId"
                       :is-dragging-member="isDraggingMember"
                       :hovered-drop-zone="hoveredDropZone"
@@ -1770,9 +1850,9 @@ onMounted(async () => {
                       @change-category="onPartyChangeCategory"
                       @change-note="onPartyChangeNote"
                       @delete-party="requestDeleteParty"
+                      @open-composition-wizard="openCompositionWizard"
                       @remove-from-party="removeFromParty"
                       @suggest-class="openSuggestionModal"
-                      @suggest-class-recommendation="openSuggestionModalWithRecommendation"
                       @open-progression="openProgressionForMember"
                       @drag-over-party="onDragOverParty"
                       @drop-to-party="onDropToParty"
@@ -1794,6 +1874,7 @@ onMounted(async () => {
                     :party="party"
                     :can-edit="canEdit"
                     :busy="busy"
+                    :automatic-suggestions-enabled="automaticPartySuggestionsEnabled"
                     :actor-id="actorId"
                     :is-dragging-member="isDraggingMember"
                     :hovered-drop-zone="hoveredDropZone"
@@ -1804,9 +1885,9 @@ onMounted(async () => {
                     @change-category="onPartyChangeCategory"
                     @change-note="onPartyChangeNote"
                     @delete-party="requestDeleteParty"
+                    @open-composition-wizard="openCompositionWizard"
                     @remove-from-party="removeFromParty"
                     @suggest-class="openSuggestionModal"
-                    @suggest-class-recommendation="openSuggestionModalWithRecommendation"
                     @open-progression="openProgressionForMember"
                     @drag-over-party="onDragOverParty"
                     @drop-to-party="onDropToParty"
@@ -2105,6 +2186,21 @@ onMounted(async () => {
       </div>
     </template>
   </UModal>
+
+  <PartyCompositionWizardModal
+    :open="showCompositionWizardModal"
+    :party-name="wizardParty?.name ?? null"
+    :current-party-member-ids="wizardCurrentMemberIds"
+    :objective-id="wizardObjectiveId"
+    :objective-options="wizardObjectiveOptions"
+    :objective-description="wizardSelectedObjective?.description ?? null"
+    :explanation="wizardExplanation"
+    :capability-breakdown="wizardCapabilityBreakdown"
+    :suggested-players="wizardSuggestedPlayers"
+    :loading="wizardLoading"
+    @update:open="showCompositionWizardModal = $event"
+    @update:objective-id="wizardObjectiveId = $event"
+  />
 
   <!-- Suggestion Modal -->
   <UModal v-model:open="showSuggestionModal">
