@@ -1,0 +1,37 @@
+[
+  {
+    "skillName": "Loaded Coins",
+    "src": "/skills/UI_Icon_Skill_NightGuard_Qiandaimanman01.webp",
+    "error": "All variants failed for /skills/UI_Icon_Skill_NightGuard_Qiandaimanman01.webp: HTTP 404"
+  },
+  {
+    "skillName": "Midnight Breakthrough",
+    "src": "/skills/UI_Icon_Skill_NightGuard_Yemutuwei.webp",
+    "error": "All variants failed for /skills/UI_Icon_Skill_NightGuard_Yemutuwei.webp: HTTP 404"
+  },
+  {
+    "skillName": "Airdrop Supplies",
+    "src": "/skills/UI_Icon_Skill_NightGuard_KongToubuji.webp",
+    "error": "All variants failed for /skills/UI_Icon_Skill_NightGuard_KongToubuji.webp: HTTP 404"
+  },
+  {
+    "skillName": "Shark&#x27;s Eye",
+    "src": "/skills/UI_Icon_Skill_NightGuard_Kuangshazhiyan.webp",
+    "error": "All variants failed for /skills/UI_Icon_Skill_NightGuard_Kuangshazhiyan.webp: HTTP 404"
+  },
+  {
+    "skillName": "Rapid Storm",
+    "src": "/skills/UI_Icon_Skill_NightGuard_Jifengzhouyu.webp",
+    "error": "All variants failed for /skills/UI_Icon_Skill_NightGuard_Jifengzhouyu.webp: HTTP 404"
+  },
+  {
+    "skillName": "R.I.P.",
+    "src": "/skills/UI_Icon_Skill_NightGuard_RIP.webp",
+    "error": "All variants failed for /skills/UI_Icon_Skill_NightGuard_RIP.webp: HTTP 404"
+  },
+  {
+    "skillName": "Nightfire Raid",
+    "src": "/skills/UI_Icon_Skill_NightGuard_Yehuokongxi.webp",
+    "error": "All variants failed for /skills/UI_Icon_Skill_NightGuard_Yehuokongxi.webp: HTTP 404"
+  }
+]

@@ -14,6 +14,13 @@ interface SuggestedPlayer {
   note: string;
   capabilitySource: "selected" | "potential";
   topCapabilities: string[];
+  matchedSkills: {
+    id: number;
+    name: string;
+    description: string | null;
+    matchedCapabilities: string[];
+    capabilityEffectivenessByKey: Record<string, number>;
+  }[];
 }
 
 interface CapabilityBreakdownRow {
@@ -24,6 +31,15 @@ interface CapabilityBreakdownRow {
   potentialFillPercent: number;
   filledBy: string | null;
   filledBySource: "selected" | "potential" | null;
+  effectiveness: number;
+}
+
+interface CapabilityContribution {
+  playerName: string;
+  jobName: string;
+  skillId: number;
+  skillName: string;
+  description: string | null;
   effectiveness: number;
 }
 
@@ -55,10 +71,64 @@ const objectiveIdModel = computed({
   set: (value: number | undefined) => emit("update:objectiveId", value),
 });
 
+const missingSkillIconIds = ref(new Set<number>());
+
 const currentPartyMemberIdSet = computed(() => new Set(props.currentPartyMemberIds));
 
 function isAlreadyInParty(memberId: number) {
   return currentPartyMemberIdSet.value.has(memberId);
+}
+
+function markSkillIconMissing(skillId: number) {
+  missingSkillIconIds.value.add(skillId);
+}
+
+function skillInitials(skillName: string) {
+  const words = skillName
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+
+  return `${words[0][0] ?? ""}${words[1][0] ?? ""}`.toUpperCase();
+}
+
+function getCapabilityContributions(capabilityKey: string): CapabilityContribution[] {
+  const contributions: CapabilityContribution[] = [];
+
+  for (const member of props.suggestedPlayers) {
+    for (const skill of member.matchedSkills) {
+      if (!skill.matchedCapabilities.includes(capabilityKey)) continue;
+      contributions.push({
+        playerName: member.ign,
+        jobName: member.job ?? "Unknown",
+        skillId: skill.id,
+        skillName: skill.name,
+        description: skill.description,
+        effectiveness: skill.capabilityEffectivenessByKey[capabilityKey] ?? 0,
+      });
+    }
+  }
+
+  return contributions.sort((a, b) => {
+    if (b.effectiveness !== a.effectiveness) {
+      return b.effectiveness - a.effectiveness;
+    }
+    if (a.playerName !== b.playerName) {
+      return a.playerName.localeCompare(b.playerName);
+    }
+    return a.skillName.localeCompare(b.skillName);
+  });
+}
+
+function getVisibleCapabilityContributions(capabilityKey: string) {
+  return getCapabilityContributions(capabilityKey).slice(0, 5);
+}
+
+function hasMoreCapabilityContributions(capabilityKey: string) {
+  return getCapabilityContributions(capabilityKey).length > 5;
 }
 </script>
 
@@ -96,11 +166,6 @@ function isAlreadyInParty(memberId: number) {
             </p>
 
             <div class="rounded-lg border border-slate-800 bg-slate-900/40 p-3">
-              <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Explanation</p>
-              <p class="text-sm text-slate-200">{{ explanation }}</p>
-            </div>
-
-            <div class="rounded-lg border border-slate-800 bg-slate-900/40 p-3">
               <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Capability Fill</p>
 
               <div v-if="loading" class="text-xs text-slate-500">
@@ -131,9 +196,57 @@ function isAlreadyInParty(memberId: number) {
                       />
                     </div>
                   </div>
-                  <div class="flex items-center justify-between gap-2 text-[11px] text-slate-500">
-                    <span>{{ row.fillPercent.toFixed(0) }}% fill</span>
-                    <span>{{ row.filledBy ? `${row.filledBy} (eff ${row.effectiveness})` : 'unfilled' }}</span>
+                  <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <UPopover
+                      v-for="(contribution, index) in getVisibleCapabilityContributions(row.capabilityKey)"
+                      :key="`${row.capabilityKey}-${contribution.playerName}-${contribution.skillId}-${index}`"
+                      mode="hover"
+                    >
+                      <button
+                        type="button"
+                        class="rounded border border-slate-700 bg-slate-900/80 p-0.5 transition hover:border-cyan-500/70"
+                      >
+                        <img
+                          v-if="!missingSkillIconIds.has(contribution.skillId)"
+                          :src="`/skills/${contribution.skillId}.webp`"
+                          :alt="contribution.skillName"
+                          class="h-5 w-5 rounded object-cover"
+                          @error="markSkillIconMissing(contribution.skillId)"
+                        >
+                        <div
+                          v-else
+                          class="flex h-5 w-5 items-center justify-center rounded-full bg-slate-700 text-[8px] font-semibold text-slate-200"
+                          :aria-label="contribution.skillName"
+                        >
+                          {{ skillInitials(contribution.skillName) }}
+                        </div>
+                      </button>
+
+                      <template #content>
+                        <div class="max-w-xs p-2">
+                          <div class="flex items-center justify-between gap-2">
+                            <p class="text-xs font-semibold text-slate-100">{{ contribution.playerName }}</p>
+                            <span class="text-[10px] font-semibold text-cyan-300">Eff {{ contribution.effectiveness }}</span>
+                          </div>
+                          <p class="mt-1 text-[11px] text-slate-300">{{ contribution.jobName }} - {{ contribution.skillName }}</p>
+                          <p class="mt-1 text-[11px] text-slate-300">{{ contribution.description || "No description" }}</p>
+                        </div>
+                      </template>
+                    </UPopover>
+                    <span
+                      v-if="hasMoreCapabilityContributions(row.capabilityKey)"
+                      class="flex h-5 w-5 items-center justify-center rounded border border-slate-700 bg-slate-900/80 text-[11px] font-semibold text-slate-300"
+                      aria-label="More skills"
+                      title="More skills"
+                    >
+                      +
+                    </span>
+                    <span
+                      v-if="getCapabilityContributions(row.capabilityKey).length === 0"
+                      class="text-[11px] text-slate-500"
+                    >
+                      No contributing skill
+                    </span>
                   </div>
                 </div>
               </div>
@@ -188,16 +301,43 @@ function isAlreadyInParty(memberId: number) {
                     <p class="text-xs text-slate-400">
                       {{ member.job && member.classRole ? `${member.job} / ${member.classRole}` : "No snapshot" }}
                     </p>
-                    <p class="text-[11px] text-slate-500">{{ member.note }}</p>
                   </div>
                   <UBadge color="primary" variant="soft">{{ member.score.toFixed(1) }}</UBadge>
                 </div>
-                <p v-if="member.topCapabilities.length > 0" class="mt-1 text-[11px] text-cyan-300">
-                  {{ member.topCapabilities.join(', ') }}
-                </p>
-                <p class="mt-1 text-[11px] text-slate-500">
-                  {{ member.playerId }}
-                </p>
+                <div v-if="member.matchedSkills.length > 0" class="mt-1.5 flex flex-wrap gap-1">
+                  <UPopover
+                    v-for="skill in member.matchedSkills"
+                    :key="`${member.id}-${skill.id}`"
+                    mode="hover"
+                  >
+                    <button
+                      type="button"
+                      class="rounded border border-slate-700 bg-slate-900/80 p-0.5 transition hover:border-cyan-500/70"
+                    >
+                      <img
+                        v-if="!missingSkillIconIds.has(skill.id)"
+                        :src="`/skills/${skill.id}.webp`"
+                        :alt="skill.name"
+                        class="h-6 w-6 rounded object-cover"
+                        @error="markSkillIconMissing(skill.id)"
+                      >
+                      <div
+                        v-else
+                        class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-[9px] font-semibold text-slate-200"
+                        :aria-label="skill.name"
+                      >
+                        {{ skillInitials(skill.name) }}
+                      </div>
+                    </button>
+
+                    <template #content>
+                      <div class="max-w-xs p-2">
+                        <p class="text-xs font-semibold text-slate-100">{{ skill.name }}</p>
+                        <p class="mt-1 text-[11px] text-slate-300">{{ skill.description || "No description" }}</p>
+                      </div>
+                    </template>
+                  </UPopover>
+                </div>
               </div>
             </div>
           </section>

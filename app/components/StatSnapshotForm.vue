@@ -40,6 +40,11 @@ const selectedSkillIds = ref<number[]>([]);
 const editingBuildId = ref<number | null>(null);
 const editingName = ref('');
 
+function filterToAvailableSkillIds(skillIds: number[]) {
+  const allowed = new Set(availableSkills.value.map((skill) => skill.id));
+  return skillIds.filter((id) => allowed.has(id));
+}
+
 async function fetchBuilds() {
   const res = await api.get<StatBuild[]>('/api/stat-snapshots/builds');
   builds.value = [...res].sort((a, b) => a.name.localeCompare(b.name));
@@ -113,7 +118,8 @@ async function openSkillsModal() {
       `/api/stat-snapshots/builds/${selectedBuildId.value}/skills?jobId=${form.jobId}&classRoleId=${form.classRoleId}`,
     );
     availableSkills.value = res.availableSkills;
-    selectedSkillIds.value = [...res.selectedSkillIds];
+    // Keep only selectable skills so hidden legacy IDs are not re-submitted.
+    selectedSkillIds.value = filterToAvailableSkillIds(res.selectedSkillIds);
   } catch {
     skillsError.value = "Failed to load skills for this build.";
     availableSkills.value = [];
@@ -136,11 +142,13 @@ async function saveSkillsSelection() {
   skillsSaving.value = true;
   skillsError.value = null;
   try {
+    const skillIds = filterToAvailableSkillIds(selectedSkillIds.value);
     await api.put(`/api/stat-snapshots/builds/${selectedBuildId.value}/skills`, {
       jobId: form.jobId,
       classRoleId: form.classRoleId,
-      skillIds: selectedSkillIds.value,
+      skillIds,
     });
+    selectedSkillIds.value = skillIds;
     skillsModalOpen.value = false;
     successMsg.value = "Build skills updated.";
   } catch {

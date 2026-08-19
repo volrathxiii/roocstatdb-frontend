@@ -120,6 +120,13 @@ interface WizardSuggestedPlayer {
   note: string;
   capabilitySource: "selected" | "potential";
   topCapabilities: string[];
+  matchedSkills: {
+    id: number;
+    name: string;
+    description: string | null;
+    matchedCapabilities: string[];
+    capabilityEffectivenessByKey: Record<string, number>;
+  }[];
 }
 
 interface WizardCapabilityBreakdown {
