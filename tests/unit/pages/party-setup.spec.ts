@@ -345,6 +345,21 @@ describe("party-setup.vue", () => {
     });
   });
 
+  // ── Composition wizard behavior ──────────────────────────────────────────────
+
+  describe("composition wizard", () => {
+    it("stores objective selection separately for objective and player focus", async () => {
+      const { vm } = await mountPageWithVm();
+
+      vm.wizardObjectiveFocusObjectiveId = 11;
+      vm.wizardPlayerFocusObjectiveId = 22;
+
+      expect(vm.wizardObjectiveFocusObjectiveId).toBe(11);
+      expect(vm.wizardPlayerFocusObjectiveId).toBe(22);
+    });
+
+  });
+
   // ── Empty / no events states ──────────────────────────────────────────────────
 
   describe("empty states", () => {

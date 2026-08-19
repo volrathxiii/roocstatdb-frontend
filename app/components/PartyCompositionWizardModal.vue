@@ -4,6 +4,16 @@ interface ObjectiveOption {
   value: number;
 }
 
+type WizardTab = "objective-focus" | "player-focus";
+
+interface PlayerFocusIntentCard {
+  id: number;
+  name: string;
+  description: string | null;
+  averageScore: number;
+  matchedCount: number;
+}
+
 interface SuggestedPlayer {
   id: number;
   ign: string;
@@ -48,17 +58,23 @@ const props = defineProps<{
   partyName: string | null;
   currentPartyMemberIds: number[];
   objectiveId: number | undefined;
+  activeTab: WizardTab;
   objectiveOptions: ObjectiveOption[];
+  playerFocusCards: PlayerFocusIntentCard[];
+  playerFocusLoading: boolean;
   objectiveDescription: string | null;
   explanation: string;
   capabilityBreakdown: CapabilityBreakdownRow[];
   suggestedPlayers: SuggestedPlayer[];
   loading: boolean;
+  applyingSuggestedMembers: boolean;
 }>();
 
 const emit = defineEmits<{
   "update:open": [value: boolean];
   "update:objectiveId": [value: number | undefined];
+  "update:activeTab": [value: WizardTab];
+  "apply-suggested": [memberIds: number[]];
 }>();
 
 const openModel = computed({
@@ -69,6 +85,11 @@ const openModel = computed({
 const objectiveIdModel = computed({
   get: () => props.objectiveId,
   set: (value: number | undefined) => emit("update:objectiveId", value),
+});
+
+const activeTabModel = computed({
+  get: () => props.activeTab,
+  set: (value: WizardTab) => emit("update:activeTab", value),
 });
 
 const missingSkillIconIds = ref(new Set<number>());
@@ -130,6 +151,10 @@ function getVisibleCapabilityContributions(capabilityKey: string) {
 function hasMoreCapabilityContributions(capabilityKey: string) {
   return getCapabilityContributions(capabilityKey).length > 5;
 }
+
+function emitApplySuggested() {
+  emit("apply-suggested", props.suggestedPlayers.map((member) => member.id));
+}
 </script>
 
 <template>
@@ -145,9 +170,28 @@ function hasMoreCapabilityContributions(capabilityKey: string) {
           </span>
         </template>
 
+        <div class="mb-3 inline-flex rounded-lg border border-slate-800 bg-slate-900/60 p-1">
+          <button
+            type="button"
+            class="rounded-md px-3 py-1.5 text-xs font-medium transition"
+            :class="activeTabModel === 'objective-focus' ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-300 hover:bg-slate-800'"
+            @click="activeTabModel = 'objective-focus'"
+          >
+            Objective Focus
+          </button>
+          <button
+            type="button"
+            class="rounded-md px-3 py-1.5 text-xs font-medium transition"
+            :class="activeTabModel === 'player-focus' ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-300 hover:bg-slate-800'"
+            @click="activeTabModel = 'player-focus'"
+          >
+            Player Focus
+          </button>
+        </div>
+
         <div class="grid gap-4 md:grid-cols-[1.15fr_0.85fr]">
           <section class="space-y-3">
-            <UFormField label="Objective" required>
+            <UFormField v-if="activeTabModel === 'objective-focus'" label="Objective" required>
               <USelect
                 v-model:model-value="objectiveIdModel"
                 :items="objectiveOptions"
@@ -160,6 +204,33 @@ function hasMoreCapabilityContributions(capabilityKey: string) {
                 placeholder="Select objective"
               />
             </UFormField>
+
+            <div v-else class="space-y-2">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Top Intent Matches</p>
+              <div v-if="playerFocusLoading" class="rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-xs text-slate-500">
+                Calculating best intents for current party members...
+              </div>
+              <div v-else-if="playerFocusCards.length === 0" class="rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-xs text-slate-500">
+                No intent score data available for this party.
+              </div>
+              <div v-else class="grid gap-2">
+                <button
+                  v-for="card in playerFocusCards"
+                  :key="card.id"
+                  type="button"
+                  class="rounded-lg border p-2.5 text-left transition"
+                  :class="objectiveIdModel === card.id ? 'border-cyan-500/60 bg-cyan-950/20' : 'border-slate-700 bg-slate-900/40 hover:border-slate-500'"
+                  @click="objectiveIdModel = card.id"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <p class="text-sm font-medium text-slate-100">{{ card.name }}</p>
+                    <UBadge color="primary" variant="soft">Avg {{ card.averageScore.toFixed(1) }}</UBadge>
+                  </div>
+                  <p v-if="card.description" class="mt-1 text-xs text-slate-400">{{ card.description }}</p>
+                  <p class="mt-1 text-[11px] text-slate-500">Matched current members: {{ card.matchedCount }}</p>
+                </button>
+              </div>
+            </div>
 
             <p v-if="objectiveDescription" class="text-xs text-slate-400">
               {{ objectiveDescription }}
@@ -255,7 +326,7 @@ function hasMoreCapabilityContributions(capabilityKey: string) {
 
           <section class="rounded-lg border border-slate-800 bg-slate-900/40 p-3">
             <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Suggested Players ({{ suggestedPlayers.length }}/5)
+              {{ activeTabModel === 'player-focus' ? 'Accompanying Party Members' : 'Suggested Players' }} ({{ suggestedPlayers.length }}/5)
             </p>
 
             <div v-if="loading" class="flex justify-center py-6">
@@ -339,6 +410,16 @@ function hasMoreCapabilityContributions(capabilityKey: string) {
                   </UPopover>
                 </div>
               </div>
+
+              <UButton
+                class="mt-2 w-full justify-center"
+                color="primary"
+                :loading="applyingSuggestedMembers"
+                :disabled="loading || suggestedPlayers.length === 0 || applyingSuggestedMembers"
+                @click="emitApplySuggested"
+              >
+                Apply Suggested Members
+              </UButton>
             </div>
           </section>
         </div>
