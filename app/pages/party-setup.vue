@@ -1411,9 +1411,9 @@ async function fetchRefData() {
       api.get<RefClassRole[]>(`/api/ref-data/class-roles`),
       api.get<PartyIntent[]>(`/api/ref-data/party-intents`).catch(() => [] as PartyIntent[]),
     ]);
-    refJobs.value = jobsRes || [];
-    refClassRoles.value = rolesRes || [];
-    partyIntents.value = intentsRes || [];
+    refJobs.value = Array.isArray(jobsRes) ? jobsRes : [];
+    refClassRoles.value = Array.isArray(rolesRes) ? rolesRes : [];
+    partyIntents.value = Array.isArray(intentsRes) ? intentsRes : [];
   } catch {
     console.error("Failed to fetch ref data");
   }
