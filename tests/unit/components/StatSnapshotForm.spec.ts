@@ -29,6 +29,8 @@ const BUILDS = [
   { id: 1, name: 'Main', isDefault: true, createdAt: '2026-08-01T00:00:00.000Z' },
 ];
 
+const PARTY_SUGGESTIONS_ENABLED = { enabled: true };
+
 const EMPTY_SNAPSHOT = { snapshot: null };
 
 const EXISTING_SNAPSHOT = {
@@ -56,6 +58,7 @@ async function mountForm() {
     .mockResolvedValueOnce(JOB_CLASSES)
     .mockResolvedValueOnce(CLASS_ROLES)
     .mockResolvedValueOnce(BUILDS)
+    .mockResolvedValueOnce(PARTY_SUGGESTIONS_ENABLED)
     .mockResolvedValueOnce(EMPTY_SNAPSHOT);
   const wrapper = await mountSuspended(StatSnapshotForm);
   await flushPromises();
@@ -68,6 +71,7 @@ async function mountFormDirect(snapshot = EMPTY_SNAPSHOT) {
     .mockResolvedValueOnce(JOB_CLASSES)
     .mockResolvedValueOnce(CLASS_ROLES)
     .mockResolvedValueOnce(BUILDS)
+    .mockResolvedValueOnce(PARTY_SUGGESTIONS_ENABLED)
     .mockResolvedValueOnce(snapshot);
   const wrapper = mount(StatSnapshotForm);
   await flushPromises();
@@ -116,6 +120,7 @@ describe("StatSnapshotForm", () => {
         .mockResolvedValueOnce(JOB_CLASSES)
         .mockResolvedValueOnce(CLASS_ROLES)
         .mockResolvedValueOnce(BUILDS)
+        .mockResolvedValueOnce(PARTY_SUGGESTIONS_ENABLED)
         .mockResolvedValueOnce(EXISTING_SNAPSHOT);
 
       const wrapper = await mountSuspended(StatSnapshotForm);
@@ -139,7 +144,7 @@ describe("StatSnapshotForm", () => {
       await (wrapper.vm as any).handleSubmit();
       await flushPromises();
 
-      expect(fetchMock).toHaveBeenCalledTimes(4); // only initial 4 fetches (jobs+roles+builds+snapshot), not the save
+      expect(fetchMock).toHaveBeenCalledTimes(5); // only initial fetches (jobs+roles+builds+setting+snapshot), not the save
       expect(wrapper.text()).toContain("All fields must have a value");
     });
 

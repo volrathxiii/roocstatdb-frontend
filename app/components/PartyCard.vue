@@ -41,6 +41,7 @@ const props = defineProps<{
   party: Party;
   canEdit: boolean;
   busy: boolean;
+  automaticSuggestionsEnabled: boolean;
   actorId: number | null;
   isDraggingMember: boolean;
   hoveredDropZone: string | null;
@@ -52,6 +53,7 @@ const emit = defineEmits<{
   "rename": [party: Party, name: string];
   "change-category": [party: Party, category: "Main" | "Sub"];
   "change-note": [party: Party, note: string | null];
+  "open-composition-wizard": [party: Party];
   "delete-party": [party: Party];
   "remove-from-party": [party: Party, memberId: number];
   "suggest-class": [party: Party, member: PartyMember];
@@ -206,6 +208,17 @@ function onPartyDragEnd() {
       </div>
 
       <UButton v-if="canEdit" color="error" variant="ghost" size="xs" icon="i-lucide-trash-2" square :disabled="busy" @click="emit('delete-party', party)" />
+      <UButton
+        v-if="canEdit && automaticSuggestionsEnabled"
+        color="warning"
+        variant="ghost"
+        size="xs"
+        icon="i-lucide-wand-sparkles"
+        square
+        :disabled="busy"
+        title="Party Composition Wizard"
+        @click="emit('open-composition-wizard', party)"
+      />
     </div>
 
     <!-- Members drop zone -->

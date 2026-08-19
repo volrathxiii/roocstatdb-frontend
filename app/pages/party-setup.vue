@@ -104,6 +104,63 @@ interface RefClassRole {
   name: string;
 }
 
+interface PartyIntent {
+  id: number;
+  name: string;
+  description: string | null;
+}
+
+type WizardTab = "objective-focus" | "player-focus";
+
+interface WizardPlayerFocusCard {
+  id: number;
+  name: string;
+  description: string | null;
+  averageScore: number;
+  matchedCount: number;
+}
+
+interface WizardSuggestedPlayer {
+  id: number;
+  ign: string;
+  playerId: string;
+  job: string | null;
+  classRole: string | null;
+  score: number;
+  note: string;
+  capabilitySource: "selected" | "potential";
+  topCapabilities: string[];
+  matchedSkills: {
+    id: number;
+    name: string;
+    description: string | null;
+    matchedCapabilities: string[];
+    capabilityEffectivenessByKey: Record<string, number>;
+  }[];
+}
+
+interface WizardCapabilityBreakdown {
+  capabilityKey: string;
+  weight: number;
+  fillPercent: number;
+  selectedFillPercent: number;
+  potentialFillPercent: number;
+  filledBy: string | null;
+  filledBySource: "selected" | "potential" | null;
+  effectiveness: number;
+}
+
+interface WizardCompositionResponse {
+  objective: {
+    id: number;
+    name: string;
+    description: string | null;
+  };
+  suggestedPlayers: WizardSuggestedPlayer[];
+  capabilityBreakdown: WizardCapabilityBreakdown[];
+  explanation: string;
+}
+
 interface PartyPresetRecord {
   id: number;
   position: number;
@@ -159,6 +216,24 @@ const editingGroupNotesId = ref<number | null>(null);
 const editingGroupNotes = ref("");
 const showPreviewModal = ref(false);
 const previewLinkCopied = ref(false);
+const automaticPartySuggestionsEnabled = ref(false);
+const partyIntents = ref<PartyIntent[]>([]);
+const showCompositionWizardModal = ref(false);
+const wizardParty = ref<Party | null>(null);
+const wizardObjectiveFocusObjectiveId = ref<number | undefined>(undefined);
+const wizardPlayerFocusObjectiveId = ref<number | undefined>(undefined);
+const wizardActiveTab = ref<WizardTab>("objective-focus");
+const wizardPlayerFocusCards = ref<WizardPlayerFocusCard[]>([]);
+const wizardPlayerFocusLoading = ref(false);
+const wizardObjectiveSuggestedPlayers = ref<WizardSuggestedPlayer[]>([]);
+const wizardObjectiveCapabilityBreakdown = ref<WizardCapabilityBreakdown[]>([]);
+const wizardObjectiveExplanation = ref("Select an objective to generate a suggested composition.");
+const wizardObjectiveLoading = ref(false);
+const wizardPlayerSuggestedPlayers = ref<WizardSuggestedPlayer[]>([]);
+const wizardPlayerCapabilityBreakdown = ref<WizardCapabilityBreakdown[]>([]);
+const wizardPlayerExplanation = ref("Select an objective to generate a suggested composition.");
+const wizardPlayerLoading = ref(false);
+const wizardApplyingMembers = ref(false);
 
 function copyPreviewLink() {
   if (!previewUrl.value) return;
@@ -217,6 +292,32 @@ function openProgressionForRosterPlayer(player: RosterPlayer) {
     playerStringId: player.playerId,
     ign: player.ign,
   };
+}
+
+function openCompositionWizard(party: Party) {
+  if (!canEdit.value || !automaticPartySuggestionsEnabled.value) return;
+  const memberCount = party.members.length;
+  const defaultTab: WizardTab = memberCount >= 1 && memberCount <= 4
+    ? "player-focus"
+    : "objective-focus";
+
+  wizardParty.value = party;
+  wizardObjectiveFocusObjectiveId.value = undefined;
+  wizardPlayerFocusObjectiveId.value = undefined;
+  wizardActiveTab.value = defaultTab;
+  wizardPlayerFocusCards.value = [];
+  wizardObjectiveSuggestedPlayers.value = [];
+  wizardObjectiveCapabilityBreakdown.value = [];
+  wizardObjectiveExplanation.value = "Select an objective to generate a suggested composition.";
+  wizardObjectiveLoading.value = false;
+  wizardPlayerSuggestedPlayers.value = [];
+  wizardPlayerCapabilityBreakdown.value = [];
+  wizardPlayerExplanation.value = "Select an objective to generate a suggested composition.";
+  wizardPlayerLoading.value = false;
+  showCompositionWizardModal.value = true;
+  if (defaultTab === "player-focus") {
+    void regenerateWizardPlayerFocusCards();
+  }
 }
 
 type EventModalMode = 'create' | 'edit';
@@ -595,7 +696,10 @@ async function loadAll() {
     const webhookCheck = api.get<{ available: boolean }>(`/api/settings/discord-webhook-available`)
       .then((r) => { discordWebhookAvailable.value = r.available; })
       .catch(() => {});
-    await Promise.all([...fetches, webhookCheck]);
+    const suggestionToggleCheck = api.get<{ enabled: boolean }>(`/api/settings/party-suggestions-enabled`)
+      .then((r) => { automaticPartySuggestionsEnabled.value = r.enabled; })
+      .catch(() => { automaticPartySuggestionsEnabled.value = false; });
+    await Promise.all([...fetches, webhookCheck, suggestionToggleCheck]);
     if (selectedEventId.value) {
       await fetchSetup(selectedEventId.value);
     }
@@ -774,7 +878,7 @@ async function savePartyMembers(party: Party, memberIds: number[]) {
   if (!canEdit.value) return;
   if (memberIds.length > 5) {
     errorMsg.value = "A party can only have up to 5 members.";
-    return;
+    return false;
   }
 
   busy.value = true;
@@ -783,8 +887,10 @@ async function savePartyMembers(party: Party, memberIds: number[]) {
     const res = await api.patch<SetupResponse>(`/api/party-setup/parties/${party.id}/members`, { memberIds });
     applySetupResponse(res);
     await fetchEvents();
+    return true;
   } catch {
     errorMsg.value = "Failed to update party members.";
+    return false;
   } finally {
     busy.value = false;
   }
@@ -1300,14 +1406,169 @@ async function applyPreset(preset: PartyPreset) {
 
 async function fetchRefData() {
   try {
-    const [jobsRes, rolesRes] = await Promise.all([
+    const [jobsRes, rolesRes, intentsRes] = await Promise.all([
       api.get<RefJob[]>(`/api/ref-data/job-classes`),
       api.get<RefClassRole[]>(`/api/ref-data/class-roles`),
+      api.get<PartyIntent[]>(`/api/ref-data/party-intents`).catch(() => [] as PartyIntent[]),
     ]);
-    refJobs.value = jobsRes || [];
-    refClassRoles.value = rolesRes || [];
+    refJobs.value = Array.isArray(jobsRes) ? jobsRes : [];
+    refClassRoles.value = Array.isArray(rolesRes) ? rolesRes : [];
+    partyIntents.value = Array.isArray(intentsRes) ? intentsRes : [];
   } catch {
     console.error("Failed to fetch ref data");
+  }
+}
+
+const wizardObjectiveOptions = computed(() =>
+  partyIntents.value.map((intent) => ({
+    label: intent.name,
+    value: intent.id,
+  })),
+);
+
+const wizardActiveObjectiveId = computed<number | undefined>({
+  get: () => wizardActiveTab.value === "player-focus"
+    ? wizardPlayerFocusObjectiveId.value
+    : wizardObjectiveFocusObjectiveId.value,
+  set: (value: number | undefined) => {
+    if (wizardActiveTab.value === "player-focus") {
+      wizardPlayerFocusObjectiveId.value = value;
+      return;
+    }
+    wizardObjectiveFocusObjectiveId.value = value;
+  },
+});
+
+const wizardSelectedObjective = computed(() =>
+  partyIntents.value.find((intent) => intent.id === wizardActiveObjectiveId.value) ?? null,
+);
+
+const wizardSuggestedPlayers = computed(() =>
+  wizardActiveTab.value === "player-focus" ? wizardPlayerSuggestedPlayers.value : wizardObjectiveSuggestedPlayers.value,
+);
+
+const wizardCapabilityBreakdown = computed(() =>
+  wizardActiveTab.value === "player-focus" ? wizardPlayerCapabilityBreakdown.value : wizardObjectiveCapabilityBreakdown.value,
+);
+
+const wizardExplanation = computed(() =>
+  wizardActiveTab.value === "player-focus" ? wizardPlayerExplanation.value : wizardObjectiveExplanation.value,
+);
+
+const wizardLoading = computed(() =>
+  wizardActiveTab.value === "player-focus" ? wizardPlayerLoading.value : wizardObjectiveLoading.value,
+);
+
+const wizardCurrentMemberIds = computed(() =>
+  wizardParty.value?.members.map((member) => member.id) ?? [],
+);
+
+async function regenerateWizardSuggestion() {
+  const isPlayerFocus = wizardActiveTab.value === "player-focus";
+  const targetSuggestedPlayers = isPlayerFocus ? wizardPlayerSuggestedPlayers : wizardObjectiveSuggestedPlayers;
+  const targetCapabilityBreakdown = isPlayerFocus ? wizardPlayerCapabilityBreakdown : wizardObjectiveCapabilityBreakdown;
+  const targetExplanation = isPlayerFocus ? wizardPlayerExplanation : wizardObjectiveExplanation;
+  const setLoading = (value: boolean) => {
+    if (isPlayerFocus) {
+      wizardPlayerLoading.value = value;
+      return;
+    }
+    wizardObjectiveLoading.value = value;
+  };
+
+  if (!wizardParty.value || !wizardSelectedObjective.value) {
+    targetSuggestedPlayers.value = [];
+    targetCapabilityBreakdown.value = [];
+    targetExplanation.value = "Select an objective to generate a suggested composition.";
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const focusQuery = isPlayerFocus ? "&focus=player" : "";
+    const res = await api.get<WizardCompositionResponse>(
+      `/api/party-setup/parties/${wizardParty.value.id}/composition-wizard?objectiveId=${wizardSelectedObjective.value.id}${focusQuery}`,
+    );
+    targetSuggestedPlayers.value = res.suggestedPlayers;
+    targetCapabilityBreakdown.value = res.capabilityBreakdown;
+    targetExplanation.value = res.explanation;
+  } catch {
+    targetSuggestedPlayers.value = [];
+    targetCapabilityBreakdown.value = [];
+    targetExplanation.value = "Failed to generate a capability-based suggestion. Please try again.";
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function regenerateWizardPlayerFocusCards() {
+  if (!wizardParty.value || partyIntents.value.length === 0) {
+    wizardPlayerFocusCards.value = [];
+    return;
+  }
+
+  wizardPlayerFocusLoading.value = true;
+  try {
+    const currentPartyIds = new Set(wizardCurrentMemberIds.value);
+    const scored = await Promise.all(partyIntents.value.map(async (intent) => {
+      const res = await api.get<WizardCompositionResponse>(
+        `/api/party-setup/parties/${wizardParty.value!.id}/composition-wizard?objectiveId=${intent.id}&focus=player`,
+      );
+
+      const matched = res.suggestedPlayers.filter((player) => currentPartyIds.has(player.id));
+      const total = matched.reduce((sum, player) => sum + player.score, 0);
+      const averageScore = matched.length > 0 ? Math.round((total / matched.length) * 10) / 10 : 0;
+
+      return {
+        id: intent.id,
+        name: intent.name,
+        description: intent.description,
+        averageScore,
+        matchedCount: matched.length,
+      } as WizardPlayerFocusCard;
+    }));
+
+    wizardPlayerFocusCards.value = scored
+      .filter((card) => card.averageScore > 0)
+      .sort((a, b) => {
+        if (b.averageScore !== a.averageScore) return b.averageScore - a.averageScore;
+        if (b.matchedCount !== a.matchedCount) return b.matchedCount - a.matchedCount;
+        return a.name.localeCompare(b.name);
+      })
+      .slice(0, 3);
+
+    const topCard = wizardPlayerFocusCards.value[0];
+    if (topCard && wizardPlayerFocusObjectiveId.value !== topCard.id) {
+      wizardPlayerFocusObjectiveId.value = topCard.id;
+    }
+    if (!topCard) {
+      wizardPlayerFocusObjectiveId.value = undefined;
+    }
+  } catch {
+    wizardPlayerFocusCards.value = [];
+    wizardPlayerFocusObjectiveId.value = undefined;
+  } finally {
+    wizardPlayerFocusLoading.value = false;
+  }
+}
+
+async function applyWizardSuggestedMembers(memberIds: number[]) {
+  if (!wizardParty.value || !canEdit.value || memberIds.length === 0) return;
+
+  wizardApplyingMembers.value = true;
+  try {
+    const applied = await savePartyMembers(wizardParty.value, memberIds.slice(0, 5));
+    if (!applied) return;
+
+    const refreshed = parties.value.find((party) => party.id === wizardParty.value?.id) ?? null;
+    wizardParty.value = refreshed;
+    await regenerateWizardSuggestion();
+    if (wizardActiveTab.value === "player-focus") {
+      await regenerateWizardPlayerFocusCards();
+    }
+    showCompositionWizardModal.value = false;
+  } finally {
+    wizardApplyingMembers.value = false;
   }
 }
 
@@ -1368,6 +1629,16 @@ async function deleteMemberSuggestion() {
 
 watch(selectedEventId, async () => {
   if (selectedEventId.value) await onEventChange();
+});
+
+watch(wizardActiveObjectiveId, async () => {
+  await regenerateWizardSuggestion();
+});
+
+watch(wizardActiveTab, async () => {
+  if (wizardActiveTab.value !== "player-focus") return;
+  if (wizardPlayerFocusCards.value.length > 0 || wizardPlayerFocusLoading.value) return;
+  await regenerateWizardPlayerFocusCards();
 });
 
 onMounted(async () => {
@@ -1731,6 +2002,7 @@ onMounted(async () => {
                       :party="party"
                       :can-edit="canEdit"
                       :busy="busy"
+                      :automatic-suggestions-enabled="automaticPartySuggestionsEnabled"
                       :actor-id="actorId"
                       :is-dragging-member="isDraggingMember"
                       :hovered-drop-zone="hoveredDropZone"
@@ -1741,6 +2013,7 @@ onMounted(async () => {
                       @change-category="onPartyChangeCategory"
                       @change-note="onPartyChangeNote"
                       @delete-party="requestDeleteParty"
+                      @open-composition-wizard="openCompositionWizard"
                       @remove-from-party="removeFromParty"
                       @suggest-class="openSuggestionModal"
                       @open-progression="openProgressionForMember"
@@ -1764,6 +2037,7 @@ onMounted(async () => {
                     :party="party"
                     :can-edit="canEdit"
                     :busy="busy"
+                    :automatic-suggestions-enabled="automaticPartySuggestionsEnabled"
                     :actor-id="actorId"
                     :is-dragging-member="isDraggingMember"
                     :hovered-drop-zone="hoveredDropZone"
@@ -1774,6 +2048,7 @@ onMounted(async () => {
                     @change-category="onPartyChangeCategory"
                     @change-note="onPartyChangeNote"
                     @delete-party="requestDeleteParty"
+                    @open-composition-wizard="openCompositionWizard"
                     @remove-from-party="removeFromParty"
                     @suggest-class="openSuggestionModal"
                     @open-progression="openProgressionForMember"
@@ -2074,6 +2349,27 @@ onMounted(async () => {
       </div>
     </template>
   </UModal>
+
+  <PartyCompositionWizardModal
+    :open="showCompositionWizardModal"
+    :party-name="wizardParty?.name ?? null"
+    :current-party-member-ids="wizardCurrentMemberIds"
+    :objective-id="wizardActiveObjectiveId"
+    :active-tab="wizardActiveTab"
+    :objective-options="wizardObjectiveOptions"
+    :player-focus-cards="wizardPlayerFocusCards"
+    :player-focus-loading="wizardPlayerFocusLoading"
+    :objective-description="wizardSelectedObjective?.description ?? null"
+    :explanation="wizardExplanation"
+    :capability-breakdown="wizardCapabilityBreakdown"
+    :suggested-players="wizardSuggestedPlayers"
+    :loading="wizardLoading"
+    :applying-suggested-members="wizardApplyingMembers"
+    @update:open="showCompositionWizardModal = $event"
+    @update:objective-id="wizardActiveObjectiveId = $event"
+    @update:active-tab="wizardActiveTab = $event"
+    @apply-suggested="applyWizardSuggestedMembers"
+  />
 
   <!-- Suggestion Modal -->
   <UModal v-model:open="showSuggestionModal">

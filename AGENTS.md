@@ -161,6 +161,16 @@ Dev server runs on port **3000** by default (`npm run dev`).
 - No default exports — use `defineComponent` only when options API is unavoidable
 - Keep `<template>` → `<script>` → `<style scoped>` order in every SFC
 
+## Management: Skills Module
+
+- `app/pages/management.vue` now supports skill creation and editing from the Skills modal.
+- Skills form fields: `name`, `description`, multi-select `job classes`, and multi-select capability chips.
+- The page fetches archetype/capability options from backend ref-data endpoints.
+- Archetype behavior shown in UI and enforced by backend rule:
+  - No archetype + no capabilities => `null` archetype
+  - No archetype + with capabilities => defaults to `utility`
+- Skills list/filtering handles skills linked to multiple job classes and displays all linked jobs.
+
 ---
 
 ## Score System & Rankings

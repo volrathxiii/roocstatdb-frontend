@@ -1,0 +1,1686 @@
+{
+  "2.webp": {
+    "skillName": "Bash",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_kuangJi.webp",
+    "skillId": 2,
+    "previousFileName": "bash.webp"
+  },
+  "3.webp": {
+    "skillName": "Magnum Break",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_NuBao.webp",
+    "skillId": 3,
+    "previousFileName": "magnum-break.webp"
+  },
+  "7.webp": {
+    "skillName": "Provoke",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_TiaoXing.webp",
+    "skillId": 7,
+    "previousFileName": "provoke.webp"
+  },
+  "4.webp": {
+    "skillName": "Endure",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_BaTi.webp",
+    "skillId": 4,
+    "previousFileName": "endure.webp"
+  },
+  "66.webp": {
+    "skillName": "Pierce",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_LianCiGongJi.webp",
+    "skillId": 66,
+    "previousFileName": "pierce.webp"
+  },
+  "74.webp": {
+    "skillName": "Spear Boomerang",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_TouZhiChangMaoGongJi.webp",
+    "skillId": 74,
+    "previousFileName": "spear-boomerang.webp"
+  },
+  "63.webp": {
+    "skillName": "Cavalier Mastery",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Transform_qibing.webp",
+    "skillId": 63,
+    "previousFileName": "cavalier-mastery.webp"
+  },
+  "64.webp": {
+    "skillName": "Brandish Spear",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_QiChengGongJi.webp",
+    "skillId": 64,
+    "previousFileName": "brandish-spear.webp"
+  },
+  "71.webp": {
+    "skillName": "Sturdy Strike",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_JianDingDaJi.webp",
+    "skillId": 71,
+    "previousFileName": "sturdy-strike.webp"
+  },
+  "72.webp": {
+    "skillName": "Lion Roar",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_ShiZiFenXun.webp",
+    "skillId": 72,
+    "previousFileName": "lion-roar.webp"
+  },
+  "67.webp": {
+    "skillName": "Spear Stab",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_ChangMaoCiJi.webp",
+    "skillId": 67,
+    "previousFileName": "spear-stab.webp"
+  },
+  "68.webp": {
+    "skillName": "Sword Quicken",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_JianGongSuZengJia.webp",
+    "skillId": 68,
+    "previousFileName": "sword-quicken.webp"
+  },
+  "69.webp": {
+    "skillName": "Bowling Bash",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_GuaiWuHuJi.webp",
+    "skillId": 69,
+    "previousFileName": "bowling-bash.webp"
+  },
+  "70.webp": {
+    "skillName": "Vanguard Force",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_XianFengZhuiJi.webp",
+    "skillId": 70,
+    "previousFileName": "vanguard-force.webp"
+  },
+  "75.webp": {
+    "skillName": "Charge Attack",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_ChongFengGongJi.webp",
+    "skillId": 75,
+    "previousFileName": "charge-attack.webp"
+  },
+  "237.webp": {
+    "skillName": "Aura Blade",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_LingQiJian.webp",
+    "skillId": 237,
+    "previousFileName": "aura-blade.webp"
+  },
+  "239.webp": {
+    "skillName": "Parry",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_ShuangJianGeDang.webp",
+    "skillId": 239,
+    "previousFileName": "parry.webp"
+  },
+  "233.webp": {
+    "skillName": "Concentration",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_JiZhongGongJi.webp",
+    "skillId": 233,
+    "previousFileName": "concentration.webp"
+  },
+  "236.webp": {
+    "skillName": "Clashing Spiral",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_LuoXuanJiCi.webp",
+    "skillId": 236,
+    "previousFileName": "clashing-spiral.webp"
+  },
+  "238.webp": {
+    "skillName": "Tension Relax",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_JiSuHuiFu.webp",
+    "skillId": 238,
+    "previousFileName": "tension-relax.webp"
+  },
+  "240.webp": {
+    "skillName": "Berserk",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_KuangNuZhiQiang.webp",
+    "skillId": 240,
+    "previousFileName": "berserk.webp"
+  },
+  "234.webp": {
+    "skillName": "Head Crush",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_ShangHaiZengYa.webp",
+    "skillId": 234,
+    "previousFileName": "head-crush.webp"
+  },
+  "235.webp": {
+    "skillName": "Joint Beat",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Swordman_QiaoDa.webp",
+    "skillId": 235,
+    "previousFileName": "joint-beat.webp"
+  },
+  "241.webp": {
+    "skillName": "Rune of Faith",
+    "sourceUrl": "https://roocdb.com/skills/UI_icon_item_fuwenshi03.webp",
+    "skillId": 241,
+    "previousFileName": "rune-of-faith.webp"
+  },
+  "82.webp": {
+    "skillName": "Providence",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Crusader_ShenYouZhiGuang.webp",
+    "skillId": 82,
+    "previousFileName": "providence.webp"
+  },
+  "83.webp": {
+    "skillName": "Auto Guard",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Crusader_ZiDongFangYu.webp",
+    "skillId": 83,
+    "previousFileName": "auto-guard.webp"
+  },
+  "77.webp": {
+    "skillName": "Smite",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Crusader_DunJi.webp",
+    "skillId": 77,
+    "previousFileName": "smite.webp"
+  },
+  "78.webp": {
+    "skillName": "Shield Boomerang",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Crusader_HuiXuanDunJi.webp",
+    "skillId": 78,
+    "previousFileName": "shield-boomerang.webp"
+  },
+  "84.webp": {
+    "skillName": "Holy Cross",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Crusader_ShengShiZiGongJi.webp",
+    "skillId": 84,
+    "previousFileName": "holy-cross.webp"
+  },
+  "85.webp": {
+    "skillName": "Grand Cross",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Crusader_ShengShiZiShenPan.webp",
+    "skillId": 85,
+    "previousFileName": "grand-cross.webp"
+  },
+  "26.webp": {
+    "skillName": "Heal",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_ZhiYuShu.webp",
+    "skillId": 26,
+    "previousFileName": "heal.webp"
+  },
+  "252.webp": {
+    "skillName": "Gloria Domini",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Paladin_ShenZhiWeiYa.webp",
+    "skillId": 252,
+    "previousFileName": "gloria-domini.webp"
+  },
+  "243.webp": {
+    "skillName": "Battle Chant",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Paladin_ShengYin_Buff.webp",
+    "skillId": 243,
+    "previousFileName": "battle-chant.webp"
+  },
+  "249.webp": {
+    "skillName": "Spear Quicken",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Paladin_ChangMaoJiaSuShu.webp",
+    "skillId": 249,
+    "previousFileName": "spear-quicken.webp"
+  },
+  "250.webp": {
+    "skillName": "Sacrifice",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Paladin_SheMingGongJi.webp",
+    "skillId": 250,
+    "previousFileName": "sacrifice.webp"
+  },
+  "247.webp": {
+    "skillName": "Devotion",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Paladin_XiSheng.webp",
+    "skillId": 247,
+    "previousFileName": "devotion.webp"
+  },
+  "245.webp": {
+    "skillName": "Shield Reflect",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Paladin_FanSheDun.webp",
+    "skillId": 245,
+    "previousFileName": "shield-reflect.webp"
+  },
+  "246.webp": {
+    "skillName": "Defending Aura",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Paladin_GuangZhiDun.webp",
+    "skillId": 246,
+    "previousFileName": "defending-aura.webp"
+  },
+  "251.webp": {
+    "skillName": "Concentrate Pierce",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Paladin_NingShenCiJi.webp",
+    "skillId": 251,
+    "previousFileName": "concentrate-pierce.webp"
+  },
+  "253.webp": {
+    "skillName": "Crushing Roar",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_RoyalGuard_NuHou.webp",
+    "skillId": 253,
+    "previousFileName": "crushing-roar.webp"
+  },
+  "254.webp": {
+    "skillName": "Quick Slide",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_RoyalGuard_KuaiSuHuaXing.webp",
+    "skillId": 254,
+    "previousFileName": "quick-slide.webp"
+  },
+  "35.webp": {
+    "skillName": "Holy Light",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_ShenShengZhiGuang.webp",
+    "skillId": 35,
+    "previousFileName": "holy-light.webp"
+  },
+  "27.webp": {
+    "skillName": "Blessing",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_TianShiZhiCiFu.webp",
+    "skillId": 27,
+    "previousFileName": "blessing.webp"
+  },
+  "31.webp": {
+    "skillName": "Angelus",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_TianShiZhiZhangBi.webp",
+    "skillId": 31,
+    "previousFileName": "angelus.webp"
+  },
+  "30.webp": {
+    "skillName": "Signum Crucis",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_TianShiZhiGuang.webp",
+    "skillId": 30,
+    "previousFileName": "signum-crucis.webp"
+  },
+  "33.webp": {
+    "skillName": "Teleport",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_ShunJianYiDong.webp",
+    "skillId": 33,
+    "previousFileName": "teleport.webp"
+  },
+  "32.webp": {
+    "skillName": "Kyrie Eleison",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_BaXieZhiZhen.webp",
+    "skillId": 32,
+    "previousFileName": "kyrie-eleison.webp"
+  },
+  "34.webp": {
+    "skillName": "Ruwach",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_GuangLie.webp",
+    "skillId": 34,
+    "previousFileName": "ruwach.webp"
+  },
+  "151.webp": {
+    "skillName": "Magnificat",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_ShengMuZhiSongGe.webp",
+    "skillId": 151,
+    "previousFileName": "magnificat.webp"
+  },
+  "152.webp": {
+    "skillName": "Impositio Manus",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_ShenWeiQiFu.webp",
+    "skillId": 152,
+    "previousFileName": "impositio-manus.webp"
+  },
+  "161.webp": {
+    "skillName": "Gloria",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_XingYunZhiSongGe.webp",
+    "skillId": 161,
+    "previousFileName": "gloria.webp"
+  },
+  "153.webp": {
+    "skillName": "Resurrection",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_FuHuoShu.webp",
+    "skillId": 153,
+    "previousFileName": "resurrection.webp"
+  },
+  "154.webp": {
+    "skillName": "Turn Undead",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_ZhuanShengShu.webp",
+    "skillId": 154,
+    "previousFileName": "turn-undead.webp"
+  },
+  "159.webp": {
+    "skillName": "Recovery",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_QuanYuShu.webp",
+    "skillId": 159,
+    "previousFileName": "recovery.webp"
+  },
+  "160.webp": {
+    "skillName": "Aspersio",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_SaShuiQiFu.webp",
+    "skillId": 160,
+    "previousFileName": "aspersio.webp"
+  },
+  "157.webp": {
+    "skillName": "Pneuma",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_GuangZhiZhangBi.webp",
+    "skillId": 157,
+    "previousFileName": "pneuma.webp"
+  },
+  "156.webp": {
+    "skillName": "Sanctuary",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_GuangYaoZhiTang.webp",
+    "skillId": 156,
+    "previousFileName": "sanctuary.webp"
+  },
+  "155.webp": {
+    "skillName": "Magnus Exorcismus",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_ShiZiQuMoGongJi.webp",
+    "skillId": 155,
+    "previousFileName": "magnus-exorcismus.webp"
+  },
+  "158.webp": {
+    "skillName": "Safety Wall",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_AnZhiZhangBi.webp",
+    "skillId": 158,
+    "previousFileName": "safety-wall.webp"
+  },
+  "314.webp": {
+    "skillName": "Assumptio",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_ShengMuZhiQiFu.webp",
+    "skillId": 314,
+    "previousFileName": "assumptio.webp"
+  },
+  "316.webp": {
+    "skillName": "Basilica",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_ShenShengDianTang.webp",
+    "skillId": 316,
+    "previousFileName": "basilica.webp"
+  },
+  "317.webp": {
+    "skillName": "Lex Divina",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_ChenMoZhiShu.webp",
+    "skillId": 317,
+    "previousFileName": "lex-divina.webp"
+  },
+  "318.webp": {
+    "skillName": "Lex Aeterna",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_TianShiZhiNu.webp",
+    "skillId": 318,
+    "previousFileName": "lex-aeterna.webp"
+  },
+  "315.webp": {
+    "skillName": "Suffragium",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_XiShengQiFu.webp",
+    "skillId": 315,
+    "previousFileName": "suffragium.webp"
+  },
+  "319.webp": {
+    "skillName": "Judex",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Acolyte_ShenPan.webp",
+    "skillId": 319,
+    "previousFileName": "judex.webp"
+  },
+  "323.webp": {
+    "skillName": "Bonded Fate",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_ArchBishop_ShengJieDaoGao.webp",
+    "skillId": 323,
+    "previousFileName": "bonded-fate.webp"
+  },
+  "321.webp": {
+    "skillName": "Lauda Agnus",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_ArchBishop_ChunJingZhiChi.webp",
+    "skillId": 321,
+    "previousFileName": "lauda-agnus.webp"
+  },
+  "322.webp": {
+    "skillName": "Leap of Faith",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_ArchBishop_CiBeiBiHu.webp",
+    "skillId": 322,
+    "previousFileName": "leap-of-faith.webp"
+  },
+  "324.webp": {
+    "skillName": "Epiclesis",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_ArchBishop_ShengLingJiangLin.webp",
+    "skillId": 324,
+    "previousFileName": "epiclesis.webp"
+  },
+  "163.webp": {
+    "skillName": "Call Spirit",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_XuQi.webp",
+    "skillId": 163,
+    "previousFileName": "call-spirit.webp"
+  },
+  "165.webp": {
+    "skillName": "Critical Explosion",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_BaoQi.webp",
+    "skillId": 165,
+    "previousFileName": "critical-explosion.webp"
+  },
+  "167.webp": {
+    "skillName": "Chain Combo",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_LianHuanQuanShenZhang.webp",
+    "skillId": 167,
+    "previousFileName": "chain-combo.webp"
+  },
+  "168.webp": {
+    "skillName": "Combo Finish",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_MengLongKuaQiang.webp",
+    "skillId": 168,
+    "previousFileName": "combo-finish.webp"
+  },
+  "164.webp": {
+    "skillName": "Invasion",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_JinTouJin.webp",
+    "skillId": 164,
+    "previousFileName": "invasion.webp"
+  },
+  "170.webp": {
+    "skillName": "Asura Strike",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_AXiuLuoBaHuangQuan.webp",
+    "skillId": 170,
+    "previousFileName": "asura-strike.webp"
+  },
+  "173.webp": {
+    "skillName": "Flee",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Transform_yihuajiemu.webp",
+    "skillId": 173,
+    "previousFileName": "flee.webp"
+  },
+  "172.webp": {
+    "skillName": "Body Relocation",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_GongShenTanYing.webp",
+    "skillId": 172,
+    "previousFileName": "body-relocation.webp"
+  },
+  "174.webp": {
+    "skillName": "Steel Body",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_JinGangBuHuai.webp",
+    "skillId": 174,
+    "previousFileName": "steel-body.webp"
+  },
+  "325.webp": {
+    "skillName": "Zen",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_KuangXuQi.webp",
+    "skillId": 325,
+    "previousFileName": "zen.webp"
+  },
+  "328.webp": {
+    "skillName": "Tiger Knuckle Fist",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_FuHuQuan.webp",
+    "skillId": 328,
+    "previousFileName": "tiger-knuckle-fist.webp"
+  },
+  "329.webp": {
+    "skillName": "Chain Crush Combo",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_QiJueBengJi.webp",
+    "skillId": 329,
+    "previousFileName": "chain-crush-combo.webp"
+  },
+  "326.webp": {
+    "skillName": "Finger Offensive",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_TanZhiShenTong.webp",
+    "skillId": 326,
+    "previousFileName": "finger-offensive.webp"
+  },
+  "333.webp": {
+    "skillName": "Blade Stop",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_ZhenJianBaiPoDao.webp",
+    "skillId": 333,
+    "previousFileName": "blade-stop.webp"
+  },
+  "331.webp": {
+    "skillName": "Raging Palm Strike",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_MengHuYingPaShan.webp",
+    "skillId": 331,
+    "previousFileName": "raging-palm-strike.webp"
+  },
+  "327.webp": {
+    "skillName": "Fist of Four Symbols",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_SiXiangZhiQuan.webp",
+    "skillId": 327,
+    "previousFileName": "fist-of-four-symbols.webp"
+  },
+  "332.webp": {
+    "skillName": "Tranquility",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Monk_BingQiNingShen.webp",
+    "skillId": 332,
+    "previousFileName": "tranquility.webp"
+  },
+  "334.webp": {
+    "skillName": "Gentle Touch-Cure",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Asura_DianXueYu_01.webp",
+    "skillId": 334,
+    "previousFileName": "gentle-touch-cure.webp"
+  },
+  "10.webp": {
+    "skillName": "Cold Bolt",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_BingJianShu.webp",
+    "skillId": 10,
+    "previousFileName": "cold-bolt.webp"
+  },
+  "13.webp": {
+    "skillName": "Frost Diver",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_BingDongShu.webp",
+    "skillId": 13,
+    "previousFileName": "frost-diver.webp"
+  },
+  "12.webp": {
+    "skillName": "Lightning Bolt",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_LeiJiShu.webp",
+    "skillId": 12,
+    "previousFileName": "lightning-bolt.webp"
+  },
+  "15.webp": {
+    "skillName": "Thunderstorm",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_LeiBaoShu.webp",
+    "skillId": 15,
+    "previousFileName": "thunderstorm.webp"
+  },
+  "11.webp": {
+    "skillName": "Fire Bolt",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_HuoJianShu.webp",
+    "skillId": 11,
+    "previousFileName": "fire-bolt.webp"
+  },
+  "9.webp": {
+    "skillName": "Fire Ball",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_HuoQiuShu.webp",
+    "skillId": 9,
+    "previousFileName": "fire-ball.webp"
+  },
+  "18.webp": {
+    "skillName": "Soul Strike",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_ShengLingZhaoHuan.webp",
+    "skillId": 18,
+    "previousFileName": "soul-strike.webp"
+  },
+  "14.webp": {
+    "skillName": "Energy Coat",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_NengLiangWaiTao.webp",
+    "skillId": 14,
+    "previousFileName": "energy-coat.webp"
+  },
+  "16.webp": {
+    "skillName": "Fire Wall",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_HuoYanZhiBi.webp",
+    "skillId": 16,
+    "previousFileName": "fire-wall.webp"
+  },
+  "17.webp": {
+    "skillName": "Stone Curse",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_ShiHuaShu.webp",
+    "skillId": 17,
+    "previousFileName": "stone-curse.webp"
+  },
+  "91.webp": {
+    "skillName": "Water Ball",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_ShuiQiuShu.webp",
+    "skillId": 91,
+    "previousFileName": "water-ball.webp"
+  },
+  "93.webp": {
+    "skillName": "Jupitel Thunder",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_LeiMingShu.webp",
+    "skillId": 93,
+    "previousFileName": "jupitel-thunder.webp"
+  },
+  "111.webp": {
+    "skillName": "Earth Spike",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_DiZhenShu.webp",
+    "skillId": 111,
+    "previousFileName": "earth-spike.webp"
+  },
+  "112.webp": {
+    "skillName": "Heaven&#x27;s Drive",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_BengLieShu.webp",
+    "skillId": 112,
+    "previousFileName": "heavenx27s-drive.webp"
+  },
+  "97.webp": {
+    "skillName": "Quagmire",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_NiZhaoDi.webp",
+    "skillId": 97,
+    "previousFileName": "quagmire.webp"
+  },
+  "89.webp": {
+    "skillName": "Fire Pillar",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_HuoZhuGongJi.webp",
+    "skillId": 89,
+    "previousFileName": "fire-pillar.webp"
+  },
+  "87.webp": {
+    "skillName": "Sight",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_HuoShou.webp",
+    "skillId": 87,
+    "previousFileName": "sight.webp"
+  },
+  "88.webp": {
+    "skillName": "Sightrasher",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_HuoZhiLieSha.webp",
+    "skillId": 88,
+    "previousFileName": "sightrasher.webp"
+  },
+  "90.webp": {
+    "skillName": "Meteor Storm",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_YunShiShu.webp",
+    "skillId": 90,
+    "previousFileName": "meteor-storm.webp"
+  },
+  "92.webp": {
+    "skillName": "Storm Gust",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_BaoFengXue.webp",
+    "skillId": 92,
+    "previousFileName": "storm-gust.webp"
+  },
+  "94.webp": {
+    "skillName": "Lord of Vermilion",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_NuLeiQiangJi.webp",
+    "skillId": 94,
+    "previousFileName": "lord-of-vermilion.webp"
+  },
+  "98.webp": {
+    "skillName": "Tetra Vortex",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Warlock_YuanSuXuanWo.webp",
+    "skillId": 98,
+    "previousFileName": "tetra-vortex.webp"
+  },
+  "255.webp": {
+    "skillName": "Napalm Vulcan",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_NianLiLianJi.webp",
+    "skillId": 255,
+    "previousFileName": "napalm-vulcan.webp"
+  },
+  "257.webp": {
+    "skillName": "Ganbantein",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_KaBanTaYin.webp",
+    "skillId": 257,
+    "previousFileName": "ganbantein.webp"
+  },
+  "258.webp": {
+    "skillName": "Magic Crasher",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_MoJiShu.webp",
+    "skillId": 258,
+    "previousFileName": "magic-crasher.webp"
+  },
+  "256.webp": {
+    "skillName": "Gravitation Field",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_ZhongLiYuanYe.webp",
+    "skillId": 256,
+    "previousFileName": "gravitation-field.webp"
+  },
+  "264.webp": {
+    "skillName": "Stonehenge",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_JuShiChongJiZhen.webp",
+    "skillId": 264,
+    "previousFileName": "stonehenge.webp"
+  },
+  "261.webp": {
+    "skillName": "Frost Nova",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Magician_ShuangDongZhiShu.webp",
+    "skillId": 261,
+    "previousFileName": "frost-nova.webp"
+  },
+  "266.webp": {
+    "skillName": "Element Control",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Warlock_YuanSuZhangKongNew.webp",
+    "skillId": 266,
+    "previousFileName": "element-control.webp"
+  },
+  "103.webp": {
+    "skillName": "Spider Web",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_yiranzhiwang.webp",
+    "skillId": 103,
+    "previousFileName": "spider-web.webp"
+  },
+  "107.webp": {
+    "skillName": "Volcano",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_huoyuansulingyu.webp",
+    "skillId": 107,
+    "previousFileName": "volcano.webp"
+  },
+  "108.webp": {
+    "skillName": "Deluge",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_shuiyuansulingyu.webp",
+    "skillId": 108,
+    "previousFileName": "deluge.webp"
+  },
+  "109.webp": {
+    "skillName": "Violent Gale",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_fengyuansulingyu.webp",
+    "skillId": 109,
+    "previousFileName": "violent-gale.webp"
+  },
+  "104.webp": {
+    "skillName": "Void Bolt",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_xuwuzhijian.webp",
+    "skillId": 104,
+    "previousFileName": "void-bolt.webp"
+  },
+  "267.webp": {
+    "skillName": "Autocast",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_zidongnianzhou.webp",
+    "skillId": 267,
+    "previousFileName": "autocast.webp"
+  },
+  "271.webp": {
+    "skillName": "Health Conversion",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_HPzhuanhuan.webp",
+    "skillId": 271,
+    "previousFileName": "health-conversion.webp"
+  },
+  "272.webp": {
+    "skillName": "Soul Change",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_xinshenhuhuan.webp",
+    "skillId": 272,
+    "previousFileName": "soul-change.webp"
+  },
+  "273.webp": {
+    "skillName": "Weaken Mind",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_jingshenghaoruoshu.webp",
+    "skillId": 273,
+    "previousFileName": "weaken-mind.webp"
+  },
+  "274.webp": {
+    "skillName": "Chant Removal",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_nianzhouchaichu.webp",
+    "skillId": 274,
+    "previousFileName": "chant-removal.webp"
+  },
+  "275.webp": {
+    "skillName": "Dispel",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_HPzhuanhuanmofaxiaoguojiechu.webp",
+    "skillId": 275,
+    "previousFileName": "dispel.webp"
+  },
+  "276.webp": {
+    "skillName": "Land Protector",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_diyuansulingyu.webp",
+    "skillId": 276,
+    "previousFileName": "land-protector.webp"
+  },
+  "277.webp": {
+    "skillName": "Psychic Wave",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_chaozirenbo.webp",
+    "skillId": 277,
+    "previousFileName": "psychic-wave.webp"
+  },
+  "spell-mastery-water.webp": {
+    "skillName": "Spell Mastery (Water)",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_nianzhoujingtong_Fire.webp"
+  },
+  "spell-mastery-wind.webp": {
+    "skillName": "Spell Mastery (Wind)",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_nianzhoujingtong_Water.webp"
+  },
+  "spell-mastery-earth.webp": {
+    "skillName": "Spell Mastery (Earth)",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_nianzhoujingtong_Wind.webp"
+  },
+  "spell-mastery-fire.webp": {
+    "skillName": "Spell Mastery (Fire)",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_nianzhoujingtong.webp"
+  },
+  "278.webp": {
+    "skillName": "Elemental Shield",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Element_MoLiHuDun.webp",
+    "skillId": 278,
+    "previousFileName": "elemental-shield.webp"
+  },
+  "24.webp": {
+    "skillName": "Steady Focus",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_XinShenNingJu.webp",
+    "skillId": 24,
+    "previousFileName": "steady-focus.webp"
+  },
+  "20.webp": {
+    "skillName": "Double Strafe",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_ErLianShi.webp",
+    "skillId": 20,
+    "previousFileName": "double-strafe.webp"
+  },
+  "22.webp": {
+    "skillName": "Arrow Shower",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_JianYu.webp",
+    "skillId": 22,
+    "previousFileName": "arrow-shower.webp"
+  },
+  "25.webp": {
+    "skillName": "Fetter Arrow",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_ChongFengJian.webp",
+    "skillId": 25,
+    "previousFileName": "fetter-arrow.webp"
+  },
+  "115.webp": {
+    "skillName": "Blitz Beat",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_ShanDianChongJi.webp",
+    "skillId": 115,
+    "previousFileName": "blitz-beat.webp"
+  },
+  "117.webp": {
+    "skillName": "Detecting",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_LieYingXunDi.webp",
+    "skillId": 117,
+    "previousFileName": "detecting.webp"
+  },
+  "121.webp": {
+    "skillName": "Freezing Trap",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_ShuangDongXianJing.webp",
+    "skillId": 121,
+    "previousFileName": "freezing-trap.webp"
+  },
+  "123.webp": {
+    "skillName": "Claymore Trap",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_BaoSanXianJing.webp",
+    "skillId": 123,
+    "previousFileName": "claymore-trap.webp"
+  },
+  "124.webp": {
+    "skillName": "Land Mine",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_DiLeiXianJing.webp",
+    "skillId": 124,
+    "previousFileName": "land-mine.webp"
+  },
+  "125.webp": {
+    "skillName": "Flasher",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_QiangGuangXianJing.webp",
+    "skillId": 125,
+    "previousFileName": "flasher.webp"
+  },
+  "126.webp": {
+    "skillName": "Sandman Shock Trap",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_ShuiMoLanHaoXianJing.webp",
+    "skillId": 126,
+    "previousFileName": "sandman-shock-trap.webp"
+  },
+  "122.webp": {
+    "skillName": "Blast Mine",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_DingShiBaoZhaXianJing.webp",
+    "skillId": 122,
+    "previousFileName": "blast-mine.webp"
+  },
+  "120.webp": {
+    "skillName": "Skid Trap",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_DingWeiHuaDongXianJing.webp",
+    "skillId": 120,
+    "previousFileName": "skid-trap.webp"
+  },
+  "119.webp": {
+    "skillName": "Wind Dance",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_JiFengLuanWu.webp",
+    "skillId": 119,
+    "previousFileName": "wind-dance.webp"
+  },
+  "116.webp": {
+    "skillName": "Falcon Assault",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_LieYingTuJi.webp",
+    "skillId": 116,
+    "previousFileName": "falcon-assault.webp"
+  },
+  "280.webp": {
+    "skillName": "True Sight",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_JuShaMiaoZhun.webp",
+    "skillId": 280,
+    "previousFileName": "true-sight.webp"
+  },
+  "281.webp": {
+    "skillName": "Wind Walker",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_FengZhiBu.webp",
+    "skillId": 281,
+    "previousFileName": "wind-walker.webp"
+  },
+  "282.webp": {
+    "skillName": "Heal Guard Trap",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_ZhiYuJiaHuXianJing.webp",
+    "skillId": 282,
+    "previousFileName": "heal-guard-trap.webp"
+  },
+  "279.webp": {
+    "skillName": "Sonic Blast",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_YinSuChongJi.webp",
+    "skillId": 279,
+    "previousFileName": "sonic-blast.webp"
+  },
+  "291.webp": {
+    "skillName": "Disengage",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Archer_WeiZhuangZhanShu.webp",
+    "skillId": 291,
+    "previousFileName": "disengage.webp"
+  },
+  "292.webp": {
+    "skillName": "Emergency Escape",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Transform_qiantiao.webp",
+    "skillId": 292,
+    "previousFileName": "emergency-escape.webp"
+  },
+  "129.webp": {
+    "skillName": "Blow Whistle",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_chuikoushao.webp",
+    "skillId": 129,
+    "previousFileName": "blow-whistle.webp"
+  },
+  "132.webp": {
+    "skillName": "Unchained Serenade",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_buhexieyin.webp",
+    "skillId": 132,
+    "previousFileName": "unchained-serenade.webp"
+  },
+  "135.webp": {
+    "skillName": "Impressive Riff",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_cikedehuanghun.webp",
+    "skillId": 135,
+    "previousFileName": "impressive-riff.webp"
+  },
+  "137.webp": {
+    "skillName": "Magic Strings",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_bulaiqizhishi.webp",
+    "skillId": 137,
+    "previousFileName": "magic-strings.webp"
+  },
+  "133.webp": {
+    "skillName": "Cold Joke",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_lengxiaohua.webp",
+    "skillId": 133,
+    "previousFileName": "cold-joke.webp"
+  },
+  "130.webp": {
+    "skillName": "Song of Lutie",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_yidengdeapple.webp",
+    "skillId": 130,
+    "previousFileName": "song-of-lutie.webp"
+  },
+  "150.webp": {
+    "skillName": "Lullaby",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_yaolanqu.webp",
+    "skillId": 150,
+    "previousFileName": "lullaby.webp"
+  },
+  "134.webp": {
+    "skillName": "Melody Strike",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_yueqigongji.webp",
+    "skillId": 134,
+    "previousFileName": "melody-strike.webp"
+  },
+  "148.webp": {
+    "skillName": "Fantasy Music",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_huanxiangyuezhang.webp",
+    "skillId": 148,
+    "previousFileName": "fantasy-music.webp"
+  },
+  "308.webp": {
+    "skillName": "Death Valley",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_huiguizhige.webp",
+    "skillId": 308,
+    "previousFileName": "death-valley.webp"
+  },
+  "297.webp": {
+    "skillName": "Puppet Master&#x27;s Trick",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_kuileishidebaxi.webp",
+    "skillId": 297,
+    "previousFileName": "puppet-masterx27s-trick.webp"
+  },
+  "296.webp": {
+    "skillName": "Puppet Dance",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_kuileizhiwu.webp",
+    "skillId": 296,
+    "previousFileName": "puppet-dance.webp"
+  },
+  "311.webp": {
+    "skillName": "Arrow Vulcan",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_aoyijianluanwu.webp",
+    "skillId": 311,
+    "previousFileName": "arrow-vulcan.webp"
+  },
+  "293.webp": {
+    "skillName": "Battle Theme",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_zhanguzhengtian.webp",
+    "skillId": 293,
+    "previousFileName": "battle-theme.webp"
+  },
+  "294.webp": {
+    "skillName": "Loki&#x27;s Lament",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_luoqidebeiming.webp",
+    "skillId": 294,
+    "previousFileName": "lokix27s-lament.webp"
+  },
+  "301.webp": {
+    "skillName": "Eternal Chaos",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_yongyuandehundun.webp",
+    "skillId": 301,
+    "previousFileName": "eternal-chaos.webp"
+  },
+  "302.webp": {
+    "skillName": "Nibelungan&#x27;s Ring",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_nibeilonggendejiezhi.webp",
+    "skillId": 302,
+    "previousFileName": "nibelunganx27s-ring.webp"
+  },
+  "295.webp": {
+    "skillName": "Siegfried the Undead God",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_busishenqigefolide.webp",
+    "skillId": 295,
+    "previousFileName": "siegfried-the-undead-god.webp"
+  },
+  "300.webp": {
+    "skillName": "Final Rhapsody",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_huanxiangkuangwuqu.webp",
+    "skillId": 300,
+    "previousFileName": "final-rhapsody.webp"
+  },
+  "298.webp": {
+    "skillName": "Curtain Call",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_MaestroWanderer_weiyi.webp",
+    "skillId": 298,
+    "previousFileName": "curtain-call.webp"
+  },
+  "299.webp": {
+    "skillName": "Joyful Notes",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_MaestroWanderer_huishengzhige.webp",
+    "skillId": 299,
+    "previousFileName": "joyful-notes.webp"
+  },
+  "303.webp": {
+    "skillName": "Sincere Sound",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_MaestroWanderer_qianchengzhiYin.webp",
+    "skillId": 303,
+    "previousFileName": "sincere-sound.webp"
+  },
+  "141.webp": {
+    "skillName": "Singing Voice",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_hengchangzhiyin.webp",
+    "skillId": 141,
+    "previousFileName": "singing-voice.webp"
+  },
+  "144.webp": {
+    "skillName": "Hip Shaker",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_choulouzhiwu.webp",
+    "skillId": 144,
+    "previousFileName": "hip-shaker.webp"
+  },
+  "147.webp": {
+    "skillName": "Slow Grace",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_wuwangwo.webp",
+    "skillId": 147,
+    "previousFileName": "slow-grace.webp"
+  },
+  "149.webp": {
+    "skillName": "Lady Luck",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_nvshenzhiwen.webp",
+    "skillId": 149,
+    "previousFileName": "lady-luck.webp"
+  },
+  "145.webp": {
+    "skillName": "Dazzler",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_jingshengjianjiao.webp",
+    "skillId": 145,
+    "previousFileName": "dazzler.webp"
+  },
+  "142.webp": {
+    "skillName": "Gypsy&#x27;s Kiss",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_weinifuwu.webp",
+    "skillId": 142,
+    "previousFileName": "gypsyx27s-kiss.webp"
+  },
+  "146.webp": {
+    "skillName": "Throw Arrow",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_BardandDancer_chanjiantouzhi.webp",
+    "skillId": 146,
+    "previousFileName": "throw-arrow.webp"
+  },
+  "41.webp": {
+    "skillName": "Hiding",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_YinNi.webp",
+    "skillId": 41,
+    "previousFileName": "hiding.webp"
+  },
+  "43.webp": {
+    "skillName": "Detoxify",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_JieDu.webp",
+    "skillId": 43,
+    "previousFileName": "detoxify.webp"
+  },
+  "42.webp": {
+    "skillName": "Back Slide",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_HouTuiHuiBi.webp",
+    "skillId": 42,
+    "previousFileName": "back-slide.webp"
+  },
+  "39.webp": {
+    "skillName": "Shield Dodge",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_ShanBiHuDun.webp",
+    "skillId": 39,
+    "previousFileName": "shield-dodge.webp"
+  },
+  "38.webp": {
+    "skillName": "Envenom",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_shidu.webp",
+    "skillId": 38,
+    "previousFileName": "envenom.webp"
+  },
+  "37.webp": {
+    "skillName": "Trick Control",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_GuiZhaBaXi.webp",
+    "skillId": 37,
+    "previousFileName": "trick-control.webp"
+  },
+  "197.webp": {
+    "skillName": "Sonic Blow",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_YinSuTouZhi.webp",
+    "skillId": 197,
+    "previousFileName": "sonic-blow.webp"
+  },
+  "194.webp": {
+    "skillName": "Red Cut",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_ShenHongQieGe.webp",
+    "skillId": 194,
+    "previousFileName": "red-cut.webp"
+  },
+  "203.webp": {
+    "skillName": "Grimtooth",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_WuYingZhiYa.webp",
+    "skillId": 203,
+    "previousFileName": "grimtooth.webp"
+  },
+  "199.webp": {
+    "skillName": "Enchant Poison",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_WuQiTuDu.webp",
+    "skillId": 199,
+    "previousFileName": "enchant-poison.webp"
+  },
+  "200.webp": {
+    "skillName": "Venom Dust",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_BingDuSanBo.webp",
+    "skillId": 200,
+    "previousFileName": "venom-dust.webp"
+  },
+  "201.webp": {
+    "skillName": "Venom Splasher",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_DuXingGanRan.webp",
+    "skillId": 201,
+    "previousFileName": "venom-splasher.webp"
+  },
+  "337.webp": {
+    "skillName": "Soul Breaker",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_XinLingZhenBo.webp",
+    "skillId": 337,
+    "previousFileName": "soul-breaker.webp"
+  },
+  "340.webp": {
+    "skillName": "Meteor Assault",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_HeiAnShunJian.webp",
+    "skillId": 340,
+    "previousFileName": "meteor-assault.webp"
+  },
+  "338.webp": {
+    "skillName": "Deadly Poison",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_ZhiMingTuDu.webp",
+    "skillId": 338,
+    "previousFileName": "deadly-poison.webp"
+  },
+  "341.webp": {
+    "skillName": "Poisonous Blade",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_JuDuDuanDao.webp",
+    "skillId": 341,
+    "previousFileName": "poisonous-blade.webp"
+  },
+  "342.webp": {
+    "skillName": "Envenomed Blade",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Thief_DuRen.webp",
+    "skillId": 342,
+    "previousFileName": "envenomed-blade.webp"
+  },
+  "344.webp": {
+    "skillName": "Cross Parry",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_GuillotineCross_WuQiGeDang.webp",
+    "skillId": 344,
+    "previousFileName": "cross-parry.webp"
+  },
+  "345.webp": {
+    "skillName": "Phantom Burst",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_GuillotineCross_HeiAnBaoFa.webp",
+    "skillId": 345,
+    "previousFileName": "phantom-burst.webp"
+  },
+  "205.webp": {
+    "skillName": "Raiding Strike",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_qiaoqugongji.webp",
+    "skillId": 205,
+    "previousFileName": "raiding-strike.webp"
+  },
+  "209.webp": {
+    "skillName": "Remove Helmet",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_xiechutoukui.webp",
+    "skillId": 209,
+    "previousFileName": "remove-helmet.webp"
+  },
+  "210.webp": {
+    "skillName": "Remove Cloak",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_xiechupifeng.webp",
+    "skillId": 210,
+    "previousFileName": "remove-cloak.webp"
+  },
+  "212.webp": {
+    "skillName": "Sightless Mind",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_qianji.webp",
+    "skillId": 212,
+    "previousFileName": "sightless-mind.webp"
+  },
+  "213.webp": {
+    "skillName": "Coerce",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_xiechi.webp",
+    "skillId": 213,
+    "previousFileName": "coerce.webp"
+  },
+  "214.webp": {
+    "skillName": "Weapon Swap",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_nurenqiehuan2.webp",
+    "skillId": 214,
+    "previousFileName": "weapon-swap.webp"
+  },
+  "217.webp": {
+    "skillName": "Raiding Shot",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_siluesheji.webp",
+    "skillId": 217,
+    "previousFileName": "raiding-shot.webp"
+  },
+  "216.webp": {
+    "skillName": "Blinding Shot",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_xuanmusheji.webp",
+    "skillId": 216,
+    "previousFileName": "blinding-shot.webp"
+  },
+  "346.webp": {
+    "skillName": "Backstab",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_beici.webp",
+    "skillId": 346,
+    "previousFileName": "backstab.webp"
+  },
+  "348.webp": {
+    "skillName": "Graffiti",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_tuya.webp",
+    "skillId": 348,
+    "previousFileName": "graffiti.webp"
+  },
+  "349.webp": {
+    "skillName": "Counter Instinct",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_bawanghunnu.webp",
+    "skillId": 349,
+    "previousFileName": "counter-instinct-crossbow.webp"
+  },
+  "351.webp": {
+    "skillName": "Remove Armor",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_xiechukaijia.webp",
+    "skillId": 351,
+    "previousFileName": "remove-armor.webp"
+  },
+  "352.webp": {
+    "skillName": "Remove Weapon",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_xiechuwuqi.webp",
+    "skillId": 352,
+    "previousFileName": "remove-weapon.webp"
+  },
+  "353.webp": {
+    "skillName": "Shadow Seeker",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_anyingzhuizhon.webp",
+    "skillId": 353,
+    "previousFileName": "shadow-seeker.webp"
+  },
+  "354.webp": {
+    "skillName": "Copy",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_chaoxi.webp",
+    "skillId": 354,
+    "previousFileName": "copy.webp"
+  },
+  "356.webp": {
+    "skillName": "Piercing Shot",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_nuren_chuantousheji.webp",
+    "skillId": 356,
+    "previousFileName": "piercing-shot.webp"
+  },
+  "357.webp": {
+    "skillName": "Graffiti Mastery",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Skill_Chaser_TuYa.webp",
+    "skillId": 357,
+    "previousFileName": "graffiti-mastery.webp"
+  },
+  "358.webp": {
+    "skillName": "Phantom Spree",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Transform_anyinxingtai.webp",
+    "skillId": 358,
+    "previousFileName": "phantom-spree.webp"
+  },
+  "45.webp": {
+    "skillName": "Mammonite",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_JinQianGongJi.webp",
+    "skillId": 45,
+    "previousFileName": "mammonite.webp"
+  },
+  "46.webp": {
+    "skillName": "Cart Revolution",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_ShouTuiCheGongJi.webp",
+    "skillId": 46,
+    "previousFileName": "cart-revolution.webp"
+  },
+  "47.webp": {
+    "skillName": "Cart Clash",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_ShouTuiCheChongZhuang.webp",
+    "skillId": 47,
+    "previousFileName": "cart-clash.webp"
+  },
+  "48.webp": {
+    "skillName": "Slamming Smash",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_QuanLiHuiJi.webp",
+    "skillId": 48,
+    "previousFileName": "slamming-smash.webp"
+  },
+  "175.webp": {
+    "skillName": "Hammer Fall",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_DaDiZhiJi.webp",
+    "skillId": 175,
+    "previousFileName": "hammer-fall.webp"
+  },
+  "177.webp": {
+    "skillName": "Adrenaline Rush",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_SuDuJiFa.webp",
+    "skillId": 177,
+    "previousFileName": "adrenaline-rush.webp"
+  },
+  "179.webp": {
+    "skillName": "Power Thrust",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_XiongKan.webp",
+    "skillId": 179,
+    "previousFileName": "power-thrust.webp"
+  },
+  "180.webp": {
+    "skillName": "Weapon Perfection",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_WuShiTiXingGongJi.webp",
+    "skillId": 180,
+    "previousFileName": "weapon-perfection.webp"
+  },
+  "182.webp": {
+    "skillName": "Maximize Power",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_WuQiZhiZuiDaHua.webp",
+    "skillId": 182,
+    "previousFileName": "maximize-power.webp"
+  },
+  "359.webp": {
+    "skillName": "Maximum Over Thrust",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_XiongKanZuiDaZhi.webp",
+    "skillId": 359,
+    "previousFileName": "maximum-over-thrust.webp"
+  },
+  "361.webp": {
+    "skillName": "Melt Down",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_YeManXiongKan.webp",
+    "skillId": 361,
+    "previousFileName": "melt-down.webp"
+  },
+  "364.webp": {
+    "skillName": "Cart Boost",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_ShouTuiCheJiaSu.webp",
+    "skillId": 364,
+    "previousFileName": "cart-boost.webp"
+  },
+  "365.webp": {
+    "skillName": "High Speed Cart Ram",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_ShouTuiCheZhongJieJi.webp",
+    "skillId": 365,
+    "previousFileName": "high-speed-cart-ram.webp"
+  },
+  "362.webp": {
+    "skillName": "Axe Boomerang",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_HuiXuanZhiRen.webp",
+    "skillId": 362,
+    "previousFileName": "axe-boomerang.webp"
+  },
+  "366.webp": {
+    "skillName": "A.A.S Turret",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_AASTuJiPao.webp",
+    "skillId": 366,
+    "previousFileName": "aas-turret.webp"
+  },
+  "360.webp": {
+    "skillName": "Axe Tornado",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Merchant_ZhanFuJuFeng.webp",
+    "skillId": 360,
+    "previousFileName": "axe-tornado.webp"
+  },
+  "371.webp": {
+    "skillName": "Impact Landing",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Mechanic_XuanFu.webp",
+    "skillId": 371,
+    "previousFileName": "impact-landing.webp"
+  },
+  "370.webp": {
+    "skillName": "Front Slide",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Mechanic_QianCeHua.webp",
+    "skillId": 370,
+    "previousFileName": "front-slide.webp"
+  },
+  "186.webp": {
+    "skillName": "Acid Terror",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Alchemist_QiangSuanGongJi.webp",
+    "skillId": 186,
+    "previousFileName": "acid-terror.webp"
+  },
+  "187.webp": {
+    "skillName": "Demonstration",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Alchemist_HuoYanPingTouZhi.webp",
+    "skillId": 187,
+    "previousFileName": "demonstration.webp"
+  },
+  "190.webp": {
+    "skillName": "Marine Sphere",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Alchemist_QiPaoChongZhaoHuan.webp",
+    "skillId": 190,
+    "previousFileName": "marine-sphere.webp"
+  },
+  "191.webp": {
+    "skillName": "Chemistry Armor Protection",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Alchemist_HuaXueFangJuBaoHu.webp",
+    "skillId": 191,
+    "previousFileName": "chemistry-armor-protection.webp"
+  },
+  "192.webp": {
+    "skillName": "Chemistry Weapon Protection",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Alchemist_HuaXueWuQiBaoHu.webp",
+    "skillId": 192,
+    "previousFileName": "chemistry-weapon-protection.webp"
+  },
+  "373.webp": {
+    "skillName": "Acid Demonstration",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Alchemist_QiangSuanHuoYanPingTouZhi.webp",
+    "skillId": 373,
+    "previousFileName": "acid-demonstration.webp"
+  },
+  "376.webp": {
+    "skillName": "Bio Cannibalize",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Alchemist_ShengMingDiaoBo.webp",
+    "skillId": 376,
+    "previousFileName": "bio-cannibalize.webp"
+  },
+  "372.webp": {
+    "skillName": "Cart Burst",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Alchemist_ShouTuiCheBaoFa.webp",
+    "skillId": 372,
+    "previousFileName": "cart-burst.webp"
+  },
+  "378.webp": {
+    "skillName": "All Chemistry Weapon Protection",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Alchemist_SuoYouHuaXueWuQiBaoHu.webp",
+    "skillId": 378,
+    "previousFileName": "all-chemistry-weapon-protection.webp"
+  },
+  "379.webp": {
+    "skillName": "Hell&#x27;s Plant",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Skill_Geneticist_DiYuZhiWu.webp",
+    "skillId": 379,
+    "previousFileName": "hellx27s-plant.webp"
+  },
+  "380.webp": {
+    "skillName": "Howling of Mandragora",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Skill_Geneticist_ManTuoLuo.webp",
+    "skillId": 380,
+    "previousFileName": "howling-of-mandragora.webp"
+  },
+  "381.webp": {
+    "skillName": "Survival Food",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Skill_Geneticist_ShiPin.webp",
+    "skillId": 381,
+    "previousFileName": "survival-food.webp"
+  },
+  "382.webp": {
+    "skillName": "Lab Accident",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Skill_Geneticist_ShiGu.webp",
+    "skillId": 382,
+    "previousFileName": "lab-accident.webp"
+  },
+  "54.webp": {
+    "skillName": "Bite",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_henyao.webp",
+    "skillId": 54,
+    "previousFileName": "bite.webp"
+  },
+  "55.webp": {
+    "skillName": "Scratch",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_zhuashang.webp",
+    "skillId": 55,
+    "previousFileName": "scratch.webp"
+  },
+  "57.webp": {
+    "skillName": "Soul Attack",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_linghungongji.webp",
+    "skillId": 57,
+    "previousFileName": "soul-attack.webp"
+  },
+  "58.webp": {
+    "skillName": "Hide",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_duocang.webp",
+    "skillId": 58,
+    "previousFileName": "hide.webp"
+  },
+  "59.webp": {
+    "skillName": "Stoop",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_fushen.webp",
+    "skillId": 59,
+    "previousFileName": "stoop.webp"
+  },
+  "60.webp": {
+    "skillName": "Lope",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_tiaoyue.webp",
+    "skillId": 60,
+    "previousFileName": "lope.webp"
+  },
+  "383.webp": {
+    "skillName": "Grooming",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_tianmao.webp",
+    "skillId": 383,
+    "previousFileName": "grooming.webp"
+  },
+  "384.webp": {
+    "skillName": "Purring",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_gulugulu.webp",
+    "skillId": 384,
+    "previousFileName": "purring.webp"
+  },
+  "385.webp": {
+    "skillName": "Tasty Shrimp Party",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_meiweihuoxiapaidui.webp",
+    "skillId": 385,
+    "previousFileName": "tasty-shrimp-party.webp"
+  },
+  "389.webp": {
+    "skillName": "Meow Meow",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_miaomiao.webp",
+    "skillId": 389,
+    "previousFileName": "meow-meow.webp"
+  },
+  "395.webp": {
+    "skillName": "Nyang Grass",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_miaomiaocao.webp",
+    "skillId": 395,
+    "previousFileName": "nyang-grass.webp"
+  },
+  "390.webp": {
+    "skillName": "Catnip Meteorite",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_maoboheyunshi.webp",
+    "skillId": 390,
+    "previousFileName": "catnip-meteorite.webp"
+  },
+  "396.webp": {
+    "skillName": "Hiss",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_sisisheng.webp",
+    "skillId": 396,
+    "previousFileName": "hiss.webp"
+  },
+  "394.webp": {
+    "skillName": "Neko Power",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_maomaoweiwu.webp",
+    "skillId": 394,
+    "previousFileName": "neko-power.webp"
+  },
+  "391.webp": {
+    "skillName": "Spirit Of Savage",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_yezhuzhihun.webp",
+    "skillId": 391,
+    "previousFileName": "spirit-of-savage.webp"
+  },
+  "392.webp": {
+    "skillName": "Lunatic Carrot Beat",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_fengtuhuluobozhongji.webp",
+    "skillId": 392,
+    "previousFileName": "lunatic-carrot-beat.webp"
+  },
+  "397.webp": {
+    "skillName": "Life-saving Dried Fish",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Doram_jiumingyugan.webp",
+    "skillId": 397,
+    "previousFileName": "life-saving-dried-fish.webp"
+  },
+  "399.webp": {
+    "skillName": "Magnification",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Transform_judahua.webp",
+    "skillId": 399,
+    "previousFileName": "magnification.webp"
+  },
+  "400.webp": {
+    "skillName": "Attack",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_NightGuard_ShouQiangPuGong.webp",
+    "skillId": 400,
+    "previousFileName": "attack.webp"
+  },
+  "401.webp": {
+    "skillName": "Arsenal",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_NightGuard_Qianghuozhixia.webp",
+    "skillId": 401,
+    "previousFileName": "arsenal.webp"
+  },
+  "406.webp": {
+    "skillName": "Disarm",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_NightGuard_Xianfazhisheng.webp",
+    "skillId": 406,
+    "previousFileName": "disarm.webp"
+  },
+  "405.webp": {
+    "skillName": "Madness Canceller",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_NightGuard_Fengkuangkaisile.webp",
+    "skillId": 405,
+    "previousFileName": "madness-canceller.webp"
+  },
+  "411.webp": {
+    "skillName": "Platinum Altar",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_NightGuard_Baijinjitan.webp",
+    "skillId": 411,
+    "previousFileName": "platinum-altar.webp"
+  },
+  "413.webp": {
+    "skillName": "Desperado",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_NightGuard_Wangmingluanshe.webp",
+    "skillId": 413,
+    "previousFileName": "desperado.webp"
+  },
+  "412.webp": {
+    "skillName": "Slug Shot",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_NightGuard_Genyuanpohuai.webp",
+    "skillId": 412,
+    "previousFileName": "slug-shot.webp"
+  },
+  "414.webp": {
+    "skillName": "Basic Grenade",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_NightGuard_Baoposhoulei.webp",
+    "skillId": 414,
+    "previousFileName": "basic-grenade.webp"
+  },
+  "416.webp": {
+    "skillName": "Lady Luck&#x27;s Favor",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_NightGuard_Xingyunnvshen.webp",
+    "skillId": 416,
+    "previousFileName": "lady-luckx27s-favor.webp"
+  },
+  "417.webp": {
+    "skillName": "Razor Kick",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_NightGuard_Fengruihuixuan.webp",
+    "skillId": 417,
+    "previousFileName": "razor-kick.webp"
+  },
+  "244.webp": {
+    "skillName": "Rapid Smiting",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Paladin_LianXuDunJi.webp",
+    "skillId": 244,
+    "previousFileName": "rapid-smiting.webp"
+  },
+  "268.webp": {
+    "skillName": "Spell Master",
+    "sourceUrl": "https://roocdb.com/skills/UI_Icon_Skill_Sage_nianzhoujingtong_Land.webp",
+    "skillId": 268,
+    "previousFileName": "spell-mastery-all.webp"
+  }
+}

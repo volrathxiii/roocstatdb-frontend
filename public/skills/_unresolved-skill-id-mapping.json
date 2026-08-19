@@ -1,0 +1,22 @@
+[
+  {
+    "fileName": "spell-mastery-water.webp",
+    "skillName": "Spell Mastery (Water)",
+    "reason": "No matching skill name/id in backend seed"
+  },
+  {
+    "fileName": "spell-mastery-wind.webp",
+    "skillName": "Spell Mastery (Wind)",
+    "reason": "No matching skill name/id in backend seed"
+  },
+  {
+    "fileName": "spell-mastery-earth.webp",
+    "skillName": "Spell Mastery (Earth)",
+    "reason": "No matching skill name/id in backend seed"
+  },
+  {
+    "fileName": "spell-mastery-fire.webp",
+    "skillName": "Spell Mastery (Fire)",
+    "reason": "No matching skill name/id in backend seed"
+  }
+]

@@ -13,7 +13,13 @@ onMounted(() => {
 
 interface RefItem { id: number; name: string }
 type ClassRank = "PDMG" | "MDMG" | "DEF";
-type SectionType = "job-classes" | "class-roles" | "settings" | "party-presets" | "score-weights";
+type SectionType =
+  | "job-classes"
+  | "class-roles"
+  | "settings"
+  | "party-presets"
+  | "score-weights"
+  | "automatic-party-suggestion";
 
 interface ScoreWeightsPayload {
   physical: Record<string, number>;
@@ -53,6 +59,15 @@ interface SectionCard {
   summary: string;
   count: string;
 }
+
+const BOOLEAN_SETTING_KEYS = new Set([
+  "PARTY_SUGGESTIONS_ENABLED",
+]);
+
+const booleanSettingOptions = [
+  { label: "Enabled", value: "true" },
+  { label: "Disabled", value: "false" },
+];
 
 const PHYSICAL_WEIGHT_DEFAULTS: Record<string, number> = {
   ignorePdef: 25,
@@ -136,6 +151,13 @@ const sectionModal = reactive({
   open: false,
   type: "job-classes" as SectionType,
 });
+const automaticSuggestionPopdownOpen = ref(false);
+
+const sectionBodyUiClass = computed(() => (
+  sectionModal.type === "automatic-party-suggestion"
+    ? "flex flex-col flex-1 min-h-0 overflow-hidden"
+    : "flex-1 min-h-0 overflow-y-auto"
+));
 
 const modal = reactive({
   open: false,
@@ -170,6 +192,14 @@ const classRoleOptions = computed(() => [
 const canAddPresetRecord = computed(() => presetModal.records.length < 5);
 
 const visibleAppSettings = computed(() => appSettings.value);
+const isPartySuggestionsEnabled = computed(() => {
+  const setting = appSettings.value.find((item) => item.key === "PARTY_SUGGESTIONS_ENABLED");
+  return (setting?.value ?? "false") === "true";
+});
+
+function isBooleanSetting(setting: AppSetting) {
+  return BOOLEAN_SETTING_KEYS.has(setting.key);
+}
 
 const cards = computed<SectionCard[]>(() => {
   const overriddenSettings = visibleAppSettings.value.filter((setting) => setting.isOverridden).length;
@@ -208,6 +238,13 @@ const cards = computed<SectionCard[]>(() => {
       icon: "i-lucide-layout-template",
       summary: "Create templates for party setup suggestions.",
       count: `${partyPresets.value.length}`,
+    },
+    {
+      type: "automatic-party-suggestion",
+      title: "Automatic Party Suggestion",
+      icon: "i-lucide-sparkles",
+      summary: "Configure capabilities, skills, and objectives with weighted intent rules.",
+      count: isPartySuggestionsEnabled.value ? "Enabled" : "Disabled",
     },
   ];
 });
@@ -306,11 +343,18 @@ function sectionTitle(type: SectionType) {
     settings: "Settings",
     "party-presets": "Party Presets",
     "score-weights": "Score Weights",
+    "automatic-party-suggestion": "Automatic Party Suggestion",
   };
   return map[type];
 }
 
 function openSection(type: SectionType) {
+  if (type === "automatic-party-suggestion") {
+    automaticSuggestionPopdownOpen.value = !automaticSuggestionPopdownOpen.value;
+    return;
+  }
+
+  automaticSuggestionPopdownOpen.value = false;
   sectionModal.type = type;
   sectionModal.open = true;
 }
@@ -455,33 +499,48 @@ async function confirmDeletePreset() {
 
 <template>
   <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-    <UCard
+    <div
       v-for="card in cards"
       :key="card.type"
-      class="cursor-pointer border border-cyan-900/40 bg-slate-950/70 transition hover:border-cyan-700/70"
-      @click="openSection(card.type)"
+      class="relative"
     >
-      <div class="flex items-start justify-between gap-2">
-        <div class="space-y-2">
-          <div class="flex items-center gap-2">
-            <UIcon :name="card.icon" class="h-4 w-4 text-cyan-300" />
-            <p class="font-semibold text-white">{{ card.title }}</p>
+      <UCard
+        class="cursor-pointer border border-cyan-900/40 bg-slate-950/70 transition hover:border-cyan-700/70"
+        @click="openSection(card.type)"
+      >
+        <div class="flex items-start justify-between gap-2">
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <UIcon :name="card.icon" class="h-4 w-4 text-cyan-300" />
+              <p class="font-semibold text-white">{{ card.title }}</p>
+            </div>
+            <p class="text-sm text-slate-400">{{ card.summary }}</p>
           </div>
-          <p class="text-sm text-slate-400">{{ card.summary }}</p>
+          <span class="rounded bg-slate-900 px-2 py-1 text-xs text-cyan-200">{{ card.count }}</span>
         </div>
-        <span class="rounded bg-slate-900 px-2 py-1 text-xs text-cyan-200">{{ card.count }}</span>
+        <div class="mt-3 flex justify-end">
+          <UButton size="xs" color="primary" variant="soft" @click.stop="openSection(card.type)">Open</UButton>
+        </div>
+      </UCard>
+
+      <div
+        v-if="card.type === 'automatic-party-suggestion' && automaticSuggestionPopdownOpen"
+        class="absolute left-0 top-full z-30 mt-2 w-full rounded-xl border border-cyan-900/40 bg-slate-950/95 p-4 shadow-2xl backdrop-blur"
+        @click.stop
+      >
+        <AutomaticPartySuggestionManager :enabled="isPartySuggestionsEnabled" mode="launcher" />
       </div>
-      <div class="mt-3 flex justify-end">
-        <UButton size="xs" color="primary" variant="soft" @click.stop="openSection(card.type)">Open</UButton>
-      </div>
-    </UCard>
+    </div>
   </div>
 
-  <UModal v-model:open="sectionModal.open">
+  <UModal
+    v-model:open="sectionModal.open"
+    :ui="{ content: 'sm:max-w-7xl' }"
+  >
     <template #content>
       <UCard
-        class="w-full border border-cyan-900/40 bg-slate-950 max-h-[60vh] flex flex-col overflow-hidden"
-        :ui="{ header: 'shrink-0', body: 'flex-1 min-h-0 overflow-y-auto', footer: 'shrink-0' }"
+        class="w-full max-w-6xl border border-cyan-900/40 bg-slate-950 max-h-[75vh] flex flex-col overflow-hidden"
+        :ui="{ header: 'shrink-0', body: sectionBodyUiClass, footer: 'shrink-0' }"
       >
         <template #header>
           <div class="flex items-center justify-between gap-3">
@@ -582,7 +641,17 @@ async function confirmDeletePreset() {
                 />
               </div>
               <div class="flex gap-2">
+                <USelect
+                  v-if="isBooleanSetting(setting)"
+                  v-model:model-value="settingDrafts[setting.key]"
+                  :items="booleanSettingOptions"
+                  value-key="value"
+                  label-key="label"
+                  class="flex-1"
+                  size="sm"
+                />
                 <UInput
+                  v-else
                   v-model="settingDrafts[setting.key]"
                   :placeholder="setting.defaultValue || 'Not set'"
                   class="flex-1 font-mono text-xs"

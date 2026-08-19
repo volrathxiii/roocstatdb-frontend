@@ -6,6 +6,20 @@ const api = useApi();
 // ── Ref data ────────────────────────────────────────────────────────────────
 interface RefItem { id: number; name: string }
 interface StatBuild { id: number; name: string; isDefault: boolean; createdAt: string }
+interface BuildSkillCapability { id: number; name: string; effectiveness: number }
+interface BuildSkillOption {
+  id: number;
+  name: string;
+  description: string | null;
+  capabilities: BuildSkillCapability[];
+}
+interface BuildSkillsResponse {
+  buildId: number;
+  jobId: number;
+  classRoleId: number;
+  selectedSkillIds: number[];
+  availableSkills: BuildSkillOption[];
+}
 
 const jobClasses = ref<RefItem[]>([]);
 const classRoles = ref<RefItem[]>([]);
@@ -16,8 +30,20 @@ const selectedBuildId = ref<number | null>(null);
 const newBuildName = ref('');
 const buildModalOpen = ref(false);
 const buildPopoverOpen = ref(false);
+const skillsModalOpen = ref(false);
+const skillsLoading = ref(false);
+const skillsSaving = ref(false);
+const skillsError = ref<string | null>(null);
+const automaticPartySuggestionsEnabled = ref(false);
+const availableSkills = ref<BuildSkillOption[]>([]);
+const selectedSkillIds = ref<number[]>([]);
 const editingBuildId = ref<number | null>(null);
 const editingName = ref('');
+
+function filterToAvailableSkillIds(skillIds: number[]) {
+  const allowed = new Set(availableSkills.value.map((skill) => skill.id));
+  return skillIds.filter((id) => allowed.has(id));
+}
 
 async function fetchBuilds() {
   const res = await api.get<StatBuild[]>('/api/stat-snapshots/builds');
@@ -80,6 +106,56 @@ async function deleteBuild(buildId: number) {
   selectedBuildId.value = defaultBuild?.id ?? null;
   await fetchBuilds();
   if (selectedBuildId.value) await loadSnapshotForBuild(selectedBuildId.value);
+}
+
+async function openSkillsModal() {
+  if (!selectedBuildId.value || !form.jobId || !form.classRoleId) return;
+  skillsError.value = null;
+  skillsLoading.value = true;
+  skillsModalOpen.value = true;
+  try {
+    const res = await api.get<BuildSkillsResponse>(
+      `/api/stat-snapshots/builds/${selectedBuildId.value}/skills?jobId=${form.jobId}&classRoleId=${form.classRoleId}`,
+    );
+    availableSkills.value = res.availableSkills;
+    // Keep only selectable skills so hidden legacy IDs are not re-submitted.
+    selectedSkillIds.value = filterToAvailableSkillIds(res.selectedSkillIds);
+  } catch {
+    skillsError.value = "Failed to load skills for this build.";
+    availableSkills.value = [];
+    selectedSkillIds.value = [];
+  } finally {
+    skillsLoading.value = false;
+  }
+}
+
+function toggleSkillSelection(skillId: number) {
+  if (selectedSkillIds.value.includes(skillId)) {
+    selectedSkillIds.value = selectedSkillIds.value.filter((id) => id !== skillId);
+  } else {
+    selectedSkillIds.value = [...selectedSkillIds.value, skillId];
+  }
+}
+
+async function saveSkillsSelection() {
+  if (!selectedBuildId.value || !form.jobId || !form.classRoleId) return;
+  skillsSaving.value = true;
+  skillsError.value = null;
+  try {
+    const skillIds = filterToAvailableSkillIds(selectedSkillIds.value);
+    await api.put(`/api/stat-snapshots/builds/${selectedBuildId.value}/skills`, {
+      jobId: form.jobId,
+      classRoleId: form.classRoleId,
+      skillIds,
+    });
+    selectedSkillIds.value = skillIds;
+    skillsModalOpen.value = false;
+    successMsg.value = "Build skills updated.";
+  } catch {
+    skillsError.value = "Failed to save selected skills.";
+  } finally {
+    skillsSaving.value = false;
+  }
 }
 
 function resetForm() {
@@ -167,13 +243,15 @@ function applySnapshot(snapshot: Record<string, unknown>) {
 
 onMounted(async () => {
   try {
-    const [jobRes, roleRes, buildsRes] = await Promise.all([
+    const [jobRes, roleRes, buildsRes, suggestionToggleRes] = await Promise.all([
       api.get<RefItem[]>("/api/ref-data/job-classes"),
       api.get<RefItem[]>("/api/ref-data/class-roles"),
       props.showBuilds ? api.get<StatBuild[]>("/api/stat-snapshots/builds") : Promise.resolve([] as StatBuild[]),
+      api.get<{ enabled: boolean }>("/api/settings/party-suggestions-enabled").catch(() => ({ enabled: false })),
     ]);
     jobClasses.value = jobRes;
     classRoles.value = roleRes;
+    automaticPartySuggestionsEnabled.value = suggestionToggleRes.enabled;
 
     if (props.showBuilds) {
       builds.value = [...buildsRes].sort((a, b) => a.name.localeCompare(b.name));
@@ -191,7 +269,7 @@ onMounted(async () => {
       );
       if (snapRes.snapshot) applySnapshot(snapRes.snapshot);
     }
-  } catch (e) {
+  } catch {
     errorMsg.value = "Failed to load data. Please refresh.";
   } finally {
     loading.value = false;
@@ -259,8 +337,9 @@ const classRoleOptions = computed(() =>
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-white">Character Stats</h3>
 
-        <!-- Build split button -->
-        <div v-if="props.showBuilds && builds.length > 0" class="flex items-center gap-0">
+        <div class="flex items-center gap-2">
+          <!-- Build split button -->
+          <div v-if="props.showBuilds && builds.length > 0" class="flex items-center gap-0">
           <span class="inline-flex items-center px-3 h-8 text-sm font-medium text-slate-300 bg-slate-800 border border-slate-600 rounded-l-md border-r-0 select-none">
             Build
           </span>
@@ -346,6 +425,7 @@ const classRoleOptions = computed(() =>
               </div>
             </template>
           </UPopover>
+          </div>
         </div>
       </div>
     </template>
@@ -362,6 +442,65 @@ const classRoleOptions = computed(() =>
           <div class="flex gap-2">
             <UInput v-model="newBuildName" placeholder="Build name (e.g. PVP)" class="flex-1" @keydown.enter="addBuild" />
             <UButton @click="addBuild">Create</UButton>
+          </div>
+        </template>
+      </UModal>
+
+      <UModal v-model:open="skillsModalOpen" title="Skills">
+        <template #body>
+          <div class="space-y-3">
+            <p class="text-xs text-slate-400">
+              Select capability-linked skills for this build and job class.
+            </p>
+
+            <UAlert
+              v-if="skillsError"
+              color="error"
+              variant="soft"
+              icon="i-lucide-alert-circle"
+              :title="skillsError"
+            />
+
+            <div v-if="skillsLoading" class="flex justify-center py-6">
+              <UIcon name="i-lucide-loader" class="animate-spin text-2xl text-slate-400" />
+            </div>
+
+            <div v-else-if="availableSkills.length === 0" class="rounded border border-slate-700 bg-slate-900/60 p-3 text-sm text-slate-300">
+              No capability-linked skills available for this job class.
+            </div>
+
+            <div v-else class="max-h-80 space-y-2 overflow-y-auto pr-1">
+              <button
+                v-for="skill in availableSkills"
+                :key="skill.id"
+                type="button"
+                class="w-full rounded border p-3 text-left transition-colors"
+                :class="selectedSkillIds.includes(skill.id)
+                  ? 'border-cyan-500 bg-cyan-500/10'
+                  : 'border-slate-700 bg-slate-900/60 hover:border-slate-500'"
+                @click="toggleSkillSelection(skill.id)"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="font-medium text-slate-100">{{ skill.name }}</p>
+                    <p v-if="skill.description" class="mt-0.5 text-xs text-slate-400">{{ skill.description }}</p>
+                    <p class="mt-1 text-xs text-slate-400">
+                      {{ skill.capabilities.map((c) => `${c.name} (${c.effectiveness})`).join(', ') }}
+                    </p>
+                  </div>
+                  <UIcon
+                    v-if="selectedSkillIds.includes(skill.id)"
+                    name="i-lucide-check"
+                    class="mt-0.5 size-4 text-cyan-400"
+                  />
+                </div>
+              </button>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+              <UButton color="neutral" variant="soft" :disabled="skillsSaving" @click="skillsModalOpen = false">Cancel</UButton>
+              <UButton :loading="skillsSaving" :disabled="skillsLoading" @click="saveSkillsSelection">Save Skills</UButton>
+            </div>
           </div>
         </template>
       </UModal>
@@ -535,7 +674,17 @@ const classRoleOptions = computed(() =>
       <UAlert v-if="successMsg" color="success" variant="soft" icon="i-lucide-circle-check" :description="successMsg" />
 
       <!-- Submit -->
-      <div class="flex justify-end">
+      <div class="flex justify-end gap-2">
+        <UButton
+          v-if="automaticPartySuggestionsEnabled && props.showBuilds && selectedBuildId && form.jobId && form.classRoleId"
+          type="button"
+          color="neutral"
+          variant="soft"
+          icon="i-lucide-swords"
+          @click="openSkillsModal"
+        >
+          Skills
+        </UButton>
         <UButton type="submit" :loading="saving" icon="i-lucide-save" color="primary">
           Save Stats
         </UButton>
