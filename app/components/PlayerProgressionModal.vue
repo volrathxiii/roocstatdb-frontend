@@ -67,11 +67,44 @@ interface ClassGroupOption {
   count: number;
 }
 
+type WeightMap = Record<string, number>;
+interface EffectiveWeights { physical: WeightMap; magic: WeightMap; defensive: WeightMap; }
+
+const STAT_KEY_LABELS: Record<string, string> = {
+  ignorePdef: "Ignore PDEF",
+  ignoreMdef: "Ignore MDEF",
+  dmgVsDemiHuman: "DMG vs Demi-human",
+  dmgVsMedium: "DMG vs Medium",
+  pDmgPct: "Physical DMG %",
+  mDmgPct: "Magic DMG %",
+  patk: "PATK",
+  matk: "MATK",
+  pvpDmg: "PvP DMG",
+  dmgReductionVsDemiHuman: "Reduc. vs Demi-human",
+  dmgReductionVsMedium: "Reduc. vs Medium",
+  pDmgReductionPct: "Phys. DMG Reduc. %",
+  mDmgReductionPct: "Magic DMG Reduc. %",
+  rawPdef: "Raw PDEF",
+  rawMdef: "Raw MDEF",
+  hp: "HP",
+  healingTaken: "Healing Taken %",
+  healingDone: "Healing Done %",
+  pvpDmgReduction: "PvP Reduction",
+};
+
 const snapshots = ref<Snapshot[]>([]);
 const scores = ref<ScoresResponse | null>(null);
 const playerRank = ref<RankResponse | null>(null);
+const effectiveWeights = ref<EffectiveWeights | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
+
+function weightRows(map: WeightMap | undefined): { label: string; weight: number }[] {
+  if (!map) return [];
+  return Object.entries(map)
+    .map(([key, weight]) => ({ label: STAT_KEY_LABELS[key] ?? key, weight }))
+    .sort((a, b) => b.weight - a.weight);
+}
 
 // Compare search state
 const compareQuery = ref("");
@@ -175,10 +208,11 @@ onMounted(async () => {
   onUnmounted(() => document.removeEventListener("keydown", onKeydown));
 
   try {
-    [snapshots.value, scores.value, playerRank.value] = await Promise.all([
+    [snapshots.value, scores.value, playerRank.value, effectiveWeights.value] = await Promise.all([
       api.get<Snapshot[]>(`/api/players/${props.playerId}/snapshots`),
       api.get<ScoresResponse>(`/api/players/${props.playerId}/scores`),
       api.get<RankResponse>(`/api/players/${props.playerId}/rank`),
+      api.get<EffectiveWeights>("/api/score-weights/effective"),
     ]);
   } catch {
     error.value = "Failed to load progression data.";
@@ -222,10 +256,10 @@ const STAT_GROUPS: { heading: string; stats: StatDef[] }[] = [
       { key: "hp",                  label: "HP",             format: String },
       { key: "rawPdef",             label: "Raw PDEF",       format: fmtFp   },
       { key: "rawMdef",             label: "Raw MDEF",       format: fmtFp   },
-      { key: "pDmgReductionPct",    label: "Physical DMG Reduction %",   format: fmtPct  },
-      { key: "mDmgReductionPct",    label: "Magic DMG Reduction %",   format: fmtPct  },
-      { key: "dmgReductionVsDemiHuman", label: "DMG Reduction vs Demi-human %", format: fmtPct },
-      { key: "dmgReductionVsMedium",    label: "DMG Reduction vs Medium %",    format: fmtPct },
+      { key: "pDmgReductionPct",    label: "Phys. DMG Reduc. %",   format: fmtPct  },
+      { key: "mDmgReductionPct",    label: "Magic DMG Reduc. %",   format: fmtPct  },
+      { key: "dmgReductionVsDemiHuman", label: "Reduc. vs Demi-human %", format: fmtPct },
+      { key: "dmgReductionVsMedium",    label: "Reduc. vs Medium %",    format: fmtPct },
       { key: "healingDone",         label: "Healing Done %", format: fmtPct },
       { key: "healingTaken",        label: "Healing Taken %", format: fmtPct },
       { key: "pvpDmgReduction",     label: "PVP Reduction",        format: String },
@@ -244,6 +278,7 @@ const jobChanged = computed(
 const classRoleChanged = computed(
   () => current.value && previous.value && current.value.classRole !== previous.value.classRole,
 );
+
 </script>
 
 <template>
@@ -366,9 +401,12 @@ const classRoleChanged = computed(
 
           <!-- Scores -->
           <div v-if="scores?.current" class="rounded-lg border border-slate-700 bg-slate-800/50 p-4 space-y-3">
-            <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Class Scores</p>
+            <div class="space-y-0.5">
+              <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Class Scores</p>
+              <p class="text-xs text-slate-500">Class scores are ranked against players with the same job and class role. Guild scores are ranked against all players in the guild.</p>
+            </div>
             <div class="flex flex-nowrap gap-2 sm:gap-4">
-              <div class="w-1/3 min-w-0 flex flex-col items-center gap-1">
+              <div class="w-1/3 min-w-0 relative group flex flex-col items-center gap-1 cursor-help">
                 <UIcon name="i-lucide-sword" class="h-5 w-5 text-orange-400" />
                 <p class="text-xs text-slate-400">Physical</p>
                 <p class="text-lg sm:text-2xl font-bold text-white">{{ (scores.classCurrent?.physical ?? scores.current.physical).toFixed(1) }}<span class="text-xs sm:text-sm text-slate-400">%</span></p>
@@ -378,8 +416,15 @@ const classRoleChanged = computed(
                 <p v-if="playerRank?.physical" class="text-xs text-slate-500">
                   Guild Rank #{{ playerRank.physical.guild.rank }} / {{ playerRank.physical.guild.total }}
                 </p>
+                <div v-if="effectiveWeights" class="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block z-30 w-48 rounded-lg border border-slate-600 bg-slate-900 shadow-xl p-3">
+                  <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-2">Weights</p>
+                  <div v-for="w in weightRows(effectiveWeights.physical)" :key="w.label" class="flex justify-between text-xs py-0.5">
+                    <span class="text-slate-400">{{ w.label }}</span>
+                    <span class="text-white font-medium ml-2">{{ w.weight }}%</span>
+                  </div>
+                </div>
               </div>
-              <div class="w-1/3 min-w-0 flex flex-col items-center gap-1">
+              <div class="w-1/3 min-w-0 relative group flex flex-col items-center gap-1 cursor-help">
                 <UIcon name="i-lucide-wand" class="h-5 w-5 text-purple-400" />
                 <p class="text-xs text-slate-400">Magic</p>
                 <p class="text-lg sm:text-2xl font-bold text-white">{{ (scores.classCurrent?.magic ?? scores.current.magic).toFixed(1) }}<span class="text-xs sm:text-sm text-slate-400">%</span></p>
@@ -389,8 +434,15 @@ const classRoleChanged = computed(
                 <p v-if="playerRank?.magic" class="text-xs text-slate-500">
                   Guild Rank #{{ playerRank.magic.guild.rank }} / {{ playerRank.magic.guild.total }}
                 </p>
+                <div v-if="effectiveWeights" class="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block z-30 w-48 rounded-lg border border-slate-600 bg-slate-900 shadow-xl p-3">
+                  <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-2">Weights</p>
+                  <div v-for="w in weightRows(effectiveWeights.magic)" :key="w.label" class="flex justify-between text-xs py-0.5">
+                    <span class="text-slate-400">{{ w.label }}</span>
+                    <span class="text-white font-medium ml-2">{{ w.weight }}%</span>
+                  </div>
+                </div>
               </div>
-              <div class="w-1/3 min-w-0 flex flex-col items-center gap-1">
+              <div class="w-1/3 min-w-0 relative group flex flex-col items-center gap-1 cursor-help">
                 <UIcon name="i-lucide-shield" class="h-5 w-5 text-cyan-400" />
                 <p class="text-xs text-slate-400">Defense</p>
                 <p class="text-lg sm:text-2xl font-bold text-white">{{ (scores.classCurrent?.defensive ?? scores.current.defensive).toFixed(1) }}<span class="text-xs sm:text-sm text-slate-400">%</span></p>
@@ -400,6 +452,13 @@ const classRoleChanged = computed(
                 <p v-if="playerRank?.defensive" class="text-xs text-slate-500">
                   Guild Rank #{{ playerRank.defensive.guild.rank }} / {{ playerRank.defensive.guild.total }}
                 </p>
+                <div v-if="effectiveWeights" class="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block z-30 w-56 rounded-lg border border-slate-600 bg-slate-900 shadow-xl p-3">
+                  <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-2">Weights</p>
+                  <div v-for="w in weightRows(effectiveWeights.defensive)" :key="w.label" class="flex justify-between text-xs py-0.5">
+                    <span class="text-slate-400">{{ w.label }}</span>
+                    <span class="text-white font-medium ml-2">{{ w.weight }}%</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

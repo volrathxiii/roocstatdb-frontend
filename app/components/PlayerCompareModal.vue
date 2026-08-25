@@ -131,6 +131,14 @@ function isHigher(a: number | null, b: number | null): boolean {
   if (a === null || b === null) return false;
   return a > b;
 }
+
+/** Returns an HSL color string when A is behind B, shading green→yellow→red by gap size. */
+function gapColor(a: number | null, b: number | null): string | undefined {
+  if (a === null || b === null || a >= b || b === 0) return undefined;
+  const ratio = Math.min((b - a) / b, 1);
+  const hue = Math.round(60 * (1 - ratio));
+  return `hsl(${hue}, 70%, 55%)`;
+}
 </script>
 
 <template>
@@ -222,9 +230,8 @@ function isHigher(a: number | null, b: number | null): boolean {
                   <div class="flex items-center justify-start gap-1.5">
                     <span
                       class="text-sm font-medium"
-                      :class="isHigher(getVal(data.playerA.snapshot, stat.key), getVal(data.playerB.snapshot, stat.key))
-                        ? 'text-green-400'
-                        : 'text-white'"
+                      :class="isHigher(getVal(data.playerA.snapshot, stat.key), getVal(data.playerB.snapshot, stat.key)) ? 'text-green-400' : !gapColor(getVal(data.playerA.snapshot, stat.key), getVal(data.playerB.snapshot, stat.key)) ? 'text-white' : ''"
+                      :style="gapColor(getVal(data.playerA.snapshot, stat.key), getVal(data.playerB.snapshot, stat.key)) ? { color: gapColor(getVal(data.playerA.snapshot, stat.key), getVal(data.playerB.snapshot, stat.key)) } : undefined"
                     >
                       {{ getVal(data.playerA.snapshot, stat.key) !== null
                         ? stat.format(getVal(data.playerA.snapshot, stat.key)!)

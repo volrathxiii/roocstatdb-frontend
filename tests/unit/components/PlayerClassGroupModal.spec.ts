@@ -116,4 +116,70 @@ describe("PlayerClassGroupModal", () => {
       expect(vm.sortedPlayers[0].id).toBe(2);
     });
   });
+
+  describe("deltaVsHighest", () => {
+    let vm: any;
+
+    beforeEach(async () => {
+      fetchMock.mockResolvedValueOnce(CLASS_GROUP_RESPONSE);
+      const wrapper = await mountSuspended(PlayerClassGroupModal, { props: DEFAULT_PROPS });
+      await flushPromises();
+      vm = wrapper.vm;
+    });
+
+    it("returns negative delta when active player is behind the highest", () => {
+      // PLAYER_A.matk=1500, PLAYER_B.matk=1800 → delta = 1500 - 1800 = -300
+      const delta = vm.deltaVsHighest("matk", PLAYER_A);
+      expect(delta).toBe(-300);
+    });
+
+    it("returns positive delta when active player leads", () => {
+      // PLAYER_B.matk=1800 vs PLAYER_A.matk=1500 → delta = 1800 - 1500 = 300
+      const delta = vm.deltaVsHighest("matk", PLAYER_B);
+      expect(delta).toBe(300);
+    });
+
+    it("returns null when there is only one player", async () => {
+      fetchMock.mockResolvedValueOnce({ ...CLASS_GROUP_RESPONSE, players: [PLAYER_A] });
+      const wrapper = await mountSuspended(PlayerClassGroupModal, { props: DEFAULT_PROPS });
+      await flushPromises();
+      const singleVm = wrapper.vm as any;
+      expect(singleVm.deltaVsHighest("matk", PLAYER_A)).toBeNull();
+    });
+  });
+
+  describe("gapColor", () => {
+    let vm: any;
+
+    beforeEach(async () => {
+      fetchMock.mockResolvedValueOnce(CLASS_GROUP_RESPONSE);
+      const wrapper = await mountSuspended(PlayerClassGroupModal, { props: DEFAULT_PROPS });
+      await flushPromises();
+      vm = wrapper.vm;
+    });
+
+    it("returns undefined when player is ahead", () => {
+      expect(vm.gapColor("matk", PLAYER_B)).toBeUndefined();
+    });
+
+    it("returns undefined when players are tied", () => {
+      const tied = { ...PLAYER_A, matk: 1800 };
+      // both players same value → delta = 0
+      expect(vm.gapColor("matk", tied)).toBeUndefined();
+    });
+
+    it("returns a yellow-to-red hsl color when player is behind", () => {
+      // PLAYER_A.matk=1500 vs highest=1800 → ratio=300/1800≈0.17 → hue≈50 (yellow)
+      const color = vm.gapColor("matk", PLAYER_A);
+      expect(color).toMatch(/^hsl\(/);
+    });
+
+    it("returns red (hue=0) for a full gap", () => {
+      const zeroed = { ...PLAYER_A, matk: 0 };
+      const color = vm.gapColor("matk", zeroed);
+      expect(color).toMatch(/^hsl\(/);
+      const hue = parseInt(color.match(/hsl\((\d+)/)[1]);
+      expect(hue).toBe(0);
+    });
+  });
 });

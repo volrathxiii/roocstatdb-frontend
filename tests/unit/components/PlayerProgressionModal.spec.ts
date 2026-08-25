@@ -38,6 +38,12 @@ const RANK = {
   defensive: { guild: { rank: 5, total: 20 }, classRole: { rank: 2, total: 5 } },
 };
 
+const EFFECTIVE_WEIGHTS = {
+  physical: { ignorePdef: 25, dmgVsDemiHuman: 23, dmgVsMedium: 20, pDmgPct: 16, patk: 14, pvpDmg: 2 },
+  magic:    { ignoreMdef: 25, dmgVsDemiHuman: 23, dmgVsMedium: 20, mDmgPct: 16, matk: 14, pvpDmg: 2 },
+  defensive: { dmgReductionVsDemiHuman: 18, dmgReductionVsMedium: 16, pDmgReductionPct: 12, mDmgReductionPct: 12, rawPdef: 11, rawMdef: 11, hp: 8, healingTaken: 6, healingDone: 4, pvpDmgReduction: 2 },
+};
+
 const DEFAULT_PROPS = {
   playerId: 1,
   playerStringId: "test-001",
@@ -48,7 +54,8 @@ function setupFetches(snapshots = [SNAPSHOT_CURRENT, SNAPSHOT_PREVIOUS], scores 
   fetchMock
     .mockResolvedValueOnce(snapshots)
     .mockResolvedValueOnce(scores)
-    .mockResolvedValueOnce(rank);
+    .mockResolvedValueOnce(rank)
+    .mockResolvedValueOnce(EFFECTIVE_WEIGHTS);
 }
 
 async function mountModal(props = DEFAULT_PROPS) {
@@ -64,11 +71,12 @@ describe("PlayerProgressionModal", () => {
   beforeEach(() => vi.clearAllMocks());
 
   describe("on mount", () => {
-    it("fetches snapshots, scores, and rank for the player", async () => {
+    it("fetches snapshots, scores, rank, and effective weights for the player", async () => {
       await mountModal();
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/players/1/snapshots"), expect.anything());
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/players/1/scores"), expect.anything());
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/players/1/rank"), expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/score-weights/effective"), expect.anything());
     });
 
     it("shows error message when fetch fails", async () => {
@@ -76,6 +84,20 @@ describe("PlayerProgressionModal", () => {
       const wrapper = await mountSuspended(PlayerProgressionModal, { props: DEFAULT_PROPS });
       await flushPromises();
       expect(wrapper.text()).toContain("Failed to load progression data");
+    });
+
+    it("effectiveWeights is populated from the API", async () => {
+      const wrapper = await mountModal();
+      const vm = wrapper.vm as any;
+      expect(vm.effectiveWeights.value).toEqual(EFFECTIVE_WEIGHTS);
+    });
+
+    it("effectiveWeights is null when fetch fails", async () => {
+      fetchMock.mockRejectedValue(new Error("500"));
+      const wrapper = await mountSuspended(PlayerProgressionModal, { props: DEFAULT_PROPS });
+      await flushPromises();
+      const vm = wrapper.vm as any;
+      expect(vm.effectiveWeights.value).toBeNull();
     });
 
     it("displays the player IGN in the header", async () => {
@@ -95,7 +117,8 @@ describe("PlayerProgressionModal", () => {
       fetchMock
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce(SCORES)
-        .mockResolvedValueOnce(RANK);
+        .mockResolvedValueOnce(RANK)
+        .mockResolvedValueOnce(EFFECTIVE_WEIGHTS);
       const wrapper = await mountSuspended(PlayerProgressionModal, { props: DEFAULT_PROPS });
       await flushPromises();
       expect(wrapper.text()).toContain("No snapshot");
@@ -119,7 +142,8 @@ describe("PlayerProgressionModal", () => {
       fetchMock
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce(SCORES)
-        .mockResolvedValueOnce(RANK);
+        .mockResolvedValueOnce(RANK)
+        .mockResolvedValueOnce(EFFECTIVE_WEIGHTS);
       const wrapper = await mountSuspended(PlayerProgressionModal, { props: DEFAULT_PROPS });
       await flushPromises();
       expect((wrapper.vm as any).current).toBeNull();

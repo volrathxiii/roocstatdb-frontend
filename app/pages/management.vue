@@ -535,7 +535,7 @@ async function confirmDeletePreset() {
 
   <UModal
     v-model:open="sectionModal.open"
-    :ui="{ content: 'sm:max-w-7xl' }"
+    :ui="{ content: 'sm:max-w-6xl' }"
   >
     <template #content>
       <UCard

@@ -143,6 +143,19 @@ function deltaVsHighest(key: StatKey, player: PlayerRow): number | null {
   const highest = Math.max(...others.map((p) => p[key] as number));
   return (player[key] as number) - highest;
 }
+
+/** Returns an HSL color string shading yellow→red based on how far the active player is behind the highest. */
+function gapColor(key: StatKey, player: PlayerRow): string | undefined {
+  const delta = deltaVsHighest(key, player);
+  if (delta === null || delta >= 0) return undefined;
+  if (!data.value) return undefined;
+  const others = data.value.players.filter((p) => p.id !== player.id);
+  const highest = Math.max(...others.map((p) => p[key] as number));
+  if (highest === 0) return undefined;
+  const ratio = Math.min(Math.abs(delta) / highest, 1);
+  const hue = Math.round(60 * (1 - ratio));
+  return `hsl(${hue}, 70%, 55%)`;
+}
 </script>
 
 <template>
@@ -270,7 +283,10 @@ function deltaVsHighest(key: StatKey, player: PlayerRow): number | null {
                           name="i-lucide-arrow-up"
                           class="h-3 w-3 text-green-400 shrink-0"
                         />
-                        <span :class="isHighest(stat.key, player) ? 'text-green-400 font-medium' : 'text-white'">
+                        <span
+                          :class="isHighest(stat.key, player) ? 'text-green-400 font-medium' : (player.id === activePlayerId && gapColor(stat.key, player) ? '' : 'text-white')"
+                          :style="player.id === activePlayerId && gapColor(stat.key, player) ? { color: gapColor(stat.key, player) } : undefined"
+                        >
                           {{ stat.format(player[stat.key] as number) }}
                         </span>
                       </span>
@@ -278,13 +294,14 @@ function deltaVsHighest(key: StatKey, player: PlayerRow): number | null {
                       <template v-if="player.id === activePlayerId">
                         <span
                           v-if="deltaVsHighest(stat.key, player) !== null && deltaVsHighest(stat.key, player)! < 0"
-                          class="inline-flex items-center gap-0.5 text-sm font-medium text-red-400"
+                          class="inline-flex items-center gap-0.5 text-sm font-medium"
+                          :style="{ color: gapColor(stat.key, player) ?? '#f87171' }"
                         >
                           <UIcon
                             name="i-lucide-trending-down"
                             class="h-2.5 w-2.5 shrink-0"
                           />
-                          {{ fmtDelta(Math.abs(deltaVsHighest(stat.key, player)!)) }}
+                          {{ stat.format(Math.abs(deltaVsHighest(stat.key, player)!)) }}
                         </span>
                         <span v-else-if="deltaVsHighest(stat.key, player) === 0" class="text-sm text-slate-500">tied</span>
                       </template>

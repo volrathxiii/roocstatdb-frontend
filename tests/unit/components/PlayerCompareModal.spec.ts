@@ -103,6 +103,50 @@ describe("PlayerCompareModal", () => {
     it("fmtFp formats to 2 decimal places", () => expect(vm.fmtFp(10.567)).toBe("10.57"));
   });
 
+  describe("gapColor", () => {
+    let vm: any;
+
+    beforeEach(async () => {
+      fetchMock.mockResolvedValueOnce(COMPARE_RESPONSE);
+      const wrapper = await mountSuspended(PlayerCompareModal, { props: COMPARE_PROPS });
+      await flushPromises();
+      vm = wrapper.vm;
+    });
+
+    it("returns undefined when a is equal to b", () => {
+      expect(vm.gapColor(100, 100)).toBeUndefined();
+    });
+
+    it("returns undefined when a is ahead of b", () => {
+      expect(vm.gapColor(200, 100)).toBeUndefined();
+    });
+
+    it("returns undefined when either value is null", () => {
+      expect(vm.gapColor(null, 100)).toBeUndefined();
+      expect(vm.gapColor(100, null)).toBeUndefined();
+    });
+
+    it("returns undefined when b is 0 (avoid divide-by-zero)", () => {
+      expect(vm.gapColor(0, 0)).toBeUndefined();
+    });
+
+    it("returns a yellow hsl color for a small gap", () => {
+      // ratio ~0.05 → hue ~57 (near yellow 60)
+      const color = vm.gapColor(95, 100);
+      expect(color).toMatch(/^hsl\(/);
+      const hue = parseInt(color.match(/hsl\((\d+)/)[1]);
+      expect(hue).toBeGreaterThan(40);
+    });
+
+    it("returns a red hsl color for a large gap", () => {
+      // ratio = 1 → hue = 0 (red)
+      const color = vm.gapColor(0, 100);
+      expect(color).toMatch(/^hsl\(/);
+      const hue = parseInt(color.match(/hsl\((\d+)/)[1]);
+      expect(hue).toBe(0);
+    });
+  });
+
   describe("with missing snapshots", () => {
     it("renders without crashing when playerA has no snapshot", async () => {
       fetchMock.mockResolvedValueOnce({
