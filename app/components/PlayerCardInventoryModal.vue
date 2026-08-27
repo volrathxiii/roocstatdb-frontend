@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PlayerCardInventory } from "~/types/cards";
+import CardSearchDropdown from "./CardSearchDropdown.vue";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -142,7 +143,7 @@ const confirmDeleteCard = async () => {
       <div class="relative bg-slate-900 rounded-lg shadow-lg border border-slate-700 w-full max-w-5xl mx-4 h-[90vh] flex flex-col overflow-hidden">
         <!-- Header -->
         <div class="flex items-center px-6 py-4 border-b border-slate-700 gap-4 flex-shrink-0">
-          <h2 class="text-lg font-semibold text-white">My Card Inventory</h2>
+          <h2 class="text-lg font-semibold text-white">My Card Album</h2>
           
           <div class="ml-auto w-64">
             <!-- Card Search Dropdown -->

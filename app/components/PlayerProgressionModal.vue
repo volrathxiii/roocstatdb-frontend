@@ -300,6 +300,9 @@ const classRoleChanged = computed(
           </p>
         </div>
 
+        <!-- Card Album Popover -->
+        <CardAlbumPopover :playerId="playerId" class="shrink-0" />
+
         <!-- Compare search (inline in header) -->
         <div class="relative w-52 shrink-0">
           <UIcon name="i-lucide-users" class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />

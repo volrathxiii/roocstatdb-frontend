@@ -8,16 +8,24 @@ export const useCards = () => {
     rarity?: number;
     slot?: number;
     search?: string;
+    limit?: number;
   }): Promise<RefCard[]> {
     try {
+      // Enforce new API requirement: must provide search or slot
+      if (!filters?.slot && !filters?.search) {
+        throw new Error("Either 'search' or 'slot' filter is required");
+      }
+
       const params: Record<string, unknown> = {};
-      if (filters?.rarity) params.rarity = filters.rarity;
-      if (filters?.slot) params.slot = filters.slot;
       if (filters?.search) params.search = filters.search;
+      if (filters?.slot) params.slot = filters.slot;
+      if (filters?.limit) params.limit = filters.limit;
 
       return await api.get<RefCard[]>("/api/cards", params);
     } catch (err) {
-      throw err;
+      const message = err instanceof Error ? err.message : "Failed to fetch cards";
+      console.error("Card fetch error:", message);
+      throw new Error(message);
     }
   }
 
@@ -25,7 +33,9 @@ export const useCards = () => {
     try {
       return await api.get<RefCard>(`/api/cards/${cardId}`);
     } catch (err) {
-      throw err;
+      const message = err instanceof Error ? err.message : `Failed to fetch card ${cardId}`;
+      console.error("Card fetch error:", message);
+      throw new Error(message);
     }
   }
 
@@ -33,7 +43,9 @@ export const useCards = () => {
     try {
       return await api.get<PlayerCardInventory[]>("/api/cards/inventory/me");
     } catch (err) {
-      throw err;
+      const message = err instanceof Error ? err.message : "Failed to fetch inventory";
+      console.error("Inventory fetch error:", message);
+      throw new Error(message);
     }
   }
 
@@ -44,7 +56,9 @@ export const useCards = () => {
         quantity,
       });
     } catch (err) {
-      throw err;
+      const message = err instanceof Error ? err.message : `Failed to add card to inventory`;
+      console.error("Add card error:", message);
+      throw new Error(message);
     }
   }
 
@@ -52,7 +66,9 @@ export const useCards = () => {
     try {
       return await api.del<{ success: boolean }>(`/api/cards/inventory/me/${cardId}`);
     } catch (err) {
-      throw err;
+      const message = err instanceof Error ? err.message : `Failed to remove card from inventory`;
+      console.error("Remove card error:", message);
+      throw new Error(message);
     }
   }
 
@@ -63,7 +79,9 @@ export const useCards = () => {
         { quantity },
       );
     } catch (err) {
-      throw err;
+      const message = err instanceof Error ? err.message : `Failed to update card quantity`;
+      console.error("Update quantity error:", message);
+      throw new Error(message);
     }
   }
 

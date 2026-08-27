@@ -13,13 +13,7 @@
 
     <!-- Empty state -->
     <div v-else-if="inventory.length === 0" class="empty-container">
-      <p class="text-slate-400 mb-3">You haven't collected any cards yet.</p>
-      <NuxtLink
-        to="/cards"
-        class="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-      >
-        Start Collecting →
-      </NuxtLink>
+      <p class="text-slate-400">You haven't collected any cards yet.</p>
     </div>
 
     <!-- Cards grid (showing first 12) -->
@@ -46,17 +40,11 @@
         </div>
       </div>
 
-      <!-- Show more link if inventory exceeds 12 -->
+      <!-- Show more info if inventory exceeds 12 -->
       <div v-if="inventory.length > 12" class="mt-4 text-center">
-        <p class="text-sm text-slate-400 mb-2">
+        <p class="text-sm text-slate-400">
           Showing {{ displayedCards.length }} of {{ inventory.length }} cards
         </p>
-        <NuxtLink
-          to="/cards"
-          class="text-sm text-cyan-400 hover:text-cyan-300 transition font-medium"
-        >
-          View your full collection →
-        </NuxtLink>
       </div>
     </div>
 

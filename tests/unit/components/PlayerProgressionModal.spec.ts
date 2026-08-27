@@ -52,6 +52,7 @@ const DEFAULT_PROPS = {
 
 function setupFetches(snapshots = [SNAPSHOT_CURRENT, SNAPSHOT_PREVIOUS], scores = SCORES, rank = RANK) {
   fetchMock
+    .mockResolvedValueOnce([]) // CardAlbumPopover: GET /api/players/:playerId/cards
     .mockResolvedValueOnce(snapshots)
     .mockResolvedValueOnce(scores)
     .mockResolvedValueOnce(rank)
@@ -80,7 +81,9 @@ describe("PlayerProgressionModal", () => {
     });
 
     it("shows error message when fetch fails", async () => {
-      fetchMock.mockRejectedValue(new Error("500"));
+      fetchMock
+        .mockResolvedValueOnce([]) // CardAlbumPopover
+        .mockRejectedValue(new Error("500"));
       const wrapper = await mountSuspended(PlayerProgressionModal, { props: DEFAULT_PROPS });
       await flushPromises();
       expect(wrapper.text()).toContain("Failed to load progression data");
@@ -115,6 +118,7 @@ describe("PlayerProgressionModal", () => {
 
     it("shows no snapshot message when snapshots list is empty", async () => {
       fetchMock
+        .mockResolvedValueOnce([]) // CardAlbumPopover: GET /api/players/:playerId/cards
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce(SCORES)
         .mockResolvedValueOnce(RANK)
@@ -140,6 +144,7 @@ describe("PlayerProgressionModal", () => {
 
     it("current is null when snapshots are empty", async () => {
       fetchMock
+        .mockResolvedValueOnce([]) // CardAlbumPopover: GET /api/players/:playerId/cards
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce(SCORES)
         .mockResolvedValueOnce(RANK)

@@ -69,7 +69,7 @@
 
 <script setup lang="ts">
 import { useDebounceFn } from "@vueuse/core";
-import { nextTick } from "vue";
+import { nextTick, onMounted, onBeforeUnmount, watch } from "vue";
 import type { RefCard } from "~/app/types/cards";
 
 const { addCardToInventory } = useCards();
@@ -83,19 +83,52 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 const addingCardId = ref<number | null>(null);
 
-// Compute dropdown position based on input element
-const dropdownStyle = computed(() => {
-  if (!inputRef.value) return { top: "0", right: "0" };
+// Dropdown position - calculated once and updated only on resize
+const dropdownStyle = ref({ top: "0", right: "0" });
+
+/**
+ * Calculate and update dropdown position
+ * Only called on mount and resize to avoid expensive DOM reflows on every render
+ */
+function updateDropdownPosition() {
+  if (!inputRef.value) return;
   const rect = inputRef.value.getBoundingClientRect();
-  return {
+  dropdownStyle.value = {
     top: `${rect.bottom + 8}px`,
     right: `${window.innerWidth - rect.right}px`,
   };
-});
+}
 
 const emit = defineEmits<{
   cardAdded: [card: RefCard];
 }>();
+
+/**
+ * Initialize position calculation on component mount
+ * and add resize listener to keep position accurate
+ */
+onMounted(() => {
+  updateDropdownPosition();
+  window.addEventListener("resize", updateDropdownPosition);
+});
+
+/**
+ * Clean up resize listener on component unmount
+ */
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updateDropdownPosition);
+});
+
+/**
+ * Recalculate position when dropdown is shown
+ */
+watch(showDropdown, (isOpen) => {
+  if (isOpen) {
+    nextTick(() => {
+      updateDropdownPosition();
+    });
+  }
+});
 
 // Debounced server-side search
 const debouncedSearch = useDebounceFn(async () => {

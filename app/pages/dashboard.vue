@@ -181,7 +181,7 @@ onMounted(() => {
               @click="showCardInventoryModal = true"
               class="ml-auto sm:shrink-0"
             >
-              Card Inventory
+              Card Album
             </UButton>
           </div>
         </div>
