@@ -24,8 +24,8 @@ export default defineNuxtConfig({
 
   nitro: {
     prerender: {
-      // Don't prerender pages that use dynamic icons
-      routes: ["/sitemap.xml"],
+      // Don't prerender dynamic routes
+      routes: [],
     },
   },
 
