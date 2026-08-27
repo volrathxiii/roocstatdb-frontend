@@ -5,10 +5,28 @@ export default defineNuxtConfig({
   modules: ["@nuxt/ui"],
   css: ["~/assets/css/main.css"],
 
+  icon: {
+    mode: "auto",
+    serverBundle: {
+      collections: ["lucide"],
+    },
+  },
+
+  ui: {
+    icons: ["lucide"],
+  },
+
   colorMode: {
     preference: "dark",
     fallback: "dark",
     classSuffix: "",
+  },
+
+  nitro: {
+    prerender: {
+      // Don't prerender pages that use dynamic icons
+      routes: ["/sitemap.xml"],
+    },
   },
 
   runtimeConfig: {

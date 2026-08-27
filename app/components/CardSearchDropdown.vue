@@ -8,7 +8,7 @@
       data-card-search-input
       class="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
       @focus="showDropdown = true"
-      @blur="setTimeout(() => (showDropdown = false), 200)"
+      @blur="handleBlur"
     />
     
     <!-- Dropdown Results - Teleported to avoid modal overflow clipping -->
@@ -139,6 +139,13 @@ async function addCard(card: RefCard) {
   } finally {
     addingCardId.value = null;
   }
+}
+
+function handleBlur() {
+  // Delay closing dropdown to allow click on card button
+  globalThis.setTimeout(() => {
+    showDropdown.value = false;
+  }, 200);
 }
 </script>
 
