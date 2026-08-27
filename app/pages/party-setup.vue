@@ -92,6 +92,7 @@ interface RosterPlayer {
     magic: number;
     defensive: number;
   } | null;
+  cardIds: number[];
 }
 
 interface RefJob {
@@ -438,6 +439,10 @@ async function onPartyChangeNote(party: Party, note: string | null) {
 const poolSearch = ref("");
 const poolJobFilter = ref<string | null>(null);
 const poolRoleFilter = ref<string | null>(null);
+const poolCardFilter = ref<number | null>(null);
+const poolCardSearch = ref("");
+const ownedCards = ref<Array<{ id: number; name: string }>>([]);
+const playersWithCard = ref<Set<number>>(new Set());
 
 const actorId = computed(() => auth.value.player?.id ?? null);
 
@@ -572,6 +577,14 @@ const poolRoleOptions = computed(() => {
   ];
 });
 
+const poolCardOptions = computed(() => {
+  const cardOptions = ownedCards.value.map((card) => ({ label: card.name, value: card.id }));
+  return [
+    { label: "All Cards", value: null },
+    ...cardOptions,
+  ];
+});
+
 const filteredRosterPlayers = computed(() => {
   const search = poolSearch.value.trim().toLowerCase();
   return rosterPlayers.value.filter((player) => {
@@ -585,6 +598,9 @@ const filteredRosterPlayers = computed(() => {
       return false;
     }
     if (poolRoleFilter.value && player.snapshot?.classRole !== poolRoleFilter.value) {
+      return false;
+    }
+    if (poolCardFilter.value && !player.cardIds.includes(poolCardFilter.value)) {
       return false;
     }
     return true;
@@ -1406,17 +1422,27 @@ async function applyPreset(preset: PartyPreset) {
 
 async function fetchRefData() {
   try {
-    const [jobsRes, rolesRes, intentsRes] = await Promise.all([
+    const [jobsRes, rolesRes, intentsRes, cardsRes] = await Promise.all([
       api.get<RefJob[]>(`/api/ref-data/job-classes`),
       api.get<RefClassRole[]>(`/api/ref-data/class-roles`),
       api.get<PartyIntent[]>(`/api/ref-data/party-intents`).catch(() => [] as PartyIntent[]),
+      api.get<Array<{ id: number; name: string }>>(`/api/cards/owned/distinct`).catch(() => [] as Array<{ id: number; name: string }>),
     ]);
     refJobs.value = Array.isArray(jobsRes) ? jobsRes : [];
     refClassRoles.value = Array.isArray(rolesRes) ? rolesRes : [];
     partyIntents.value = Array.isArray(intentsRes) ? intentsRes : [];
+    ownedCards.value = Array.isArray(cardsRes) ? cardsRes : [];
   } catch {
     console.error("Failed to fetch ref data");
   }
+}
+
+function resetPoolFilters() {
+  poolSearch.value = "";
+  poolJobFilter.value = null;
+  poolRoleFilter.value = null;
+  poolCardFilter.value = null;
+  poolCardSearch.value = "";
 }
 
 const wizardObjectiveOptions = computed(() =>
@@ -2103,6 +2129,31 @@ onMounted(async () => {
               placeholder="All Class Roles"
             />
           </div>
+
+          <!-- Card Filter and Reset Button -->
+          <div class="grid gap-2 sm:grid-cols-2">
+            <USelect
+              v-model="poolCardFilter"
+              :items="poolCardOptions"
+              value-key="value"
+              label-key="label"
+              placeholder="All Cards"
+              searchable
+              clearable
+              nullable
+            />
+
+            <UButton
+              v-if="poolSearch || poolJobFilter || poolRoleFilter || poolCardFilter"
+              icon="i-lucide-x"
+              color="neutral"
+              variant="soft"
+              size="sm"
+              @click="resetPoolFilters"
+            >
+              Reset
+            </UButton>
+          </div>
         </div>
 
         <div class="max-h-[70vh] space-y-2 overflow-y-auto pr-1">
@@ -2376,7 +2427,10 @@ onMounted(async () => {
     <template #content>
       <UCard class="border border-amber-900/40 bg-slate-950">
         <template #header>
-          <span class="font-semibold text-white">Suggest Job Class for {{ suggestionMember?.ign }}</span>
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-white">Suggest Job Class for {{ suggestionMember?.ign }}</span>
+            <CardAlbumPopover v-if="suggestionMember" :playerId="suggestionMember.id" class="shrink-0" />
+          </div>
         </template>
 
         <div class="space-y-3">

@@ -6,6 +6,7 @@ definePageMeta({
 
 const api = useApi();
 const { setSubtitle } = usePageSubtitle();
+const { rarities, fetchRarities } = useCardRarities();
 
 onMounted(() => {
   setSubtitle("Management");
@@ -201,6 +202,10 @@ function isBooleanSetting(setting: AppSetting) {
   return BOOLEAN_SETTING_KEYS.has(setting.key);
 }
 
+const rarityItems = computed(() =>
+  rarities.value.map((r) => ({ label: r.displayName, value: String(r.id), color: r.color }))
+);
+
 const cards = computed<SectionCard[]>(() => {
   const overriddenSettings = visibleAppSettings.value.filter((setting) => setting.isOverridden).length;
   return [
@@ -267,6 +272,7 @@ async function fetchAll() {
     api.get<{ presets: PartyPreset[] }>("/api/party-presets"),
     api.get<AppSetting[]>("/api/settings"),
     api.get<ScoreWeightsPayload>("/api/score-weights"),
+    fetchRarities(),
   ]);
 
   jobClasses.value = j;
@@ -650,6 +656,30 @@ async function confirmDeletePreset() {
                   class="flex-1"
                   size="sm"
                 />
+                <USelect
+                  v-else-if="setting.key === 'ALLOWED_CARD_RARITIES'"
+                  :model-value="settingDrafts[setting.key] ? settingDrafts[setting.key].split(',') : []"
+                  :items="rarityItems"
+                  multiple
+                  placeholder="Select rarities..."
+                  class="flex-1"
+                  size="sm"
+                  @update:model-value="(val: any) => settingDrafts[setting.key] = val.join(',')"
+                >
+                  <template #item="{ item }">
+                    <span 
+                      :style="{ 
+                        backgroundColor: item.color,
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        color: 'white',
+                        fontSize: '12px'
+                      }"
+                    >
+                      {{ item.label }}
+                    </span>
+                  </template>
+                </USelect>
                 <UInput
                   v-else
                   v-model="settingDrafts[setting.key]"

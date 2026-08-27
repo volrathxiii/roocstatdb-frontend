@@ -50,32 +50,34 @@ onMounted(() => {
     <!-- Body: sidebar + main -->
     <div class="flex flex-1">
 
-      <!-- Left sidebar (md+) -->
-      <aside
-        class="hidden md:flex w-16 flex-col items-center gap-4 border-r border-slate-800 bg-transparent py-6"
-      >
-        <UTooltip v-for="item in navItems" :key="item.to" :text="item.label" :popper="{ placement: 'right' }">
-          <div class="relative">
-            <UButton
-              :to="item.to"
-              :icon="item.icon"
-              color="neutral"
-              variant="ghost"
-              size="lg"
-              square
-            />
-            <UTooltip v-if="item.badge > 0 && item.badgeTooltip" :text="item.badgeTooltip" :popper="{ placement: 'right' }">
+      <!-- Left sidebar (md+) - Client-only to avoid SSR icon loading warnings -->
+      <ClientOnly>
+        <aside
+          class="hidden md:flex w-16 flex-col items-center gap-4 border-r border-slate-800 bg-transparent py-6"
+        >
+          <UTooltip v-for="item in navItems" :key="item.to" :text="item.label" :popper="{ placement: 'right' }">
+            <div class="relative">
+              <UButton
+                :to="item.to"
+                :icon="item.icon"
+                color="neutral"
+                variant="ghost"
+                size="lg"
+                square
+              />
+              <UTooltip v-if="item.badge > 0 && item.badgeTooltip" :text="item.badgeTooltip" :popper="{ placement: 'right' }">
+                <span
+                  :class="['absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] font-bold text-white', item.badgeClass]"
+                >{{ item.badge }}</span>
+              </UTooltip>
               <span
+                v-else-if="item.badge > 0"
                 :class="['absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] font-bold text-white', item.badgeClass]"
               >{{ item.badge }}</span>
-            </UTooltip>
-            <span
-              v-else-if="item.badge > 0"
-              :class="['absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] font-bold text-white', item.badgeClass]"
-            >{{ item.badge }}</span>
-          </div>
-        </UTooltip>
-      </aside>
+            </div>
+          </UTooltip>
+        </aside>
+      </ClientOnly>
 
       <!-- Main content -->
       <main class="flex-1 p-4 md:p-6 lg:p-10 pb-20 md:pb-6">
