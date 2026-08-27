@@ -94,6 +94,7 @@ interface DashboardStatusResponse {
 const loadingAssignments = ref(false);
 const assignmentsError = ref<string | null>(null);
 const dashboardStatus = ref<DashboardStatusResponse | null>(null);
+const showCardInventoryModal = ref(false);
 
 function formatEventDate(iso: string | null) {
   if (!iso) return null;
@@ -173,7 +174,16 @@ onMounted(() => {
             <span class="font-medium text-cyan-300">{{ auth.player?.playerId }}</span>
           </p>
 
-          <UpdateIgnForm class="pt-2" />
+          <div class="flex items-end gap-2 pt-2">
+            <UpdateIgnForm />
+            <UButton
+              icon="i-lucide-album"
+              @click="showCardInventoryModal = true"
+              class="ml-auto sm:shrink-0"
+            >
+              Card Inventory
+            </UButton>
+          </div>
         </div>
       </UCard>
 
@@ -270,4 +280,10 @@ onMounted(() => {
       </div>
     </div>
   </div>
+
+  <!-- Card Inventory Modal -->
+  <PlayerCardInventoryModal
+    :is-open="showCardInventoryModal"
+    @close="showCardInventoryModal = false"
+  />
 </template>
