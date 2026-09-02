@@ -83,7 +83,7 @@ describe("fmtFp", () => {
 
 describe("numCols", () => {
   it("contains 23 stat columns", () => {
-    expect(numCols).toHaveLength(23);
+    expect(numCols).toHaveLength(25);
   });
 
   it("first column is hp", () => {

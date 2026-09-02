@@ -25,6 +25,7 @@ const SNAPSHOT_CURRENT = {
   dmgVsMedium: 10, dmgReductionVsMedium: 0,
   pvpDmg: 5, pvpDmgReduction: 3,
   healingDone: 0, healingTaken: 0,
+  critRes: 0, critDmgResPct: 0,
 };
 const SNAPSHOT_PREVIOUS = { ...SNAPSHOT_CURRENT, weekNumber: 32, matk: 1400 };
 
@@ -41,7 +42,7 @@ const RANK = {
 const EFFECTIVE_WEIGHTS = {
   physical: { ignorePdef: 25, dmgVsDemiHuman: 23, dmgVsMedium: 20, pDmgPct: 16, patk: 14, pvpDmg: 2 },
   magic:    { ignoreMdef: 25, dmgVsDemiHuman: 23, dmgVsMedium: 20, mDmgPct: 16, matk: 14, pvpDmg: 2 },
-  defensive: { dmgReductionVsDemiHuman: 18, dmgReductionVsMedium: 16, pDmgReductionPct: 12, mDmgReductionPct: 12, rawPdef: 11, rawMdef: 11, hp: 8, healingTaken: 6, healingDone: 4, pvpDmgReduction: 2 },
+  defensive: { dmgReductionVsDemiHuman: 18, dmgReductionVsMedium: 16, pDmgReductionPct: 12, mDmgReductionPct: 12, rawPdef: 11, rawMdef: 11, hp: 8, healingTaken: 6, healingDone: 4, pvpDmgReduction: 2, critRes: 6, critDmgResPct: 6 },
 };
 
 const DEFAULT_PROPS = {

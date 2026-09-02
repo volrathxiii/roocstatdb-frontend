@@ -30,6 +30,8 @@ interface Snapshot {
   pvpDmgReduction: number;
   healingDone: number;
   healingTaken: number;
+  critRes: number;
+  critDmgResPct: number;
 }
 
 interface PlayerSlot {
@@ -79,7 +81,8 @@ type StatKey =
   | "dmgVsDemiHuman" | "dmgReductionVsDemiHuman"
   | "dmgVsMedium" | "dmgReductionVsMedium"
   | "pvpDmg" | "pvpDmgReduction"
-  | "healingDone" | "healingTaken";
+  | "healingDone" | "healingTaken"
+  | "critRes" | "critDmgResPct";
 
 interface StatDef {
   key: StatKey;
@@ -117,6 +120,8 @@ const STAT_GROUPS: { heading: string; stats: StatDef[] }[] = [
       { key: "dmgReductionVsMedium",    label: "DMG Reduction vs Medium %",      format: fmtPct },
       { key: "healingDone",             label: "Healing Done %",                  format: fmtPct },
       { key: "healingTaken",            label: "Healing Taken %",                 format: fmtPct },
+      { key: "critRes",                 label: "Crit Res",                        format: String },
+      { key: "critDmgResPct",           label: "Crit DMG Res %",                  format: fmtPct },
       { key: "pvpDmgReduction",         label: "PVP Reduction",                   format: String },
     ],
   },

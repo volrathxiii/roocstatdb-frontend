@@ -31,6 +31,8 @@ export interface Snapshot {
   pvpDmgReduction: number;
   healingDone: number;
   healingTaken: number;
+  critRes: number;
+  critDmgResPct: number;
 }
 
 /** Fields shared between rosters and applicants flat rows. */
@@ -69,6 +71,8 @@ export interface BasePlayerFlatRow {
   pvpDmgReduction: number;
   healingDone: number;
   healingTaken: number;
+  critRes: number;
+  critDmgResPct: number;
 }
 
 // ── Staleness helpers ─────────────────────────────────────────────────────────
@@ -148,6 +152,8 @@ export const numCols: NumColDef[] = [
   ["pvpDmgReduction",         "PVP Red",          fmtFlat],
   ["healingDone",             "Healing Done %",   fmtPct],
   ["healingTaken",            "Healing Taken %",  fmtPct],
+  ["critRes",                 "Crit Res",         fmtFlat],
+  ["critDmgResPct",           "Crit DMG Res %",   fmtPct],
 ];
 
 // ── Column header builders ────────────────────────────────────────────────────
@@ -239,5 +245,7 @@ export function mapSnapshotBase(p: PlayerBase, s: Snapshot | null): BasePlayerFl
     pvpDmgReduction: s?.pvpDmgReduction ?? 0,
     healingDone: s?.healingDone ?? 0,
     healingTaken: s?.healingTaken ?? 0,
+    critRes: s?.critRes ?? 0,
+    critDmgResPct: s?.critDmgResPct ?? 0,
   };
 }

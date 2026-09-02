@@ -30,6 +30,8 @@ interface Snapshot {
   pvpDmgReduction: number;
   healingDone: number;
   healingTaken: number;
+  critRes: number;
+  critDmgResPct: number;
 }
 
 const props = defineProps<{
@@ -90,6 +92,8 @@ const STAT_KEY_LABELS: Record<string, string> = {
   healingTaken: "Healing Taken %",
   healingDone: "Healing Done %",
   pvpDmgReduction: "PvP Reduction",
+  critRes: "Crit Res",
+  critDmgResPct: "Crit DMG Res %",
 };
 
 const snapshots = ref<Snapshot[]>([]);
@@ -262,6 +266,8 @@ const STAT_GROUPS: { heading: string; stats: StatDef[] }[] = [
       { key: "dmgReductionVsMedium",    label: "Reduc. vs Medium %",    format: fmtPct },
       { key: "healingDone",         label: "Healing Done %", format: fmtPct },
       { key: "healingTaken",        label: "Healing Taken %", format: fmtPct },
+      { key: "critRes",             label: "Crit Res",       format: String },
+      { key: "critDmgResPct",       label: "Crit DMG Res %", format: fmtPct },
       { key: "pvpDmgReduction",     label: "PVP Reduction",        format: String },
     ],
   },
