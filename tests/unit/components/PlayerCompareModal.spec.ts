@@ -26,6 +26,7 @@ const SNAPSHOT_A = {
   dmgVsMedium: 10, dmgReductionVsMedium: 0,
   pvpDmg: 5, pvpDmgReduction: 3,
   healingDone: 0, healingTaken: 0,
+  critRes: 0, critDmgResPct: 0,
 };
 const SNAPSHOT_B = { ...SNAPSHOT_A, matk: 1800, pDmgPct: 40 };
 

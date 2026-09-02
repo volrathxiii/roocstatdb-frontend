@@ -99,6 +99,8 @@ const DEFENSIVE_WEIGHT_DEFAULTS: Record<string, number> = {
   healingTaken: 6,
   healingDone: 4,
   pvpDmgReduction: 2,
+  critRes: 6,
+  critDmgResPct: 6,
 };
 
 const physicalFields = [
@@ -130,6 +132,8 @@ const defensiveFields = [
   { key: "healingTaken", label: "Healing Taken" },
   { key: "healingDone", label: "Healing Done" },
   { key: "pvpDmgReduction", label: "PVP Reduction" },
+  { key: "critRes", label: "Crit Res" },
+  { key: "critDmgResPct", label: "Crit DMG Res %" },
 ] as const;
 
 const jobClasses = ref<RefItem[]>([]);

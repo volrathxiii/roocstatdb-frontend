@@ -215,6 +215,8 @@ const MEDIUM_COLUMN_VISIBILITY: Record<string, boolean> = {
   pvpDmgReduction: false,
   healingDone: false,
   healingTaken: false,
+  critRes: false,
+  critDmgResPct: false,
 };
 
 const MOBILE_COLUMN_VISIBILITY: Record<string, boolean> = {
@@ -241,6 +243,8 @@ const MOBILE_COLUMN_VISIBILITY: Record<string, boolean> = {
   pvpDmgReduction: false,
   healingDone: false,
   healingTaken: false,
+  critRes: false,
+  critDmgResPct: false,
 };
 
 const columnVisibility = ref<Record<string, boolean>>({ ...DESKTOP_COLUMN_VISIBILITY });

@@ -189,6 +189,8 @@ const form = reactive({
   pvpDmgReduction: 0,
   healingDone: 0,
   healingTaken: 0,
+  critRes: 0,
+  critDmgResPct: 0,
 });
 
 const loading = ref(true);
@@ -206,6 +208,7 @@ const numericKeys = [
   'dmgVsMedium', 'dmgReductionVsMedium',
   'pvpDmg', 'pvpDmgReduction',
   'healingDone', 'healingTaken',
+  'critRes', 'critDmgResPct',
 ] as const;
 
 function fieldError(key: keyof typeof form): boolean {
@@ -238,6 +241,8 @@ function applySnapshot(snapshot: Record<string, unknown>) {
   form.pvpDmgReduction = Number(snapshot.pvpDmgReduction);
   form.healingDone = Number(snapshot.healingDone);
   form.healingTaken = Number(snapshot.healingTaken);
+  form.critRes = Number(snapshot.critRes);
+  form.critDmgResPct = Number(snapshot.critDmgResPct);
   savedWeekLabel.value = `Week ${snapshot.weekNumber}, ${snapshot.year}`;
 }
 
@@ -314,6 +319,8 @@ async function handleSubmit() {
       pvpDmgReduction: form.pvpDmgReduction,
       healingDone: form.healingDone,
       healingTaken: form.healingTaken,
+      critRes: form.critRes,
+      critDmgResPct: form.critDmgResPct,
     });
       successMsg.value = "Stats saved for this week.";
   } catch {
@@ -616,6 +623,12 @@ const classRoleOptions = computed(() =>
           </UFormField>
           <UFormField label="Healing Taken %" class="w-full">
             <UInput v-model.number="form.healingTaken" type="number" step="0.01" class="w-full" :color="fieldError('healingTaken') ? 'error' : undefined" />
+          </UFormField>
+          <UFormField label="Crit Res" class="w-full">
+            <UInput v-model.number="form.critRes" type="number" :min="0" class="w-full" :color="fieldError('critRes') ? 'error' : undefined" />
+          </UFormField>
+          <UFormField label="Crit DMG Res %" class="w-full">
+            <UInput v-model.number="form.critDmgResPct" type="number" step="0.01" class="w-full" :color="fieldError('critDmgResPct') ? 'error' : undefined" />
           </UFormField>
           <UFormField label="P DMG %" class="w-full">
             <UInput v-model.number="form.pDmgPct" type="number" step="0.01" class="w-full" :color="fieldError('pDmgPct') ? 'error' : undefined" />

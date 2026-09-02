@@ -26,6 +26,7 @@ const PLAYER_A = {
   dmgVsMedium: 10, dmgReductionVsMedium: 0,
   pvpDmg: 5, pvpDmgReduction: 3,
   healingDone: 0, healingTaken: 0,
+  critRes: 0, critDmgResPct: 0,
 };
 const PLAYER_B = { ...PLAYER_A, id: 2, ign: "Sentinel", matk: 1800 };
 

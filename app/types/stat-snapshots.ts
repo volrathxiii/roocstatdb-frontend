@@ -38,6 +38,9 @@ export interface PlayerStatSnapshot {
   // Healing stats
   healingDone?: number;
   healingTaken?: number;
+  // Crit resistance stats
+  critRes?: number;
+  critDmgResPct?: number;
 }
 
 export interface LatestStatSnapshotResponse {
